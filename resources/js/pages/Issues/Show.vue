@@ -13,6 +13,14 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
@@ -30,8 +38,15 @@ type Issue = {
     reported_at_label: string;
     elapsed_duration: string;
     resolved_at: string | null;
+    resolution_summary: string | null;
     completed_at: string | null;
-    project: { id: number; name: string; customer_name: string | null };
+    project: {
+        id: number;
+        name: string;
+        customer_name: string | null;
+        first_responder: { id: number; name: string; email: string | null } | null;
+        second_responder: { id: number; name: string; email: string | null } | null;
+    };
     team_member_id: number | null;
     assigned_to_name: string | null;
     checklist_items: Array<{
@@ -65,6 +80,8 @@ type TeamMember = { id: number; name: string; email: string | null };
 const props = defineProps<{ issue: Issue; teamMembers: TeamMember[] }>();
 const isEditing = ref(false);
 const updatingItemIds = ref<number[]>([]);
+const resolutionItem = ref<Issue['checklist_items'][number] | null>(null);
+const resolutionSummary = ref('');
 const detailsForm = useForm({
     title: props.issue.title,
     description: props.issue.description ?? '',
@@ -86,10 +103,32 @@ const toggleItem = (item: Issue['checklist_items'][number]) => {
         return;
     }
 
+    if (item.marks_issue_resolved && !item.is_completed) {
+        resolutionItem.value = item;
+
+        return;
+    }
+
+    updateItem(item, !item.is_completed);
+};
+
+const updateItem = (
+    item: Issue['checklist_items'][number],
+    isCompleted: boolean,
+    resolutionSummaryValue?: string,
+) => {
+    if (updatingItemIds.value.includes(item.id)) {
+        return;
+    }
+
     updatingItemIds.value = [...updatingItemIds.value, item.id];
     router.patch(
         updateChecklistItem([props.issue.id, item.id]).url,
-        { is_completed: !item.is_completed, is_not_applicable: false },
+        {
+            is_completed: isCompleted,
+            is_not_applicable: false,
+            resolution_summary: resolutionSummaryValue,
+        },
         {
             preserveScroll: true,
             onFinish: () => {
@@ -99,6 +138,17 @@ const toggleItem = (item: Issue['checklist_items'][number]) => {
             },
         },
     );
+};
+
+const completeResolutionItem = () => {
+    if (!resolutionItem.value) {
+        return;
+    }
+
+    const item = resolutionItem.value;
+    updateItem(item, true, resolutionSummary.value);
+    resolutionItem.value = null;
+    resolutionSummary.value = '';
 };
 
 const markItemNotApplicable = (item: Issue['checklist_items'][number]) => {
@@ -159,6 +209,22 @@ defineOptions({
                     <template v-if="issue.project.customer_name">
                         · {{ issue.project.customer_name }}
                     </template>
+                </p>
+                <p class="text-muted-foreground text-sm">
+                    Responders:
+                    <span class="text-foreground font-medium">
+                        {{
+                            issue.project.first_responder?.name ||
+                            'Niet toegewezen'
+                        }}
+                    </span>
+                    <span aria-hidden="true"> · </span>
+                    <span class="text-foreground font-medium">
+                        {{
+                            issue.project.second_responder?.name ||
+                            'Niet toegewezen'
+                        }}
+                    </span>
                 </p>
             </div>
         </section>
@@ -313,6 +379,17 @@ defineOptions({
                                 {{ issue.resolved_at }}
                             </dd>
                         </div>
+                        <div
+                            v-if="issue.resolution_summary"
+                            class="sm:col-span-2"
+                        >
+                            <dt class="text-muted-foreground text-sm">
+                                Oplossing
+                            </dt>
+                            <dd class="mt-1 text-sm whitespace-pre-line">
+                                {{ issue.resolution_summary }}
+                            </dd>
+                        </div>
                         <div v-if="issue.completed_at">
                             <dt class="text-muted-foreground text-sm">
                                 Afgerond
@@ -367,6 +444,44 @@ defineOptions({
                 </CardContent>
             </Card>
         </section>
+
+        <Dialog
+            :open="resolutionItem !== null"
+            @update:open="(isOpen) => !isOpen && (resolutionItem = null)"
+        >
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Issue als opgelost markeren</DialogTitle>
+                    <DialogDescription>
+                        Beschrijf kort wat is opgelost. Deze notitie helpt bij
+                        het herkennen van terugkerende problemen.
+                    </DialogDescription>
+                </DialogHeader>
+                <div class="grid gap-2">
+                    <Label for="resolution_summary">Oplossing</Label>
+                    <textarea
+                        id="resolution_summary"
+                        v-model="resolutionSummary"
+                        rows="4"
+                        maxlength="2000"
+                        placeholder="Bijvoorbeeld: cache geleegd en de foutieve configuratie hersteld."
+                        class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    />
+                </div>
+                <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="resolutionItem = null"
+                    >
+                        Annuleren
+                    </Button>
+                    <Button type="button" @click="completeResolutionItem">
+                        Als opgelost markeren
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
         <section class="grid gap-6 lg:grid-cols-3">
             <Card class="lg:col-span-2">

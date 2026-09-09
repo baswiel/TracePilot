@@ -86,9 +86,6 @@ class IssueController extends Controller
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name', 'customer_name']),
-            'teamMembers' => TeamMember::query()
-                ->orderBy('name')
-                ->get(['id', 'name', 'email']),
         ]);
     }
 
@@ -109,7 +106,13 @@ class IssueController extends Controller
     {
         $this->authorize('view', $issue);
 
-        $issue->load(['project', 'teamMember', 'checklistItems.completedBy', 'activities.user']);
+        $issue->load([
+            'project.firstResponder',
+            'project.secondResponder',
+            'teamMember',
+            'checklistItems.completedBy',
+            'activities.user',
+        ]);
         $checklistItems = $issue->checklistItems;
         $requiredItems = $checklistItems->where('is_required', true);
 
@@ -124,11 +127,14 @@ class IssueController extends Controller
                 'reported_at_label' => $issue->reported_at->format('d-m-Y H:i'),
                 'elapsed_duration' => $this->elapsedDuration($issue),
                 'resolved_at' => $issue->resolved_at?->format('d-m-Y H:i'),
+                'resolution_summary' => $issue->resolution_summary,
                 'completed_at' => $issue->completed_at?->format('d-m-Y H:i'),
                 'project' => [
                     'id' => $issue->project->id,
                     'name' => $issue->project->name,
                     'customer_name' => $issue->project->customer_name,
+                    'first_responder' => $this->teamMemberData($issue->project->firstResponder),
+                    'second_responder' => $this->teamMemberData($issue->project->secondResponder),
                 ],
                 'team_member_id' => $issue->team_member_id,
                 'assigned_to_name' => $issue->teamMember?->name,
@@ -191,6 +197,7 @@ class IssueController extends Controller
             $request->boolean('is_completed'),
             $request->user(),
             $request->boolean('is_not_applicable'),
+            $request->validated('resolution_summary'),
         );
 
         return back();
@@ -208,5 +215,21 @@ class IssueController extends Controller
             $hours > 0 ? "{$hours} u" : null,
             "{$remainingMinutes} min",
         ])->filter()->join(' ');
+    }
+
+    /**
+     * @return array{id: int, name: string, email: string|null}|null
+     */
+    private function teamMemberData(?TeamMember $teamMember): ?array
+    {
+        if ($teamMember === null) {
+            return null;
+        }
+
+        return [
+            'id' => $teamMember->id,
+            'name' => $teamMember->name,
+            'email' => $teamMember->email,
+        ];
     }
 }

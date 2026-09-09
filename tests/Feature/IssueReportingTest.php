@@ -54,7 +54,7 @@ class IssueReportingTest extends TestCase
             'title' => 'Aanmelden werkt niet',
             'priority' => IssuePriority::P1->value,
             'status' => 'open',
-            'team_member_id' => $assignee->id,
+            'team_member_id' => null,
             'created_by' => $reporter->id,
         ]);
         $this->assertDatabaseHas('issue_checklist_items', [
@@ -187,7 +187,6 @@ class IssueReportingTest extends TestCase
             'description' => null,
             'priority' => 'p2',
             'reported_at' => '2026-09-03 10:00:00',
-            'team_member_id' => null,
         ];
     }
 }

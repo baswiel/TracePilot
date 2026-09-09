@@ -22,6 +22,7 @@ class UpdateIssueChecklistItemRequest extends FormRequest
         return [
             'is_completed' => ['required', 'boolean'],
             'is_not_applicable' => ['sometimes', 'boolean'],
+            'resolution_summary' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

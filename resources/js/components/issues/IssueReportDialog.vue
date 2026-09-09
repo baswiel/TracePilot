@@ -16,9 +16,8 @@ import { Label } from '@/components/ui/label';
 import { store } from '@/routes/issues';
 
 type Project = { id: number; name: string; customer_name: string | null };
-type TeamMember = { id: number; name: string; email: string };
 
-const props = defineProps<{ projects: Project[]; teamMembers: TeamMember[] }>();
+const props = defineProps<{ projects: Project[] }>();
 const open = defineModel<boolean>('open', { default: false });
 const nowForInput = () => new Date().toISOString().slice(0, 16);
 const form = useForm({
@@ -27,7 +26,6 @@ const form = useForm({
     description: '',
     priority: 'p2',
     reported_at: nowForInput(),
-    team_member_id: '',
 });
 const hasProjects = computed(() => props.projects.length > 0);
 
@@ -49,8 +47,8 @@ const submit = () => form.post(store.url());
             <DialogHeader>
                 <DialogTitle>Storing melden</DialogTitle>
                 <DialogDescription
-                    >Registreer de storing en wijs desgewenst direct een
-                    verantwoordelijke toe.</DialogDescription
+                    >Registreer de storing voor het juiste project. De
+                    responders zijn aan het project gekoppeld.</DialogDescription
                 >
             </DialogHeader>
 
@@ -128,27 +126,6 @@ const submit = () => form.post(store.url());
                         />
                         <InputError :message="form.errors.reported_at" />
                     </div>
-                </div>
-                <div class="grid gap-2">
-                    <Label for="report-team_member_id">Verantwoordelijke</Label>
-                    <select
-                        id="report-team_member_id"
-                        v-model="form.team_member_id"
-                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                    >
-                        <option value="">Nog niet toegewezen</option>
-                        <option
-                            v-for="teamMember in teamMembers"
-                            :key="teamMember.id"
-                            :value="teamMember.id"
-                        >
-                            {{ teamMember.name
-                            }}<template v-if="teamMember.email">
-                                ({{ teamMember.email }})</template
-                            >
-                        </option>
-                    </select>
-                    <InputError :message="form.errors.team_member_id" />
                 </div>
                 <DialogFooter class="pt-1">
                     <Button

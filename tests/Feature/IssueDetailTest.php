@@ -19,7 +19,13 @@ class IssueDetailTest extends TestCase
     public function test_an_authenticated_user_can_view_an_issue_detail_page(): void
     {
         $user = User::factory()->create();
-        $project = Project::factory()->create(['customer_name' => 'Acme B.V.']);
+        $firstResponder = TeamMember::factory()->create(['name' => 'Daan de Vries']);
+        $secondResponder = TeamMember::factory()->create(['name' => 'Eva Jansen']);
+        $project = Project::factory()->create([
+            'customer_name' => 'Acme B.V.',
+            'first_responder_id' => $firstResponder->id,
+            'second_responder_id' => $secondResponder->id,
+        ]);
         $issue = Issue::factory()->for($project)->create([
             'title' => 'E-mailverkeer vertraagd',
             'reported_at' => now()->subMinutes(90),
@@ -32,6 +38,8 @@ class IssueDetailTest extends TestCase
                 ->component('Issues/Show')
                 ->where('issue.title', 'E-mailverkeer vertraagd')
                 ->where('issue.project.customer_name', 'Acme B.V.')
+                ->where('issue.project.first_responder.name', 'Daan de Vries')
+                ->where('issue.project.second_responder.name', 'Eva Jansen')
                 ->has('issue.elapsed_duration')
                 ->has('issue.checklist_progress')
                 ->has('teamMembers'));
@@ -56,7 +64,10 @@ class IssueDetailTest extends TestCase
 
         $this->actingAs($user)
             ->from(route('issues.show', $issue))
-            ->patch(route('issues.checklist.update', [$issue, $resolutionItem]), ['is_completed' => true])
+            ->patch(route('issues.checklist.update', [$issue, $resolutionItem]), [
+                'is_completed' => true,
+                'resolution_summary' => 'De foutieve configuratie is hersteld.',
+            ])
             ->assertRedirect(route('issues.show', $issue));
 
         $issue->refresh();
@@ -67,6 +78,7 @@ class IssueDetailTest extends TestCase
         $this->assertSame($user->id, $resolutionItem->completed_by);
         $this->assertSame(IssueStatus::Handling, $issue->status);
         $this->assertNotNull($issue->resolved_at);
+        $this->assertSame('De foutieve configuratie is hersteld.', $issue->resolution_summary);
         $this->assertNull($issue->completed_at);
         $this->assertDatabaseHas('issue_activities', [
             'issue_id' => $issue->id,

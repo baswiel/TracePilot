@@ -19,8 +19,9 @@ class UpdateIssueChecklistItemCompletion
         bool $isCompleted,
         ?User $actor = null,
         bool $isNotApplicable = false,
+        ?string $resolutionSummary = null,
     ): Issue {
-        return DB::transaction(function () use ($actor, $isCompleted, $isNotApplicable, $item): Issue {
+        return DB::transaction(function () use ($actor, $isCompleted, $isNotApplicable, $item, $resolutionSummary): Issue {
             $issue = Issue::query()
                 ->lockForUpdate()
                 ->findOrFail($item->issue_id);
@@ -46,6 +47,14 @@ class UpdateIssueChecklistItemCompletion
 
             $previousStatus = $issue->status;
             $issue = $this->syncIssueStatus->handle($issue);
+
+            if ($item->marks_issue_resolved) {
+                $issue->update([
+                    'resolution_summary' => $isCompleted && ! $isNotApplicable
+                        ? (filled($resolutionSummary) ? trim($resolutionSummary) : null)
+                        : null,
+                ]);
+            }
 
             $issue->activities()->create([
                 'user_id' => $actor?->id,

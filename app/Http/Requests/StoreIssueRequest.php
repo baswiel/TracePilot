@@ -30,12 +30,11 @@ class StoreIssueRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'priority' => ['required', Rule::enum(IssuePriority::class)],
             'reported_at' => ['required', 'date'],
-            'team_member_id' => ['nullable', 'integer', Rule::exists('team_members', 'id')],
         ];
     }
 
     /**
-     * @return array{title: string, description: string|null, priority: IssuePriority, reported_at: Carbon, team_member_id: int|null}
+     * @return array{title: string, description: string|null, priority: IssuePriority, reported_at: Carbon}
      */
     public function issueAttributes(): array
     {
@@ -46,7 +45,6 @@ class StoreIssueRequest extends FormRequest
             'description' => $validated['description'] ?? null,
             'priority' => IssuePriority::from($validated['priority']),
             'reported_at' => Carbon::parse($validated['reported_at']),
-            'team_member_id' => $validated['team_member_id'] ?? null,
         ];
     }
 }

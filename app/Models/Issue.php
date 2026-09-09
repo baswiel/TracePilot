@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property IssueStatus $status
  * @property Carbon $reported_at
  * @property Carbon|null $resolved_at
+ * @property string|null $resolution_summary
  * @property Carbon|null $completed_at
  * @property int|null $team_member_id
  * @property int $created_by
@@ -36,6 +37,7 @@ use Illuminate\Support\Carbon;
     'status',
     'reported_at',
     'resolved_at',
+    'resolution_summary',
     'completed_at',
     'team_member_id',
     'created_by',
