@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Models\Issue;
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateIssueChecklistItemRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        $issue = $this->route('issue');
+
+        return $issue instanceof Issue && $this->user()?->can('update', $issue) === true;
+    }
+
+    /**
+     * @return array<string, array<int, string>>
+     */
+    public function rules(): array
+    {
+        return [
+            'is_completed' => ['required', 'boolean'],
+            'is_not_applicable' => ['sometimes', 'boolean'],
+        ];
+    }
+}

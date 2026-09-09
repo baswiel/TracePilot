@@ -1,0 +1,64 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\IssuePriority;
+use App\Enums\IssueStatus;
+use App\Models\Issue;
+use App\Models\Project;
+use App\Models\TeamMember;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class IssueIndexTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_it_lists_issues_of_every_status_with_newest_first(): void
+    {
+        $user = User::factory()->create();
+        $older = Issue::factory()->create(['reported_at' => now()->subHour()]);
+        $newer = Issue::factory()->create([
+            'status' => IssueStatus::Completed,
+            'reported_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->asInertiaRequest()
+            ->get(route('issues.index'))
+            ->assertOk()
+            ->assertJsonPath('component', 'Issues/Index')
+            ->assertJsonPath('props.issues.total', 2)
+            ->assertJsonPath('props.issues.data.0.id', $newer->id)
+            ->assertJsonPath('props.issues.data.1.id', $older->id);
+    }
+
+    public function test_it_filters_issues_and_preserves_filters(): void
+    {
+        $user = User::factory()->create();
+        $teamMember = TeamMember::factory()->create();
+        $project = Project::factory()->create(['name' => 'Klantportaal']);
+        $matching = Issue::factory()->for($project)->create([
+            'title' => 'Inloggen werkt niet',
+            'priority' => IssuePriority::P1,
+            'status' => IssueStatus::Completed,
+            'team_member_id' => $teamMember->id,
+        ]);
+        Issue::factory()->create(['title' => 'Andere storing']);
+
+        $this->actingAs($user)
+            ->asInertiaRequest()
+            ->get(route('issues.index', [
+                'search' => 'inloggen',
+                'project' => $project->id,
+                'priority' => 'p1',
+                'status' => 'completed',
+                'assigned_to' => $teamMember->id,
+            ]))
+            ->assertOk()
+            ->assertJsonPath('props.issues.total', 1)
+            ->assertJsonPath('props.issues.data.0.id', $matching->id)
+            ->assertJsonPath('props.filters.status', 'completed');
+    }
+}
