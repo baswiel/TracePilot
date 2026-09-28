@@ -27,6 +27,27 @@ type Issue = {
     checklist_total: number;
     required_checklist_completed: number;
     required_checklist_total: number;
+    sla: Sla;
+};
+
+type SlaMilestone = {
+    target_minutes: number | null;
+    deadline_at: string | null;
+    state:
+        | 'unavailable'
+        | 'on_track'
+        | 'at_risk'
+        | 'overdue'
+        | 'met'
+        | 'breached';
+    label: string;
+    remaining_minutes: number | null;
+};
+
+type Sla = {
+    response: SlaMilestone;
+    resolution: SlaMilestone;
+    needs_attention: boolean;
 };
 
 type PaginationLink = {
@@ -49,6 +70,7 @@ const props = defineProps<{
         open: number;
         handling: number;
         completed_this_month: number;
+        sla_attention: number;
     };
     issues: PaginatedIssues;
     filters: {
@@ -118,6 +140,32 @@ const progressWidth = (issue: Issue) =>
     issue.checklist_total === 0
         ? 0
         : Math.round((issue.checklist_completed / issue.checklist_total) * 100);
+
+const slaClass = (sla: Sla) => {
+    const states = [sla.response.state, sla.resolution.state];
+
+    if (states.some((state) => state === 'overdue' || state === 'breached')) {
+        return 'bg-red-50 text-red-700';
+    }
+
+    if (states.includes('at_risk')) return 'bg-orange-50 text-orange-700';
+    if (states.includes('unavailable')) return 'bg-slate-100 text-slate-600';
+
+    return 'bg-emerald-50 text-emerald-700';
+};
+
+const slaLabel = (sla: Sla) => {
+    const milestones = [sla.response, sla.resolution];
+    const critical = milestones.find((milestone) =>
+        ['overdue', 'breached', 'at_risk'].includes(milestone.state),
+    );
+
+    return (
+        critical?.label ??
+        milestones.find((milestone) => milestone.target_minutes)?.label ??
+        'Geen SLA'
+    );
+};
 
 defineOptions({
     layout: {
@@ -286,6 +334,7 @@ defineOptions({
                                 <th class="px-6 py-4 font-medium">
                                     Open sinds
                                 </th>
+                                <th class="px-6 py-4 font-medium">SLA</th>
                                 <th class="px-6 py-4 font-medium">Checklist</th>
                                 <th class="px-6 py-4">
                                     <span class="sr-only">Actie</span>
@@ -330,6 +379,14 @@ defineOptions({
                                     class="text-muted-foreground px-6 py-4 whitespace-nowrap"
                                 >
                                     {{ elapsedSince(issue.reported_at) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span
+                                        class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
+                                        :class="slaClass(issue.sla)"
+                                    >
+                                        {{ slaLabel(issue.sla) }}
+                                    </span>
                                 </td>
                                 <td
                                     class="text-muted-foreground px-6 py-4 whitespace-nowrap"
@@ -467,11 +524,12 @@ defineOptions({
                         <CircleAlert class="size-10 shrink-0 text-orange-500" />
                         <div>
                             <p class="font-semibold text-[#101d3f]">
-                                {{ statistics.handling }} issues wachten op
-                                nazorg
+                                {{ statistics.sla_attention }} issues vragen
+                                SLA-aandacht
                             </p>
                             <p class="text-muted-foreground mt-1 text-sm">
-                                Bekijk de openstaande checkliststappen.
+                                De reactietijd of oplostijd verloopt binnenkort
+                                of is al overschreden.
                             </p>
                         </div>
                     </div>

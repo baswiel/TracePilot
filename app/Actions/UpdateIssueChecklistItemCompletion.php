@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Enums\IssueCause;
 use App\Models\Issue;
 use App\Models\IssueChecklistItem;
 use App\Models\User;
@@ -20,8 +21,10 @@ class UpdateIssueChecklistItemCompletion
         ?User $actor = null,
         bool $isNotApplicable = false,
         ?string $resolutionSummary = null,
+        ?bool $postmortemRequired = null,
+        ?IssueCause $cause = null,
     ): Issue {
-        return DB::transaction(function () use ($actor, $isCompleted, $isNotApplicable, $item, $resolutionSummary): Issue {
+        return DB::transaction(function () use ($actor, $cause, $isCompleted, $isNotApplicable, $item, $postmortemRequired, $resolutionSummary): Issue {
             $issue = Issue::query()
                 ->lockForUpdate()
                 ->findOrFail($item->issue_id);
@@ -34,7 +37,13 @@ class UpdateIssueChecklistItemCompletion
             $wasNotApplicable = $item->is_not_applicable;
             $isNotApplicable = $isCompleted && $isNotApplicable;
 
-            if ($wasCompleted === $isCompleted && $wasNotApplicable === $isNotApplicable) {
+            $updatesPostmortemRequirement = $item->marks_issue_resolved
+                && $isCompleted
+                && ! $isNotApplicable
+                && $postmortemRequired !== null
+                && $issue->postmortem_required !== $postmortemRequired;
+
+            if ($wasCompleted === $isCompleted && $wasNotApplicable === $isNotApplicable && ! $updatesPostmortemRequirement) {
                 return $issue->refresh();
             }
 
@@ -45,16 +54,50 @@ class UpdateIssueChecklistItemCompletion
                 'completed_by' => $isCompleted ? $actor?->id : null,
             ]);
 
-            $previousStatus = $issue->status;
-            $issue = $this->syncIssueStatus->handle($issue);
-
             if ($item->marks_issue_resolved) {
                 $issue->update([
                     'resolution_summary' => $isCompleted && ! $isNotApplicable
                         ? (filled($resolutionSummary) ? trim($resolutionSummary) : null)
                         : null,
+                    'cause' => $isCompleted && ! $isNotApplicable ? $cause : null,
                 ]);
+
+                if ($isCompleted && ! $isNotApplicable && $postmortemRequired !== null) {
+                    $issue->update(['postmortem_required' => $postmortemRequired]);
+                    $postmortemItems = IssueChecklistItem::query()
+                        ->where('issue_id', $issue->id)
+                        ->whereRaw('lower(name) like ?', ['%postmortem%'])
+                        ->lockForUpdate()
+                        ->get();
+
+                    foreach ($postmortemItems as $postmortemItem) {
+                        $postmortemItemWasCompleted = $postmortemItem->is_completed;
+                        $postmortemItemWasNotApplicable = $postmortemItem->is_not_applicable;
+                        $postmortemItem->update([
+                            'is_completed' => ! $postmortemRequired,
+                            'is_not_applicable' => ! $postmortemRequired,
+                            'completed_at' => ! $postmortemRequired ? now() : null,
+                            'completed_by' => ! $postmortemRequired ? $actor?->id : null,
+                        ]);
+
+                        if ($postmortemItemWasCompleted !== ! $postmortemRequired || $postmortemItemWasNotApplicable !== ! $postmortemRequired) {
+                            $issue->activities()->create([
+                                'user_id' => $actor?->id,
+                                'action' => $postmortemRequired
+                                    ? 'checklist_item_reopened'
+                                    : 'checklist_item_not_applicable',
+                                'description' => $postmortemRequired
+                                    ? "Checklist-item '{$postmortemItem->name}' opnieuw geopend."
+                                    : "Checklist-item '{$postmortemItem->name}' gemarkeerd als niet van toepassing.",
+                                'metadata' => ['checklist_item_id' => $postmortemItem->id],
+                            ]);
+                        }
+                    }
+                }
             }
+
+            $previousStatus = $issue->status;
+            $issue = $this->syncIssueStatus->handle($issue);
 
             $issue->activities()->create([
                 'user_id' => $actor?->id,

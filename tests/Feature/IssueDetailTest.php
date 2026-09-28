@@ -10,6 +10,8 @@ use App\Models\Project;
 use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class IssueDetailTest extends TestCase
@@ -21,10 +23,12 @@ class IssueDetailTest extends TestCase
         $user = User::factory()->create();
         $firstResponder = TeamMember::factory()->create(['name' => 'Daan de Vries']);
         $secondResponder = TeamMember::factory()->create(['name' => 'Eva Jansen']);
+        $thirdResponder = TeamMember::factory()->create(['name' => 'Fleur Bakker']);
         $project = Project::factory()->create([
             'customer_name' => 'Acme B.V.',
             'first_responder_id' => $firstResponder->id,
             'second_responder_id' => $secondResponder->id,
+            'third_responder_id' => $thirdResponder->id,
         ]);
         $issue = Issue::factory()->for($project)->create([
             'title' => 'E-mailverkeer vertraagd',
@@ -40,6 +44,7 @@ class IssueDetailTest extends TestCase
                 ->where('issue.project.customer_name', 'Acme B.V.')
                 ->where('issue.project.first_responder.name', 'Daan de Vries')
                 ->where('issue.project.second_responder.name', 'Eva Jansen')
+                ->where('issue.project.third_responder.name', 'Fleur Bakker')
                 ->has('issue.elapsed_duration')
                 ->has('issue.checklist_progress')
                 ->has('teamMembers'));
@@ -67,6 +72,7 @@ class IssueDetailTest extends TestCase
             ->patch(route('issues.checklist.update', [$issue, $resolutionItem]), [
                 'is_completed' => true,
                 'resolution_summary' => 'De foutieve configuratie is hersteld.',
+                'cause' => 'configuration_error',
             ])
             ->assertRedirect(route('issues.show', $issue));
 
@@ -79,6 +85,7 @@ class IssueDetailTest extends TestCase
         $this->assertSame(IssueStatus::Handling, $issue->status);
         $this->assertNotNull($issue->resolved_at);
         $this->assertSame('De foutieve configuratie is hersteld.', $issue->resolution_summary);
+        $this->assertSame('configuration_error', $issue->cause->value);
         $this->assertNull($issue->completed_at);
         $this->assertDatabaseHas('issue_activities', [
             'issue_id' => $issue->id,
@@ -210,6 +217,8 @@ class IssueDetailTest extends TestCase
                 'description' => 'Aangepaste omschrijving',
                 'priority' => 'p1',
                 'team_member_id' => $assignee->id,
+                'knowledge_base_recorded' => true,
+                'is_trend' => true,
             ])
             ->assertRedirect(route('issues.show', $issue));
 
@@ -219,6 +228,8 @@ class IssueDetailTest extends TestCase
             'description' => 'Aangepaste omschrijving',
             'priority' => IssuePriority::P1->value,
             'team_member_id' => $assignee->id,
+            'knowledge_base_recorded' => true,
+            'is_trend' => true,
         ]);
         $this->assertDatabaseHas('issue_activities', [
             'issue_id' => $issue->id,
@@ -242,6 +253,124 @@ class IssueDetailTest extends TestCase
             ])
             ->assertRedirect(route('issues.show', $issue))
             ->assertSessionHasErrors(['title', 'priority', 'team_member_id']);
+    }
+
+    public function test_a_user_can_add_an_internal_timeline_entry_with_mentions_and_an_attachment(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create();
+        $issue = Issue::factory()->create();
+        $mentionedMember = TeamMember::factory()->create(['name' => 'Robin Peters']);
+
+        $this->actingAs($user)
+            ->from(route('issues.show', $issue))
+            ->post(route('issues.timeline.store', $issue), [
+                'type' => 'decision',
+                'body' => 'We schakelen tijdelijk terug naar de vorige release.',
+                'mention_ids' => [$mentionedMember->id],
+                'attachment' => UploadedFile::fake()->create('rollback-plan.txt', 12, 'text/plain'),
+            ])
+            ->assertRedirect(route('issues.show', $issue));
+
+        $activity = $issue->activities()->sole();
+
+        $this->assertSame('decision', $activity->action);
+        $this->assertSame('We schakelen tijdelijk terug naar de vorige release.', $activity->description);
+        $this->assertSame([
+            ['id' => $mentionedMember->id, 'name' => 'Robin Peters'],
+        ], $activity->metadata['mentions']);
+        $this->assertSame('rollback-plan.txt', $activity->metadata['attachment']['name']);
+        Storage::disk('local')->assertExists($activity->metadata['attachment']['path']);
+
+        $this->actingAs($user)
+            ->get(route('issues.timeline.attachment.download', [$issue, $activity]))
+            ->assertDownload('rollback-plan.txt');
+    }
+
+    public function test_a_timeline_entry_requires_a_valid_type_and_body(): void
+    {
+        $user = User::factory()->create();
+        $issue = Issue::factory()->create();
+
+        $this->actingAs($user)
+            ->from(route('issues.show', $issue))
+            ->post(route('issues.timeline.store', $issue), [
+                'type' => 'update',
+                'body' => '',
+                'mention_ids' => [999999],
+            ])
+            ->assertRedirect(route('issues.show', $issue))
+            ->assertSessionHasErrors(['type', 'body', 'mention_ids.0']);
+    }
+
+    public function test_a_user_can_save_a_postmortem_with_owned_action_items(): void
+    {
+        $user = User::factory()->create();
+        $issue = Issue::factory()->create();
+        $owner = TeamMember::factory()->create(['name' => 'Jamie Smit']);
+
+        $this->actingAs($user)
+            ->from(route('issues.show', $issue))
+            ->put(route('issues.postmortem.update', $issue), [
+                'root_cause' => 'Een fout in de cache-invalidering hield oude configuratie actief.',
+                'impact' => 'Klanten konden gedurende 35 minuten geen wijzigingen opslaan.',
+                'action_items' => [[
+                    'title' => 'Voeg een regressietest voor cache-invalidering toe',
+                    'owner_team_member_id' => $owner->id,
+                    'due_date' => '2026-09-30',
+                    'is_completed' => false,
+                ]],
+            ])
+            ->assertRedirect(route('issues.show', $issue));
+
+        $postmortem = $issue->refresh()->postmortem;
+
+        $this->assertNotNull($postmortem);
+        $this->assertSame('Een fout in de cache-invalidering hield oude configuratie actief.', $postmortem->root_cause);
+        $this->assertSame('Klanten konden gedurende 35 minuten geen wijzigingen opslaan.', $postmortem->impact);
+        $this->assertDatabaseHas('postmortem_action_items', [
+            'issue_postmortem_id' => $postmortem->id,
+            'title' => 'Voeg een regressietest voor cache-invalidering toe',
+            'owner_team_member_id' => $owner->id,
+            'due_date' => '2026-09-30',
+        ]);
+        $this->assertDatabaseHas('issue_activities', [
+            'issue_id' => $issue->id,
+            'user_id' => $user->id,
+            'action' => 'postmortem_updated',
+            'description' => 'Postmortem bijgewerkt.',
+        ]);
+    }
+
+    public function test_resolving_an_issue_without_a_postmortem_marks_its_checklist_step_not_applicable(): void
+    {
+        $user = User::factory()->create();
+        [$issue, $resolutionItem] = $this->issueWithRequiredChecklist();
+        $postmortemItem = IssueChecklistItem::factory()->for($issue)->create([
+            'name' => 'Postmortem verstuurd',
+            'is_required' => true,
+            'sort_order' => 3,
+        ]);
+
+        $this->actingAs($user)->patch(
+            route('issues.checklist.update', [$issue, $resolutionItem]),
+            [
+                'is_completed' => true,
+                'postmortem_required' => false,
+            ],
+        );
+
+        $issue->refresh();
+        $postmortemItem->refresh();
+
+        $this->assertFalse($issue->postmortem_required);
+        $this->assertTrue($postmortemItem->is_completed);
+        $this->assertTrue($postmortemItem->is_not_applicable);
+        $this->assertDatabaseHas('issue_activities', [
+            'issue_id' => $issue->id,
+            'action' => 'checklist_item_not_applicable',
+            'description' => "Checklist-item '{$postmortemItem->name}' gemarkeerd als niet van toepassing.",
+        ]);
     }
 
     /**

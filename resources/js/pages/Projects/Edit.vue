@@ -18,6 +18,7 @@ type Project = {
     contact_phone: string | null;
     first_responder_id: number | null;
     second_responder_id: number | null;
+    third_responder_id: number | null;
     is_active: boolean;
 };
 

@@ -33,7 +33,7 @@ class IssueActivity extends Model
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     protected function casts(): array
     {

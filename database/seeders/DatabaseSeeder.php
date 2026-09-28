@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             TeamMemberSeeder::class,
             CustomerSeeder::class,
+            SlaLevelSeeder::class,
             ProjectSeeder::class,
             IssueChecklistTemplateSeeder::class,
         ]);

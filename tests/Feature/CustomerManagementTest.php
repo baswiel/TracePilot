@@ -35,4 +35,30 @@ class CustomerManagementTest extends TestCase
         $this->actingAs($user)->delete(route('customers.destroy', $customer))
             ->assertRedirect(route('customers.index'));
     }
+
+    public function test_authenticated_users_can_view_and_edit_customers(): void
+    {
+        $user = User::factory()->create();
+        $customer = Customer::factory()->create(['name' => 'Acme B.V.']);
+        $project = Project::factory()->create(['customer_id' => $customer->id]);
+
+        $this->actingAs($user)
+            ->asInertiaRequest()
+            ->get(route('customers.show', $customer))
+            ->assertOk()
+            ->assertJsonPath('component', 'Customers/Show')
+            ->assertJsonPath('props.customer.name', 'Acme B.V.')
+            ->assertJsonPath('props.projects.0.id', $project->id);
+
+        $this->actingAs($user)
+            ->asInertiaRequest()
+            ->get(route('customers.edit', $customer))
+            ->assertOk()
+            ->assertJsonPath('component', 'Customers/Edit')
+            ->assertJsonPath('props.customer.name', 'Acme B.V.');
+
+        $this->actingAs($user)
+            ->patch(route('customers.update', $customer), ['name' => 'Nieuwe Acme B.V.'])
+            ->assertRedirect(route('customers.show', $customer));
+    }
 }

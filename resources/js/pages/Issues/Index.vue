@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ClipboardList, Search } from '@lucide/vue';
+import { ClipboardList, Download, Search } from '@lucide/vue';
 import { reactive } from 'vue';
 import IssuePriorityBadge from '@/components/issues/IssuePriorityBadge.vue';
 import IssueStatusBadge from '@/components/issues/IssueStatusBadge.vue';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
-import { index, report, show } from '@/routes/issues';
+import { exportMethod, index, report, show } from '@/routes/issues';
 
 type Issue = {
     id: number;
@@ -75,6 +75,8 @@ const clearFilters = () => {
     applyFilters();
 };
 
+const exportUrl = () => exportMethod({ query: { ...filters } }).url;
+
 const formatDate = (value: string) =>
     new Intl.DateTimeFormat('nl-NL', {
         dateStyle: 'medium',
@@ -98,9 +100,14 @@ const formatDate = (value: string) =>
                     afgeronde meldingen.
                 </p>
             </div>
-            <Button as-child
-                ><Link :href="report()">Storing melden</Link></Button
-            >
+            <div class="flex flex-wrap gap-2">
+                <Button variant="outline" as-child>
+                    <a :href="exportUrl()"><Download /> Exporteer CSV</a>
+                </Button>
+                <Button as-child
+                    ><Link :href="report()">Storing melden</Link></Button
+                >
+            </div>
         </section>
 
         <Card>

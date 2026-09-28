@@ -28,7 +28,12 @@ class ProjectManagementTest extends TestCase
             $this->assertNotNull($project->customer_id);
             $this->assertNotNull($project->first_responder_id);
             $this->assertNotNull($project->second_responder_id);
-            $this->assertNotSame($project->first_responder_id, $project->second_responder_id);
+            $this->assertNotNull($project->third_responder_id);
+            $this->assertCount(3, array_unique([
+                $project->first_responder_id,
+                $project->second_responder_id,
+                $project->third_responder_id,
+            ]));
         });
 
         $this->assertSame(2, Customer::query()->where('name', 'Folkersma')->sole()->projects()->count());
@@ -94,6 +99,7 @@ class ProjectManagementTest extends TestCase
         $user = User::factory()->create();
         $firstResponder = TeamMember::factory()->create();
         $secondResponder = TeamMember::factory()->create();
+        $thirdResponder = TeamMember::factory()->create();
 
         $createResponse = $this->actingAs($user)->post(route('projects.store'), [
             'name' => 'Klantportaal',
@@ -106,6 +112,7 @@ class ProjectManagementTest extends TestCase
             'contact_phone' => '+31 6 12345678',
             'first_responder_id' => $firstResponder->id,
             'second_responder_id' => $secondResponder->id,
+            'third_responder_id' => $thirdResponder->id,
             'is_active' => true,
         ]);
 
@@ -124,6 +131,7 @@ class ProjectManagementTest extends TestCase
             'id' => $project->id,
             'first_responder_id' => $firstResponder->id,
             'second_responder_id' => $secondResponder->id,
+            'third_responder_id' => $thirdResponder->id,
         ]);
 
         $this->actingAs($user)
@@ -138,6 +146,7 @@ class ProjectManagementTest extends TestCase
                 'contact_phone' => null,
                 'first_responder_id' => $secondResponder->id,
                 'second_responder_id' => $firstResponder->id,
+                'third_responder_id' => $thirdResponder->id,
                 'is_active' => true,
             ])
             ->assertRedirect(route('projects.show', $project));
@@ -157,6 +166,7 @@ class ProjectManagementTest extends TestCase
             'id' => $project->id,
             'first_responder_id' => $secondResponder->id,
             'second_responder_id' => $firstResponder->id,
+            'third_responder_id' => $thirdResponder->id,
         ]);
     }
 
@@ -185,6 +195,7 @@ class ProjectManagementTest extends TestCase
         $project = Project::factory()->create();
         $firstResponder = TeamMember::factory()->create();
         $secondResponder = TeamMember::factory()->create();
+        $thirdResponder = TeamMember::factory()->create();
         $project->update([
             'sla_first_response_minutes' => 60,
             'sla_resolution_minutes' => 240,
@@ -195,6 +206,7 @@ class ProjectManagementTest extends TestCase
         $project->update([
             'first_responder_id' => $firstResponder->id,
             'second_responder_id' => $secondResponder->id,
+            'third_responder_id' => $thirdResponder->id,
         ]);
         $currentIssue = Issue::factory()->for($project)->create([
             'title' => 'Actuele storing',
@@ -221,5 +233,6 @@ class ProjectManagementTest extends TestCase
         $response->assertJsonPath('props.project.contact_name', 'Jamie de Vries');
         $response->assertJsonPath('props.project.first_responder.id', $firstResponder->id);
         $response->assertJsonPath('props.project.second_responder.id', $secondResponder->id);
+        $response->assertJsonPath('props.project.third_responder.id', $thirdResponder->id);
     }
 }

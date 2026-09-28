@@ -19,6 +19,7 @@ type Project = {
     contact_phone: string | null;
     first_responder_id: number | null;
     second_responder_id: number | null;
+    third_responder_id: number | null;
     is_active: boolean;
 };
 
@@ -51,6 +52,7 @@ const form = useForm({
     contact_phone: props.project?.contact_phone ?? '',
     first_responder_id: props.project?.first_responder_id ?? null,
     second_responder_id: props.project?.second_responder_id ?? null,
+    third_responder_id: props.project?.third_responder_id ?? null,
     is_active: props.project?.is_active ?? true,
 });
 
@@ -168,11 +170,10 @@ const submit = () => {
             <div>
                 <legend class="text-sm font-medium">Responders</legend>
                 <p class="text-muted-foreground mt-1 text-sm">
-                    Wijs de vaste eerste en tweede responder voor dit project
-                    toe.
+                    Wijs de drie vaste responders voor dit project toe.
                 </p>
             </div>
-            <div v-if="teamMembers.length" class="grid gap-4 sm:grid-cols-2">
+            <div v-if="teamMembers.length >= 3" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div class="grid gap-2">
                     <Label for="first_responder_id">Eerste responder</Label>
                     <select
@@ -214,9 +215,32 @@ const submit = () => {
                     </select>
                     <InputError :message="form.errors.second_responder_id" />
                 </div>
+                <div class="grid gap-2">
+                    <Label for="third_responder_id">Derde responder</Label>
+                    <select
+                        id="third_responder_id"
+                        v-model="form.third_responder_id"
+                        required
+                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    >
+                        <option :value="null" disabled>Kies een teamlid</option>
+                        <option
+                            v-for="teamMember in teamMembers"
+                            :key="teamMember.id"
+                            :value="teamMember.id"
+                            :disabled="
+                                teamMember.id === form.first_responder_id ||
+                                teamMember.id === form.second_responder_id
+                            "
+                        >
+                            {{ teamMember.name }}
+                        </option>
+                    </select>
+                    <InputError :message="form.errors.third_responder_id" />
+                </div>
             </div>
             <p v-else class="text-muted-foreground text-sm">
-                Voeg eerst minstens twee teamleden toe om responders toe te
+                Voeg eerst minstens drie teamleden toe om responders toe te
                 wijzen.
             </p>
         </fieldset>

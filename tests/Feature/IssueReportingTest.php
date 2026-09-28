@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Actions\CreateIssue;
 use App\Enums\IssuePriority;
+use App\Enums\IssueStatus;
+use App\Actions\CalculateIssueSla;
 use App\Models\Issue;
 use App\Models\IssueChecklistTemplate;
 use App\Models\Project;
@@ -146,6 +148,89 @@ class IssueReportingTest extends TestCase
             'action' => 'issue_created',
             'description' => 'Issue aangemaakt.',
         ]);
+    }
+
+    public function test_an_issue_can_be_registered_retrospectively_with_its_actual_timestamps(): void
+    {
+        $reporter = User::factory()->create();
+        $project = Project::factory()->create(['sla_first_response_minutes' => 30, 'sla_resolution_minutes' => 120]);
+        $resolutionTemplate = IssueChecklistTemplate::factory()->resolutionMarker()->create(['sort_order' => 1]);
+        $followUpTemplate = IssueChecklistTemplate::factory()->create(['sort_order' => 2]);
+
+        $this->actingAs($reporter)->post(route('issues.store'), [
+            'project_id' => $project->id,
+            'title' => 'Portaal was niet bereikbaar',
+            'priority' => 'p1',
+            'reported_at' => '2026-09-28 10:15:00',
+            'is_historical' => true,
+            'first_responded_at' => '2026-09-28 10:24:00',
+            'resolved_at' => '2026-09-28 11:48:00',
+            'status' => 'completed',
+            'resolution_summary' => 'De vastgelopen worker is opnieuw gestart.',
+            'checklist_completed' => [$resolutionTemplate->id, $followUpTemplate->id],
+        ])->assertRedirect();
+
+        $issue = Issue::query()->sole();
+
+        $this->assertSame(IssueStatus::Completed, $issue->status);
+        $this->assertTrue($issue->reported_at->equalTo('2026-09-28 10:15:00'));
+        $this->assertTrue($issue->first_responded_at->equalTo('2026-09-28 10:24:00'));
+        $this->assertTrue($issue->resolved_at->equalTo('2026-09-28 11:48:00'));
+        $this->assertTrue($issue->completed_at->equalTo('2026-09-28 11:48:00'));
+        $this->assertSame('De vastgelopen worker is opnieuw gestart.', $issue->resolution_summary);
+        $this->assertDatabaseHas('issue_activities', [
+            'issue_id' => $issue->id,
+            'action' => 'issue_created',
+            'description' => 'Storing achteraf geregistreerd.',
+        ]);
+        $this->assertDatabaseHas('issue_activities', [
+            'issue_id' => $issue->id,
+            'action' => 'first_response_recorded',
+            'created_at' => '2026-09-28 10:24:00',
+        ]);
+    }
+
+    public function test_historical_timestamps_must_follow_the_incident_lifecycle(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+
+        $this->actingAs($user)
+            ->from(route('issues.report'))
+            ->post(route('issues.store'), [
+                ...$this->validAttributes($project),
+                'is_historical' => true,
+                'status' => 'open',
+                'first_responded_at' => '2026-09-03 09:59:00',
+                'resolved_at' => '2026-09-03 09:58:00',
+            ])
+            ->assertSessionHasErrors(['first_responded_at', 'resolved_at']);
+
+        $this->actingAs($user)
+            ->from(route('issues.report'))
+            ->post(route('issues.store'), [
+                ...$this->validAttributes($project),
+                'is_historical' => true,
+                'status' => 'open',
+                'first_responded_at' => '2026-09-03 10:24:00',
+                'resolved_at' => '2026-09-03 10:23:00',
+            ])
+            ->assertSessionHasErrors('resolved_at');
+    }
+
+    public function test_historical_sla_is_calculated_from_the_incident_timestamps_not_its_creation_time(): void
+    {
+        $project = Project::factory()->create(['sla_first_response_minutes' => 30, 'sla_resolution_minutes' => 120]);
+        $issue = Issue::factory()->for($project)->create([
+            'reported_at' => '2026-09-28 10:15:00',
+            'first_responded_at' => '2026-09-28 10:24:00',
+            'resolved_at' => '2026-09-28 11:48:00',
+        ]);
+
+        $sla = app(CalculateIssueSla::class)->handle($issue, now()->addDay());
+
+        $this->assertSame(21, $sla['response']['remaining_minutes']);
+        $this->assertSame(27, $sla['resolution']['remaining_minutes']);
     }
 
     public function test_issue_creation_rolls_back_when_checklist_storage_fails(): void

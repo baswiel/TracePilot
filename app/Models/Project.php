@@ -17,7 +17,10 @@ use Illuminate\Support\Carbon;
  * @property bool $is_active
  * @property int|null $first_responder_id
  * @property int|null $second_responder_id
+ * @property int|null $third_responder_id
  * @property int|null $sla_level_id
+ * @property int|null $sla_first_response_minutes
+ * @property int|null $sla_resolution_minutes
  * @property Carbon $created_at
  * @property int $active_issues_count
  * @property string|null $issues_max_reported_at
@@ -35,6 +38,7 @@ use Illuminate\Support\Carbon;
     'contact_phone',
     'first_responder_id',
     'second_responder_id',
+    'third_responder_id',
     'is_active',
 ])]
 class Project extends Model
@@ -78,6 +82,14 @@ class Project extends Model
     public function secondResponder(): BelongsTo
     {
         return $this->belongsTo(TeamMember::class, 'second_responder_id');
+    }
+
+    /**
+     * @return BelongsTo<TeamMember, $this>
+     */
+    public function thirdResponder(): BelongsTo
+    {
+        return $this->belongsTo(TeamMember::class, 'third_responder_id');
     }
 
     /**

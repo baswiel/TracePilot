@@ -24,8 +24,8 @@ return new class extends Migration
         });
 
         Schema::table('issues', function (Blueprint $table) {
-            $table->dropIndex(['assigned_to', 'status', 'reported_at']);
             $table->dropConstrainedForeignId('assigned_to');
+            $table->dropIndex(['assigned_to', 'status', 'reported_at']);
             $table->index(['team_member_id', 'status', 'reported_at']);
         });
     }
@@ -33,10 +33,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('issues', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('team_member_id');
             $table->dropIndex(['team_member_id', 'status', 'reported_at']);
             $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
             $table->index(['assigned_to', 'status', 'reported_at']);
-            $table->dropConstrainedForeignId('team_member_id');
         });
 
         Schema::dropIfExists('team_members');

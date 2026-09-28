@@ -53,8 +53,9 @@ class ProjectSeeder extends Seeder
             $customer = Customer::query()->where('name', $projectData['customer'])->sole();
             $firstResponder = $teamMembers->get($projectData['first_responder']);
             $secondResponder = $teamMembers->get($projectData['second_responder']);
+            $thirdResponder = $teamMembers->get($projectData['third_responder'] ?? 'hessel@rapide.software');
 
-            unset($projectData['customer'], $projectData['first_responder'], $projectData['second_responder']);
+            unset($projectData['customer'], $projectData['first_responder'], $projectData['second_responder'], $projectData['third_responder']);
 
             Project::query()->updateOrCreate(
                 ['name' => $projectData['name']],
@@ -63,6 +64,7 @@ class ProjectSeeder extends Seeder
                     'customer_id' => $customer->id,
                     'first_responder_id' => $firstResponder->id,
                     'second_responder_id' => $secondResponder->id,
+                    'third_responder_id' => $thirdResponder->id,
                     'is_active' => true,
                 ],
             );

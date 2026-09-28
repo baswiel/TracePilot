@@ -9,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
@@ -21,8 +22,16 @@ type Project = {
     customer_name: string | null;
 };
 
+type ChecklistTemplate = {
+    id: number;
+    name: string;
+    is_required: boolean;
+    marks_issue_resolved: boolean;
+};
+
 const props = defineProps<{
     projects: Project[];
+    checklistTemplates: ChecklistTemplate[];
 }>();
 
 const nowForInput = () => new Date().toISOString().slice(0, 16);
@@ -33,9 +42,26 @@ const form = useForm({
     description: '',
     priority: 'p2',
     reported_at: nowForInput(),
+    is_historical: false,
+    first_responded_at: '',
+    resolved_at: '',
+    status: 'open',
+    resolution_summary: '',
+    cause: '',
+    internal_note: '',
+    checklist_completed: [] as number[],
 });
 
 const submit = () => form.post(store.url());
+
+const isTemplateCompleted = (templateId: number) =>
+    form.checklist_completed.includes(templateId);
+
+const toggleTemplate = (templateId: number, checked: boolean) => {
+    form.checklist_completed = checked
+        ? [...form.checklist_completed, templateId]
+        : form.checklist_completed.filter((id) => id !== templateId);
+};
 
 defineOptions({
     layout: {
@@ -55,8 +81,8 @@ defineOptions({
             <CardHeader>
                 <CardTitle>Storing melden</CardTitle>
                 <CardDescription>
-                    Registreer de storing voor het juiste project. De
-                    responders zijn aan het project gekoppeld.
+                    Registreer de storing voor het juiste project. De responders
+                    zijn aan het project gekoppeld.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -133,7 +159,13 @@ defineOptions({
                         </div>
 
                         <div class="grid gap-2">
-                            <Label for="reported_at">Datum en tijd</Label>
+                            <Label for="reported_at">
+                                {{
+                                    form.is_historical
+                                        ? 'Gestart op'
+                                        : 'Datum en tijd'
+                                }}
+                            </Label>
                             <Input
                                 id="reported_at"
                                 v-model="form.reported_at"
@@ -141,6 +173,193 @@ defineOptions({
                                 required
                             />
                             <InputError :message="form.errors.reported_at" />
+                        </div>
+                    </div>
+
+                    <div class="bg-muted/30 rounded-xl border p-4 sm:p-5">
+                        <label class="flex cursor-pointer items-start gap-3">
+                            <Checkbox
+                                id="is_historical"
+                                :checked="form.is_historical"
+                                @update:checked="
+                                    form.is_historical = $event === true
+                                "
+                            />
+                            <span class="grid gap-1">
+                                <span
+                                    class="text-foreground text-sm font-medium"
+                                >
+                                    Deze storing is achteraf geregistreerd
+                                </span>
+                                <span class="text-muted-foreground text-sm">
+                                    Leg de werkelijke incidentmomenten vast. Het
+                                    registratiemoment blijft apart bewaard.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div
+                        v-if="form.is_historical"
+                        class="space-y-5 rounded-xl border p-4 sm:p-5"
+                    >
+                        <div>
+                            <h2 class="text-base font-semibold">
+                                Historische afhandeling
+                            </h2>
+                            <p class="text-muted-foreground mt-1 text-sm">
+                                Vul alleen de momenten en gegevens in die
+                                tijdens de storing bekend zijn.
+                            </p>
+                        </div>
+
+                        <div class="grid gap-5 sm:grid-cols-2">
+                            <div class="grid gap-2">
+                                <Label for="first_responded_at"
+                                    >First response op</Label
+                                >
+                                <Input
+                                    id="first_responded_at"
+                                    v-model="form.first_responded_at"
+                                    type="datetime-local"
+                                />
+                                <InputError
+                                    :message="form.errors.first_responded_at"
+                                />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="resolved_at"
+                                    >Technisch opgelost op</Label
+                                >
+                                <Input
+                                    id="resolved_at"
+                                    v-model="form.resolved_at"
+                                    type="datetime-local"
+                                />
+                                <InputError
+                                    :message="form.errors.resolved_at"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="status">Eindstatus</Label>
+                            <select
+                                id="status"
+                                v-model="form.status"
+                                class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                            >
+                                <option value="open">Open</option>
+                                <option value="handling">In afhandeling</option>
+                                <option value="completed">Afgerond</option>
+                            </select>
+                            <InputError :message="form.errors.status" />
+                        </div>
+
+                        <div class="space-y-3 rounded-lg border p-4">
+                            <div>
+                                <h3 class="text-sm font-medium">
+                                    Checklist bij afhandeling
+                                </h3>
+                                <p class="text-muted-foreground mt-1 text-sm">
+                                    Voor Afgerond moeten alle verplichte items
+                                    zijn vastgelegd.
+                                </p>
+                            </div>
+                            <div
+                                v-for="template in checklistTemplates"
+                                :key="template.id"
+                                class="flex items-start gap-3"
+                            >
+                                <Checkbox
+                                    :id="`checklist-${template.id}`"
+                                    :checked="isTemplateCompleted(template.id)"
+                                    @update:checked="
+                                        toggleTemplate(
+                                            template.id,
+                                            $event === true,
+                                        )
+                                    "
+                                />
+                                <label
+                                    :for="`checklist-${template.id}`"
+                                    class="cursor-pointer text-sm"
+                                >
+                                    {{ template.name }}
+                                    <span
+                                        v-if="template.is_required"
+                                        class="text-muted-foreground"
+                                        >(verplicht)</span
+                                    >
+                                    <span
+                                        v-if="template.marks_issue_resolved"
+                                        class="text-muted-foreground"
+                                        >(oplossing)</span
+                                    >
+                                </label>
+                            </div>
+                            <InputError
+                                :message="form.errors.checklist_completed"
+                            />
+                        </div>
+
+                        <div class="grid gap-5 sm:grid-cols-2">
+                            <div class="grid gap-2">
+                                <Label for="cause">Oorzaak</Label>
+                                <select
+                                    id="cause"
+                                    v-model="form.cause"
+                                    class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                                >
+                                    <option value="">
+                                        Nog niet vastgesteld
+                                    </option>
+                                    <option value="internal_knowledge_gap">
+                                        Kennis ontbreekt intern
+                                    </option>
+                                    <option value="customer_knowledge_gap">
+                                        Kennis ontbreekt bij klant
+                                    </option>
+                                    <option value="user_error">
+                                        Gebruikersfout
+                                    </option>
+                                    <option value="code_defect">Codebug</option>
+                                    <option value="configuration_error">
+                                        Configuratiefout
+                                    </option>
+                                    <option value="infrastructure">
+                                        Infrastructuur
+                                    </option>
+                                    <option value="external_dependency">
+                                        Externe afhankelijkheid
+                                    </option>
+                                    <option value="other">Anders</option>
+                                </select>
+                                <InputError :message="form.errors.cause" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="resolution_summary"
+                                    >Oplossing / afhandeling</Label
+                                >
+                                <Input
+                                    id="resolution_summary"
+                                    v-model="form.resolution_summary"
+                                />
+                                <InputError
+                                    :message="form.errors.resolution_summary"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="internal_note">Interne notitie</Label>
+                            <textarea
+                                id="internal_note"
+                                v-model="form.internal_note"
+                                rows="3"
+                                class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                            />
+                            <InputError :message="form.errors.internal_note" />
                         </div>
                     </div>
 

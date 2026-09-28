@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { Pencil, Plus, Trash2 } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,16 +13,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
-import { destroy, index, store, update } from '@/routes/customers';
+import { destroy, edit, index, show, store } from '@/routes/customers';
 
 type Customer = { id: number; name: string; projects_count: number };
 const props = defineProps<{ customers: Customer[] }>();
-const editingId = ref<number | null>(null);
-const editingCustomer = computed(
-    () =>
-        props.customers.find((customer) => customer.id === editingId.value) ??
-        null,
-);
 const form = useForm({ name: '' });
 defineOptions({
     layout: {
@@ -34,19 +27,10 @@ defineOptions({
     },
 });
 const reset = () => {
-    editingId.value = null;
     form.reset();
     form.clearErrors();
 };
-const edit = (customer: Customer) => {
-    editingId.value = customer.id;
-    form.name = customer.name;
-    form.clearErrors();
-};
-const submit = () =>
-    editingCustomer.value
-        ? form.patch(update(editingCustomer.value.id).url, { onSuccess: reset })
-        : form.post(store.url(), { onSuccess: reset });
+const submit = () => form.post(store.url(), { onSuccess: reset });
 const remove = (customer: Customer) => {
     if (window.confirm(`Wil je '${customer.name}' verwijderen?`))
         router.delete(destroy(customer.id).url);
@@ -69,9 +53,7 @@ const remove = (customer: Customer) => {
 
         <Card>
             <CardHeader>
-                <CardTitle>{{
-                    editingCustomer ? 'Klant bewerken' : 'Klant toevoegen'
-                }}</CardTitle>
+                <CardTitle>Klant toevoegen</CardTitle>
                 <CardDescription
                     >Een klant kan aan meerdere projecten gekoppeld
                     worden.</CardDescription
@@ -93,18 +75,7 @@ const remove = (customer: Customer) => {
                         <InputError :message="form.errors.name" />
                     </div>
                     <div class="flex gap-2">
-                        <Button type="submit"
-                            ><Plus v-if="!editingCustomer" />{{
-                                editingCustomer ? 'Opslaan' : 'Toevoegen'
-                            }}</Button
-                        >
-                        <Button
-                            v-if="editingCustomer"
-                            type="button"
-                            variant="outline"
-                            @click="reset"
-                            >Annuleren</Button
-                        >
+                        <Button type="submit"><Plus /> Toevoegen</Button>
                     </div>
                 </form>
             </CardContent>
@@ -136,8 +107,18 @@ const remove = (customer: Customer) => {
                             <Button
                                 size="sm"
                                 variant="outline"
-                                @click="edit(customer)"
-                                ><Pencil /> Bewerken</Button
+                                as-child
+                                ><Link :href="show(customer.id)">
+                                    <Eye /> Bekijken
+                                </Link></Button
+                            >
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                as-child
+                                ><Link :href="edit(customer.id)">
+                                    <Pencil /> Bewerken
+                                </Link></Button
                             >
                             <Button
                                 size="sm"

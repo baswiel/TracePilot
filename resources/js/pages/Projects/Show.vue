@@ -46,6 +46,7 @@ type Project = {
     contact_phone: string | null;
     first_responder: { id: number; name: string; email: string | null } | null;
     second_responder: { id: number; name: string; email: string | null } | null;
+    third_responder: { id: number; name: string; email: string | null } | null;
     is_active: boolean;
     created_at: string;
 };
@@ -267,6 +268,17 @@ const formatDuration = (minutes: number) => {
                         <p class="mt-1 text-sm font-medium">
                             {{
                                 project.second_responder?.name ||
+                                'Niet toegewezen'
+                            }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-muted-foreground text-sm">
+                            Derde responder
+                        </p>
+                        <p class="mt-1 text-sm font-medium">
+                            {{
+                                project.third_responder?.name ||
                                 'Niet toegewezen'
                             }}
                         </p>

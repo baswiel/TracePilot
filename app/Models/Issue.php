@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\IssueCause;
 use App\Enums\IssuePriority;
 use App\Enums\IssueStatus;
 use Database\Factories\IssueFactory;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -19,8 +21,13 @@ use Illuminate\Support\Carbon;
  * @property IssuePriority $priority
  * @property IssueStatus $status
  * @property Carbon $reported_at
+ * @property Carbon|null $first_responded_at
  * @property Carbon|null $resolved_at
  * @property string|null $resolution_summary
+ * @property IssueCause|null $cause
+ * @property bool|null $postmortem_required
+ * @property bool $knowledge_base_recorded
+ * @property bool $is_trend
  * @property Carbon|null $completed_at
  * @property int|null $team_member_id
  * @property int $created_by
@@ -36,8 +43,13 @@ use Illuminate\Support\Carbon;
     'priority',
     'status',
     'reported_at',
+    'first_responded_at',
     'resolved_at',
     'resolution_summary',
+    'cause',
+    'postmortem_required',
+    'knowledge_base_recorded',
+    'is_trend',
     'completed_at',
     'team_member_id',
     'created_by',
@@ -87,6 +99,12 @@ class Issue extends Model
         return $this->hasMany(IssueActivity::class)->latest('created_at');
     }
 
+    /** @return HasOne<IssuePostmortem, $this> */
+    public function postmortem(): HasOne
+    {
+        return $this->hasOne(IssuePostmortem::class);
+    }
+
     /**
      * @return array<string, string>
      */
@@ -94,10 +112,15 @@ class Issue extends Model
     {
         return [
             'priority' => IssuePriority::class,
+            'cause' => IssueCause::class,
             'status' => IssueStatus::class,
             'reported_at' => 'datetime',
+            'first_responded_at' => 'datetime',
             'resolved_at' => 'datetime',
             'completed_at' => 'datetime',
+            'knowledge_base_recorded' => 'boolean',
+            'is_trend' => 'boolean',
+            'postmortem_required' => 'boolean',
         ];
     }
 }

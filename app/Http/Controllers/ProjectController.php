@@ -99,7 +99,7 @@ class ProjectController extends Controller
     public function show(Project $project): Response
     {
         $this->authorize('view', $project);
-        $project->load(['slaLevel.targets', 'customer']);
+        $project->load(['slaLevel.targets', 'customer', 'firstResponder', 'secondResponder', 'thirdResponder']);
 
         $currentIssues = $project->issues()
             ->where('status', '!=', IssueStatus::Completed->value)
@@ -134,6 +134,7 @@ class ProjectController extends Controller
                 'contact_phone' => $project->contact_phone,
                 'first_responder' => $this->teamMemberData($project->firstResponder),
                 'second_responder' => $this->teamMemberData($project->secondResponder),
+                'third_responder' => $this->teamMemberData($project->thirdResponder),
                 'is_active' => $project->is_active,
                 'created_at' => $project->created_at->toDateTimeString(),
             ],
@@ -160,6 +161,7 @@ class ProjectController extends Controller
                 'contact_phone' => $project->contact_phone,
                 'first_responder_id' => $project->first_responder_id,
                 'second_responder_id' => $project->second_responder_id,
+                'third_responder_id' => $project->third_responder_id,
                 'is_active' => $project->is_active,
             ],
             'teamMembers' => $this->teamMembers(),
