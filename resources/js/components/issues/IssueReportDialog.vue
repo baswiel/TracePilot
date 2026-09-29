@@ -19,7 +19,12 @@ type Project = { id: number; name: string; customer_name: string | null };
 
 const props = defineProps<{ projects: Project[] }>();
 const open = defineModel<boolean>('open', { default: false });
-const nowForInput = () => new Date().toISOString().slice(0, 16);
+const nowForInput = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+
+    return now.toISOString().slice(0, 16);
+};
 const form = useForm({
     project_id: '',
     title: '',
@@ -48,7 +53,8 @@ const submit = () => form.post(store.url());
                 <DialogTitle>Storing melden</DialogTitle>
                 <DialogDescription
                     >Registreer de storing voor het juiste project. De
-                    responders zijn aan het project gekoppeld.</DialogDescription
+                    responders zijn aan het project
+                    gekoppeld.</DialogDescription
                 >
             </DialogHeader>
 
@@ -70,7 +76,7 @@ const submit = () => form.post(store.url());
                         v-model="form.project_id"
                         required
                         autofocus
-                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                     >
                         <option disabled value="">Kies een project</option>
                         <option
@@ -107,7 +113,7 @@ const submit = () => form.post(store.url());
                         <select
                             id="report-priority"
                             v-model="form.priority"
-                            class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                            class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                         >
                             <option value="p1">P1 — kritiek</option>
                             <option value="p2">P2 — hoog</option>

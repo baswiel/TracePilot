@@ -111,13 +111,17 @@ const formatDuration = (minutes: number) => {
 <template>
     <Head :title="project.name" />
 
-    <div class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 sm:p-6">
+    <div
+        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+    >
         <section
             class="bg-card flex flex-col gap-4 rounded-xl border p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6"
         >
             <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
-                    <h1 class="text-2xl font-semibold tracking-tight">
+                    <h1
+                        class="text-2xl font-semibold tracking-tight text-[#101d3f]"
+                    >
                         {{ project.name }}
                     </h1>
                     <Badge

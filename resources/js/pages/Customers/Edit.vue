@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import CustomerForm from '@/components/customers/CustomerForm.vue';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import { index, show } from '@/routes/customers';
 
@@ -21,9 +27,17 @@ defineOptions({
 <template>
     <Head :title="`${customer.name} bewerken`" />
 
-    <div class="mx-auto w-full max-w-3xl p-4 sm:p-6">
+    <div
+        class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 pt-2 pb-10 sm:px-8"
+    >
         <Card>
-            <CardHeader><CardTitle>Klant bewerken</CardTitle></CardHeader>
+            <CardHeader class="border-b">
+                <CardTitle>Klant bewerken</CardTitle>
+                <CardDescription>
+                    Wijzig de naam waaronder projecten en storingen worden
+                    gegroepeerd.
+                </CardDescription>
+            </CardHeader>
             <CardContent>
                 <CustomerForm
                     :customer="customer"

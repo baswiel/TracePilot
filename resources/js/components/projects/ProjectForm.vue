@@ -80,7 +80,7 @@ const submit = () => {
             <select
                 id="customer_id"
                 v-model="form.customer_id"
-                class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             >
                 <option :value="null">Geen klant gekoppeld</option>
                 <option
@@ -118,7 +118,7 @@ const submit = () => {
                 <select
                     id="sla_level_id"
                     v-model="form.sla_level_id"
-                    class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 >
                     <option :value="null">Geen SLA-niveau</option>
                     <option
@@ -173,14 +173,17 @@ const submit = () => {
                     Wijs de drie vaste responders voor dit project toe.
                 </p>
             </div>
-            <div v-if="teamMembers.length >= 3" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+                v-if="teamMembers.length >= 3"
+                class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            >
                 <div class="grid gap-2">
                     <Label for="first_responder_id">Eerste responder</Label>
                     <select
                         id="first_responder_id"
                         v-model="form.first_responder_id"
                         required
-                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                     >
                         <option :value="null" disabled>Kies een teamlid</option>
                         <option
@@ -199,7 +202,7 @@ const submit = () => {
                         id="second_responder_id"
                         v-model="form.second_responder_id"
                         required
-                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                     >
                         <option :value="null" disabled>Kies een teamlid</option>
                         <option
@@ -221,7 +224,7 @@ const submit = () => {
                         id="third_responder_id"
                         v-model="form.third_responder_id"
                         required
-                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                     >
                         <option :value="null" disabled>Kies een teamlid</option>
                         <option

@@ -32,16 +32,16 @@ kritieke storing, de status en de eerstvolgende actie direct kunnen vinden.
 
 Gebruik bij voorkeur de bestaande CSS-variabelen en semantische Tailwind-kleuren.
 
-| Rol | Token / kleur | Gebruik |
-| --- | --- | --- |
-| Primair | `--tracepilot-blue` / `#1267f4` | primaire actie, focus en geselecteerde navigatie |
-| Inhoud | `--tracepilot-navy` / `#101d3f` | koppen en belangrijke tekst |
-| Pagina | `--tracepilot-background` / `#f6f8fc` | rustige app-achtergrond |
-| Oppervlak | `--tracepilot-surface` / `#ffffff` | kaarten, sidebar en pop-overs |
-| Rand | `--tracepilot-border` / `#dfe5ee` | subtiele scheiding van oppervlakken |
-| Kritiek | `--tracepilot-danger` / `#ef3340` | P1, open storing, verlopen SLA |
-| Waarschuwing | `--tracepilot-warning` / `#f58a07` | P2, afhandeling, SLA-risico |
-| Succes | `--tracepilot-success` / `#10945a` | afgerond, op schema |
+| Rol          | Token / kleur                         | Gebruik                                          |
+| ------------ | ------------------------------------- | ------------------------------------------------ |
+| Primair      | `--tracepilot-blue` / `#1267f4`       | primaire actie, focus en geselecteerde navigatie |
+| Inhoud       | `--tracepilot-navy` / `#101d3f`       | koppen en belangrijke tekst                      |
+| Pagina       | `--tracepilot-background` / `#f6f8fc` | rustige app-achtergrond                          |
+| Oppervlak    | `--tracepilot-surface` / `#ffffff`    | kaarten, sidebar en pop-overs                    |
+| Rand         | `--tracepilot-border` / `#dfe5ee`     | subtiele scheiding van oppervlakken              |
+| Kritiek      | `--tracepilot-danger` / `#ef3340`     | P1, open storing, verlopen SLA                   |
+| Waarschuwing | `--tracepilot-warning` / `#f58a07`    | P2, afhandeling, SLA-risico                      |
+| Succes       | `--tracepilot-success` / `#10945a`    | afgerond, op schema                              |
 
 - Combineer een statuskleur altijd met tekst, een icoon of een statusstip;
   kleur is nooit de enige drager van betekenis.
@@ -103,6 +103,9 @@ Gebruik bij voorkeur de bestaande CSS-variabelen en semantische Tailwind-kleuren
 - Laat rijen subtiel reageren met `hover:bg-[#fafcff]`.
 - Zet datums, relatieve tijden, SLA's en voortgang op één regel waar dat de
   scanbaarheid verhoogt (`whitespace-nowrap`).
+- Geef een tijd in een operationeel overzicht bij voorkeur relatief weer
+  (bijvoorbeeld `32 min open`); maak de exacte datum en tijd beschikbaar via
+  een tooltip of in de detailweergave.
 - Plaats rijacties aan de rechterkant als een compacte outline-knop. Houd de
   actietekst concreet, bijvoorbeeld `Bekijken`.
 
@@ -114,7 +117,11 @@ Gebruik bij voorkeur de bestaande CSS-variabelen en semantische Tailwind-kleuren
   compact, afgerond en bevatten altijd de tekstuele prioriteit.
 - Toon een status met een stip plus label: rood voor `Open`, oranje voor
   `Afhandeling`, groen voor `Afgerond`.
-- SLA's gebruiken compacte pillen met een lichte semantische achtergrond:
+- SLA's gebruiken de gedeelde `IssueSlaBadge`: een compacte, tweeregelige pill
+  met de belangrijkste mijlpaal en resterende of overschreden tijd. Gebruik hem
+  in elk incidentoverzicht en in de detailheader. De volledige SLA-bewaking op
+  de detailpagina geeft daarnaast deadlines en beide mijlpalen weer. Gebruik
+  zachte semantische achtergronden:
   rood voor overschreden, oranje voor risico, groen voor op schema en slate
   wanneer de SLA niet beschikbaar is.
 - Een voortgangsindicator is laag (`h-1.5`), volledig afgerond en gebruikt de
@@ -152,6 +159,8 @@ Gebruik bij voorkeur de bestaande CSS-variabelen en semantische Tailwind-kleuren
 - Laat rasterindelingen op kleinere schermen naar één kolom terugvallen.
   Paginakoppen, acties en filtervelden mogen wrappen; behoud daarbij een
   minimale tikgrootte van circa 40 px.
+- Het dashboard bevat altijd de directe primaire actie `Storing melden` en
+  ondersteunt project-, status-, prioriteits- en verantwoordelijke-filters.
 - Houd tabelgegevens beschikbaar op mobiel via horizontaal scrollen in plaats
   van belangrijke informatie te verbergen.
 

@@ -3,6 +3,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import {
     Check,
     CircleSlash,
+    Clock3,
     Paperclip,
     Pencil,
     Plus,
@@ -10,9 +11,10 @@ import {
     Send,
     Trash2,
 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import IssuePriorityBadge from '@/components/issues/IssuePriorityBadge.vue';
+import IssueSlaBadge from '@/components/issues/IssueSlaBadge.vue';
 import IssueStatusBadge from '@/components/issues/IssueStatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -363,6 +365,27 @@ const deadlineLabel = (milestone: SlaMilestone) =>
         ? formatDate(milestone.deadline_at)
         : 'Niet ingesteld';
 
+const formatDuration = (minutes: number | null) => {
+    if (minutes === null) return 'Niet beschikbaar';
+    const absolute = Math.abs(minutes);
+    const duration =
+        absolute < 60
+            ? `${absolute} min`
+            : `${Math.floor(absolute / 60)} u ${absolute % 60} min`;
+
+    return minutes < 0 ? `${duration} overschreden` : duration;
+};
+
+const checklistProgress = computed(() =>
+    props.issue.checklist_progress.total
+        ? Math.round(
+              (props.issue.checklist_progress.completed /
+                  props.issue.checklist_progress.total) *
+                  100,
+          )
+        : 0,
+);
+
 defineOptions({
     layout: {
         breadcrumbs: [{ title: 'Dashboard', href: dashboard() }],
@@ -373,7 +396,9 @@ defineOptions({
 <template>
     <Head :title="issue.title" />
 
-    <div class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 sm:p-6">
+    <div
+        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+    >
         <section
             class="bg-card flex flex-col gap-4 rounded-xl border p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6"
         >
@@ -384,6 +409,10 @@ defineOptions({
                     </h1>
                     <IssueStatusBadge :status="issue.status" />
                     <IssuePriorityBadge :priority="issue.priority" />
+                    <IssueSlaBadge
+                        :response="issue.sla.response"
+                        :resolution="issue.sla.resolution"
+                    />
                 </div>
                 <p class="text-muted-foreground text-sm">
                     <Link
@@ -420,6 +449,53 @@ defineOptions({
                     </span>
                 </p>
             </div>
+            <div class="flex shrink-0 flex-wrap gap-2">
+                <Button
+                    v-if="!issue.first_responded_at"
+                    :disabled="markingFirstResponse"
+                    @click="recordFirstResponse"
+                >
+                    <Clock3 /> Eerste reactie registreren
+                </Button>
+                <Button
+                    v-if="!isEditing"
+                    size="sm"
+                    variant="outline"
+                    @click="isEditing = true"
+                >
+                    <Pencil /> Bewerken
+                </Button>
+            </div>
+        </section>
+
+        <section
+            class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+            aria-label="Kerngegevens storing"
+        >
+            <div class="bg-card rounded-xl border p-4">
+                <p class="text-muted-foreground text-sm">Gestart</p>
+                <p class="mt-1 font-medium tabular-nums">
+                    {{ issue.reported_at_label }}
+                </p>
+            </div>
+            <div class="bg-card rounded-xl border p-4">
+                <p class="text-muted-foreground text-sm">Eerste reactie</p>
+                <p class="mt-1 font-medium tabular-nums">
+                    {{ issue.first_responded_at ?? 'Nog niet geregistreerd' }}
+                </p>
+            </div>
+            <div class="bg-card rounded-xl border p-4">
+                <p class="text-muted-foreground text-sm">Technisch opgelost</p>
+                <p class="mt-1 font-medium tabular-nums">
+                    {{ issue.resolved_at ?? 'Nog niet opgelost' }}
+                </p>
+            </div>
+            <div class="bg-card rounded-xl border p-4">
+                <p class="text-muted-foreground text-sm">Totale duur</p>
+                <p class="mt-1 font-medium tabular-nums">
+                    {{ issue.elapsed_duration }}
+                </p>
+            </div>
         </section>
 
         <section class="grid gap-6 lg:grid-cols-3">
@@ -431,14 +507,6 @@ defineOptions({
                             Details en verantwoordelijke van deze storing.
                         </CardDescription>
                     </div>
-                    <Button
-                        v-if="!isEditing"
-                        size="sm"
-                        variant="outline"
-                        @click="isEditing = true"
-                    >
-                        <Pencil /> Bewerken
-                    </Button>
                 </CardHeader>
                 <CardContent>
                     <form
@@ -473,7 +541,7 @@ defineOptions({
                                 <select
                                     id="priority"
                                     v-model="detailsForm.priority"
-                                    class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                                    class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                                 >
                                     <option value="p1">P1 — kritiek</option>
                                     <option value="p2">P2 — hoog</option>
@@ -491,7 +559,7 @@ defineOptions({
                                 <select
                                     id="team_member_id"
                                     v-model="detailsForm.team_member_id"
-                                    class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                                    class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                                 >
                                     <option value="">
                                         Nog niet toegewezen
@@ -512,18 +580,43 @@ defineOptions({
                         <div class="grid gap-5 sm:grid-cols-2">
                             <div class="grid gap-2">
                                 <Label for="reported_at">Gestart op</Label>
-                                <Input id="reported_at" v-model="detailsForm.reported_at" required type="datetime-local" />
-                                <InputError :message="detailsForm.errors.reported_at" />
+                                <Input
+                                    id="reported_at"
+                                    v-model="detailsForm.reported_at"
+                                    required
+                                    type="datetime-local"
+                                />
+                                <InputError
+                                    :message="detailsForm.errors.reported_at"
+                                />
                             </div>
                             <div class="grid gap-2">
-                                <Label for="first_responded_at">First response op</Label>
-                                <Input id="first_responded_at" v-model="detailsForm.first_responded_at" type="datetime-local" />
-                                <InputError :message="detailsForm.errors.first_responded_at" />
+                                <Label for="first_responded_at"
+                                    >First response op</Label
+                                >
+                                <Input
+                                    id="first_responded_at"
+                                    v-model="detailsForm.first_responded_at"
+                                    type="datetime-local"
+                                />
+                                <InputError
+                                    :message="
+                                        detailsForm.errors.first_responded_at
+                                    "
+                                />
                             </div>
                             <div class="grid gap-2 sm:col-span-2">
-                                <Label for="resolved_at">Technisch opgelost op</Label>
-                                <Input id="resolved_at" v-model="detailsForm.resolved_at" type="datetime-local" />
-                                <InputError :message="detailsForm.errors.resolved_at" />
+                                <Label for="resolved_at"
+                                    >Technisch opgelost op</Label
+                                >
+                                <Input
+                                    id="resolved_at"
+                                    v-model="detailsForm.resolved_at"
+                                    type="datetime-local"
+                                />
+                                <InputError
+                                    :message="detailsForm.errors.resolved_at"
+                                />
                             </div>
                         </div>
                         <div class="space-y-3 rounded-lg border p-4">
@@ -688,7 +781,8 @@ defineOptions({
                     <CardTitle>Checklistvoortgang</CardTitle>
                     <CardDescription>
                         {{ issue.checklist_progress.completed }} van
-                        {{ issue.checklist_progress.total }} afgevinkt
+                        {{ issue.checklist_progress.total }} afgevinkt ·
+                        {{ checklistProgress }}%
                     </CardDescription>
                 </CardHeader>
                 <CardContent class="space-y-3 text-sm">
@@ -698,9 +792,7 @@ defineOptions({
                     >
                         <div
                             class="bg-primary h-full rounded-full transition-all"
-                            :style="{
-                                width: `${issue.checklist_progress.total ? (issue.checklist_progress.completed / issue.checklist_progress.total) * 100 : 0}%`,
-                            }"
+                            :style="{ width: `${checklistProgress}%` }"
                         />
                     </div>
                     <p class="text-muted-foreground">
@@ -749,17 +841,19 @@ defineOptions({
                         Deadline: {{ deadlineLabel(milestone) }}
                     </p>
                     <p v-if="milestone.target_minutes" class="mt-1 text-sm">
-                        Termijn: {{ milestone.target_minutes }} minuten
+                        Doel: {{ formatDuration(milestone.target_minutes) }}
+                    </p>
+                    <p
+                        v-if="milestone.remaining_minutes !== null"
+                        class="mt-1 text-sm font-medium"
+                    >
+                        {{
+                            milestone.remaining_minutes < 0
+                                ? 'Overschrijding'
+                                : 'Resterend'
+                        }}: {{ formatDuration(milestone.remaining_minutes) }}
                     </p>
                 </section>
-            </CardContent>
-            <CardContent v-if="!issue.first_responded_at" class="pt-0">
-                <Button
-                    :disabled="markingFirstResponse"
-                    @click="recordFirstResponse"
-                >
-                    Eerste reactie vastleggen
-                </Button>
             </CardContent>
         </Card>
 
@@ -855,7 +949,7 @@ defineOptions({
                                         v-model="
                                             actionItem.owner_team_member_id
                                         "
-                                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                                        class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                                     >
                                         <option :value="null">
                                             Niet toegewezen

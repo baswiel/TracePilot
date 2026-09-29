@@ -6,6 +6,7 @@ use App\Enums\IssueCause;
 use App\Enums\IssuePriority;
 use App\Enums\IssueStatus;
 use App\Models\Issue;
+use App\Support\IssueReportPeriod;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -22,32 +23,25 @@ class BuildIssueReport
     public function __construct(private readonly CalculateIssueSla $calculateIssueSla) {}
 
     /**
-     * @return array{summary: array{reported: int, completed: int, active: int, average_first_response_minutes: int|null, average_resolution_minutes: int|null}, sla: array{response: SlaSummary, resolution: SlaSummary}, priorities: array<int, PrioritySummary>, causes: array<int, CauseSummary>, projects: array<int, ProjectSummary>}
+     * @return array<string, mixed>
      */
-    public function handle(CarbonInterface $from, CarbonInterface $until, ?int $projectId = null): array
+    public function handle(IssueReportPeriod $period, ?int $projectId = null): array
     {
-        $issues = Issue::query()
-            ->whereBetween('reported_at', [$from, $until])
-            ->when($projectId, fn ($query, int $id) => $query->where('project_id', $id))
-            ->with('project.slaLevel.targets')
-            ->get();
+        $issues = $this->issuesFor($period->from, $period->until, $projectId);
+        $previousIssues = $this->issuesFor($period->previous()->from, $period->previous()->until, $projectId);
 
         $slaStates = $issues->mapWithKeys(
             fn (Issue $issue): array => [$issue->id => $this->calculateIssueSla->handle($issue)],
         )->all();
 
         return [
-            'summary' => [
-                'reported' => $issues->count(),
-                'completed' => $issues->where('status', IssueStatus::Completed)->count(),
-                'active' => $issues->where('status', '!=', IssueStatus::Completed)->count(),
-                'average_first_response_minutes' => $this->averageDuration($issues, 'first_responded_at'),
-                'average_resolution_minutes' => $this->averageDuration($issues, 'resolved_at'),
-            ],
+            'summary' => $this->summary($issues),
+            'comparison' => $this->comparison($issues, $previousIssues),
             'sla' => [
                 'response' => $this->slaSummary($issues, $slaStates, 'response'),
                 'resolution' => $this->slaSummary($issues, $slaStates, 'resolution'),
             ],
+            'trend' => $this->trend($issues, $period),
             'priorities' => collect(IssuePriority::cases())->map(
                 fn (IssuePriority $priority): array => $this->prioritySummary(
                     $issues->where('priority', $priority),
@@ -62,6 +56,83 @@ class BuildIssueReport
                 ->values()
                 ->all(),
         ];
+    }
+
+    /** @return Collection<int, Issue> */
+    private function issuesFor(CarbonInterface $from, CarbonInterface $until, ?int $projectId): Collection
+    {
+        return Issue::query()
+            ->whereBetween('reported_at', [$from, $until])
+            ->when($projectId, fn ($query, int $id) => $query->where('project_id', $id))
+            ->with('project.slaLevel.targets')
+            ->get();
+    }
+
+    /** @param Collection<int, Issue> $issues */
+    private function summary(Collection $issues): array
+    {
+        return [
+            'reported' => $issues->count(),
+            'completed' => $issues->where('status', IssueStatus::Completed)->count(),
+            'active' => $issues->where('status', '!=', IssueStatus::Completed)->count(),
+            'average_first_response_minutes' => $this->averageDuration($issues, 'first_responded_at'),
+            'average_resolution_minutes' => $this->averageDuration($issues, 'resolved_at'),
+        ];
+    }
+
+    /** @param Collection<int, Issue> $issues @param Collection<int, Issue> $previousIssues */
+    private function comparison(Collection $issues, Collection $previousIssues): array
+    {
+        $current = $this->summary($issues);
+        $previous = $this->summary($previousIssues);
+
+        return [
+            'reported' => $this->percentageChange($current['reported'], $previous['reported']),
+            'completed' => $this->percentageChange($current['completed'], $previous['completed']),
+            'average_first_response_minutes' => $this->percentageChange($current['average_first_response_minutes'], $previous['average_first_response_minutes']),
+            'average_resolution_minutes' => $this->percentageChange($current['average_resolution_minutes'], $previous['average_resolution_minutes']),
+        ];
+    }
+
+    private function percentageChange(?int $current, ?int $previous): ?int
+    {
+        if ($current === null || $previous === null || $previous === 0) {
+            return null;
+        }
+
+        return (int) round((($current - $previous) / $previous) * 100);
+    }
+
+    /** @param Collection<int, Issue> $issues */
+    private function trend(Collection $issues, IssueReportPeriod $period): array
+    {
+        $granularity = $period->granularity();
+        $cursor = $period->from->copy();
+        $points = [];
+
+        while ($cursor->lte($period->until)) {
+            $end = match ($granularity) {
+                'week' => $cursor->copy()->addDays(6)->endOfDay(),
+                'month' => $cursor->copy()->endOfMonth(),
+                default => $cursor->copy()->endOfDay(),
+            };
+            $end = $end->gt($period->until) ? $period->until->copy() : $end;
+            $points[] = [
+                'label' => match ($granularity) {
+                    'month' => $cursor->isoFormat('MMM YYYY'),
+                    'week' => $cursor->isoFormat('D MMM'),
+                    default => $cursor->isoFormat('D MMM'),
+                },
+                'reported' => $issues->filter(fn (Issue $issue): bool => $issue->reported_at->betweenIncluded($cursor, $end))->count(),
+            ];
+            $cursor = match ($granularity) {
+                'week' => $cursor->addDays(7)->startOfDay(),
+                'month' => $cursor->addMonthNoOverflow()->startOfMonth(),
+                default => $cursor->addDay()->startOfDay(),
+            };
+        }
+
+        return ['granularity' => $granularity, 'points' => $points];
     }
 
     /**

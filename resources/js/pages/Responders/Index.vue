@@ -43,9 +43,13 @@ defineOptions({
 <template>
     <Head title="Responders" />
 
-    <div class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 sm:p-6">
+    <div
+        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+    >
         <section>
-            <h1 class="text-2xl font-semibold tracking-tight">Responders</h1>
+            <h1 class="text-2xl font-semibold tracking-tight text-[#101d3f]">
+                Responders
+            </h1>
             <p class="text-muted-foreground mt-1 text-sm">
                 Bekijk per responder voor welke projecten die is ingepland.
             </p>

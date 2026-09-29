@@ -39,12 +39,18 @@ const remove = (customer: Customer) => {
 <template>
     <Head title="Klanten" />
 
-    <div class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 sm:p-6">
+    <div
+        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+    >
         <section
             class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
         >
             <div>
-                <h1 class="text-2xl font-semibold tracking-tight">Klanten</h1>
+                <h1
+                    class="text-2xl font-semibold tracking-tight text-[#101d3f]"
+                >
+                    Klanten
+                </h1>
                 <p class="text-muted-foreground mt-1 text-sm">
                     Beheer klanten en koppel ze aan projecten.
                 </p>
@@ -104,18 +110,12 @@ const remove = (customer: Customer) => {
                             </p>
                         </div>
                         <div class="flex gap-2">
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                as-child
+                            <Button size="sm" variant="outline" as-child
                                 ><Link :href="show(customer.id)">
                                     <Eye /> Bekijken
                                 </Link></Button
                             >
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                as-child
+                            <Button size="sm" variant="outline" as-child
                                 ><Link :href="edit(customer.id)">
                                     <Pencil /> Bewerken
                                 </Link></Button

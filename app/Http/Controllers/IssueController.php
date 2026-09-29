@@ -14,11 +14,14 @@ use App\Http\Requests\StoreIssueTimelineEntryRequest;
 use App\Http\Requests\UpdateIssueChecklistItemRequest;
 use App\Http\Requests\UpdateIssuePostmortemRequest;
 use App\Http\Requests\UpdateIssueRequest;
+use App\Models\Customer;
 use App\Models\Issue;
 use App\Models\IssueActivity;
 use App\Models\IssueChecklistItem;
+use App\Models\IssueChecklistTemplate;
 use App\Models\Project;
 use App\Models\TeamMember;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -29,24 +32,32 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class IssueController extends Controller
 {
-    public function index(IssueIndexFilterRequest $request): Response
+    public function index(IssueIndexFilterRequest $request, CalculateIssueSla $calculateIssueSla): Response
     {
         $validated = $request->validated();
 
         $issues = $this->filteredIssues($validated)
-            ->with(['project:id,name', 'teamMember:id,name'])
-            ->latest('reported_at')
+            ->with(['project.slaLevel.targets', 'project.customer:id,name', 'teamMember:id,name'])
+            ->withMax('activities', 'created_at')
+            ->orderByRaw("case status when 'open' then 1 when 'handling' then 2 else 3 end")
+            ->orderByRaw("case priority when 'p1' then 1 when 'p2' then 2 when 'p3' then 3 else 4 end")
+            ->orderBy('reported_at')
             ->paginate(15)
             ->withQueryString()
             ->through(fn (Issue $issue): array => [
                 'id' => $issue->id,
                 'project' => $issue->project->name,
+                'customer' => $issue->project->customer?->name ?? $issue->project->customer_name,
                 'title' => $issue->title,
                 'priority' => $issue->priority->value,
                 'status' => $issue->status->value,
                 'reported_at' => $issue->reported_at->toDateTimeString(),
+                'first_responded_at' => $issue->first_responded_at?->toDateTimeString(),
+                'resolved_at' => $issue->resolved_at?->toDateTimeString(),
                 'assigned_to' => $issue->teamMember?->name,
                 'completed_at' => $issue->completed_at?->toDateTimeString(),
+                'last_activity_at' => $issue->activities_max_created_at,
+                'sla' => $calculateIssueSla->handle($issue),
             ]);
 
         return Inertia::render('Issues/Index', [
@@ -54,11 +65,15 @@ class IssueController extends Controller
             'filters' => [
                 'search' => $validated['search'] ?? '',
                 'project' => isset($validated['project']) ? (int) $validated['project'] : '',
+                'customer' => isset($validated['customer']) ? (int) $validated['customer'] : '',
                 'priority' => $validated['priority'] ?? '',
                 'status' => $validated['status'] ?? '',
                 'assigned_to' => isset($validated['assigned_to']) ? (int) $validated['assigned_to'] : '',
+                'from' => $validated['from'] ?? '',
+                'until' => $validated['until'] ?? '',
             ],
             'projects' => Project::query()->orderBy('name')->get(['id', 'name']),
+            'customers' => Customer::query()->orderBy('name')->get(['id', 'name']),
             'teamMembers' => TeamMember::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
@@ -129,6 +144,13 @@ class IssueController extends Controller
                 fn ($query, int $projectId) => $query->where('project_id', $projectId),
             )
             ->when(
+                $filters['customer'] ?? null,
+                fn ($query, int $customerId) => $query->whereHas(
+                    'project',
+                    fn ($projectQuery) => $projectQuery->where('customer_id', $customerId),
+                ),
+            )
+            ->when(
                 $filters['priority'] ?? null,
                 fn ($query, string $priority) => $query->where('priority', $priority),
             )
@@ -139,6 +161,14 @@ class IssueController extends Controller
             ->when(
                 $filters['assigned_to'] ?? null,
                 fn ($query, int $teamMemberId) => $query->where('team_member_id', $teamMemberId),
+            )
+            ->when(
+                $filters['from'] ?? null,
+                fn ($query, string $from) => $query->where('reported_at', '>=', $from),
+            )
+            ->when(
+                $filters['until'] ?? null,
+                fn ($query, string $until) => $query->where('reported_at', '<', Carbon::parse($until)->addDay()),
             );
     }
 
@@ -174,7 +204,7 @@ class IssueController extends Controller
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name', 'customer_name']),
-            'checklistTemplates' => \App\Models\IssueChecklistTemplate::query()
+            'checklistTemplates' => IssueChecklistTemplate::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->get(['id', 'name', 'is_required', 'marks_issue_resolved']),

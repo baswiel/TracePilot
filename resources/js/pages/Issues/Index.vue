@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ClipboardList, Download, Search } from '@lucide/vue';
-import { reactive } from 'vue';
+import {
+    ClipboardList,
+    Download,
+    Search,
+    SlidersHorizontal,
+} from '@lucide/vue';
+import { computed, reactive, ref } from 'vue';
 import IssuePriorityBadge from '@/components/issues/IssuePriorityBadge.vue';
+import IssueSlaBadge from '@/components/issues/IssueSlaBadge.vue';
 import IssueStatusBadge from '@/components/issues/IssueStatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,13 +19,33 @@ import { exportMethod, index, report, show } from '@/routes/issues';
 type Issue = {
     id: number;
     project: string;
+    customer: string | null;
     title: string;
     priority: 'p1' | 'p2' | 'p3' | 'p4';
     status: 'open' | 'handling' | 'completed';
     reported_at: string;
+    first_responded_at: string | null;
+    resolved_at: string | null;
     assigned_to: string | null;
     completed_at: string | null;
+    last_activity_at: string | null;
+    sla: Sla;
 };
+
+type SlaMilestone = {
+    target_minutes: number | null;
+    state:
+        | 'unavailable'
+        | 'on_track'
+        | 'at_risk'
+        | 'overdue'
+        | 'met'
+        | 'breached';
+    label: string;
+    remaining_minutes: number | null;
+};
+
+type Sla = { response: SlaMilestone; resolution: SlaMilestone };
 
 type Pagination = {
     data: Issue[];
@@ -37,15 +63,30 @@ const props = defineProps<{
     filters: {
         search: string;
         project: number | '';
+        customer: number | '';
         priority: Issue['priority'] | '';
         status: Issue['status'] | '';
         assigned_to: number | '';
+        from: string;
+        until: string;
     };
     projects: SelectOption[];
+    customers: SelectOption[];
     teamMembers: SelectOption[];
 }>();
 
 const filters = reactive({ ...props.filters });
+const showMoreFilters = ref(
+    Boolean(
+        props.filters.customer ||
+        props.filters.assigned_to ||
+        props.filters.from ||
+        props.filters.until,
+    ),
+);
+const activeFilterCount = computed(
+    () => Object.values(filters).filter((value) => value !== '').length,
+);
 
 defineOptions({
     layout: {
@@ -68,9 +109,12 @@ const clearFilters = () => {
     Object.assign(filters, {
         search: '',
         project: '',
+        customer: '',
         priority: '',
         status: '',
         assigned_to: '',
+        from: '',
+        until: '',
     });
     applyFilters();
 };
@@ -82,12 +126,32 @@ const formatDate = (value: string) =>
         dateStyle: 'medium',
         timeStyle: 'short',
     }).format(new Date(value));
+
+const elapsedSince = (value: string) => {
+    const minutes = Math.max(
+        0,
+        Math.floor((Date.now() - new Date(value).getTime()) / 60000),
+    );
+
+    if (minutes < 60) return `${minutes} min`;
+    if (minutes < 1440) return `${Math.floor(minutes / 60)} u`;
+
+    return `${Math.floor(minutes / 1440)} d`;
+};
+
+const truncateTitle = (title: string) => {
+    const words = title.trim().split(/\s+/);
+
+    return words.length > 8 ? `${words.slice(0, 8).join(' ')}...` : title;
+};
 </script>
 
 <template>
     <Head title="Alle storingen" />
 
-    <div class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 sm:p-6">
+    <div
+        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+    >
         <section
             class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
         >
@@ -110,10 +174,10 @@ const formatDate = (value: string) =>
             </div>
         </section>
 
-        <Card>
+        <Card class="gap-0 overflow-hidden py-0">
             <CardContent class="p-4 sm:p-5">
                 <form
-                    class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(16rem,1fr)_11rem_9rem_10rem_11rem_auto]"
+                    class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(16rem,1fr)_11rem_9rem_10rem_auto]"
                     @submit.prevent="applyFilters"
                 >
                     <div class="relative md:col-span-2 xl:col-span-1">
@@ -158,11 +222,41 @@ const formatDate = (value: string) =>
                         <option value="handling">Afhandeling</option>
                         <option value="completed">Afgerond</option>
                     </select>
+                    <div class="flex gap-2">
+                        <Button type="submit">Filteren</Button
+                        ><Button
+                            type="button"
+                            variant="outline"
+                            @click="showMoreFilters = !showMoreFilters"
+                            ><SlidersHorizontal />
+                            {{
+                                showMoreFilters ? 'Minder' : 'Meer filters'
+                            }}</Button
+                        >
+                    </div>
+                </form>
+                <div
+                    v-if="showMoreFilters"
+                    class="mt-3 grid gap-3 border-t pt-3 md:grid-cols-2 xl:grid-cols-4"
+                >
+                    <select
+                        v-model="filters.customer"
+                        class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
+                    >
+                        <option value="">Alle klanten</option>
+                        <option
+                            v-for="customer in customers"
+                            :key="customer.id"
+                            :value="customer.id"
+                        >
+                            {{ customer.name }}
+                        </option>
+                    </select>
                     <select
                         v-model="filters.assigned_to"
                         class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
                     >
-                        <option value="">Iedereen</option>
+                        <option value="">Iedere verantwoordelijke</option>
                         <option
                             v-for="teamMember in teamMembers"
                             :key="teamMember.id"
@@ -171,23 +265,48 @@ const formatDate = (value: string) =>
                             {{ teamMember.name }}
                         </option>
                     </select>
-                    <div class="flex gap-2">
-                        <Button type="submit">Filteren</Button
-                        ><Button
-                            type="button"
-                            variant="outline"
-                            @click="clearFilters"
-                            >Wis</Button
+                    <div class="grid gap-1">
+                        <label
+                            class="text-muted-foreground text-xs font-medium"
+                            for="from"
+                            >Gemeld vanaf</label
                         >
+                        <Input id="from" v-model="filters.from" type="date" />
                     </div>
-                </form>
+                    <div class="grid gap-1">
+                        <label
+                            class="text-muted-foreground text-xs font-medium"
+                            for="until"
+                            >Gemeld tot en met</label
+                        >
+                        <Input id="until" v-model="filters.until" type="date" />
+                    </div>
+                </div>
+                <div
+                    v-if="activeFilterCount"
+                    class="mt-4 flex items-center gap-3 text-sm"
+                >
+                    <span class="text-muted-foreground"
+                        >{{ activeFilterCount }} actieve
+                        {{
+                            activeFilterCount === 1 ? 'filter' : 'filters'
+                        }}</span
+                    >
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        @click="clearFilters"
+                        >Filters wissen</Button
+                    >
+                </div>
             </CardContent>
         </Card>
 
         <Card class="gap-0 overflow-hidden py-0">
             <CardContent v-if="issues.data.length" class="p-0">
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[900px] text-left text-sm">
+                    <table class="w-full min-w-[1150px] text-left text-sm">
                         <thead class="text-muted-foreground bg-[#fcfdff]">
                             <tr>
                                 <th class="px-6 py-4 font-medium">Storing</th>
@@ -197,8 +316,12 @@ const formatDate = (value: string) =>
                                 </th>
                                 <th class="px-6 py-4 font-medium">Status</th>
                                 <th class="px-6 py-4 font-medium">Gemeld op</th>
+                                <th class="px-6 py-4 font-medium">SLA</th>
                                 <th class="px-6 py-4 font-medium">
                                     Toegewezen aan
+                                </th>
+                                <th class="px-6 py-4 font-medium">
+                                    Laatste activiteit
                                 </th>
                                 <th class="px-6 py-4">
                                     <span class="sr-only">Actie</span>
@@ -212,11 +335,29 @@ const formatDate = (value: string) =>
                                 class="transition-colors hover:bg-[#fafcff]"
                             >
                                 <td
-                                    class="max-w-sm px-6 py-4 font-medium text-[#101d3f]"
+                                    class="w-[18rem] min-w-[18rem] px-6 py-4 font-medium text-[#101d3f]"
                                 >
-                                    {{ issue.title }}
+                                    <span
+                                        class="block truncate whitespace-nowrap"
+                                        :aria-label="issue.title"
+                                        :title="issue.title"
+                                    >
+                                        {{ truncateTitle(issue.title) }}
+                                    </span>
                                 </td>
-                                <td class="px-6 py-4">{{ issue.project }}</td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="block font-medium text-[#101d3f]"
+                                    >
+                                        {{ issue.project }}
+                                    </span>
+                                    <span
+                                        v-if="issue.customer"
+                                        class="text-muted-foreground mt-0.5 block text-xs"
+                                    >
+                                        {{ issue.customer }}
+                                    </span>
+                                </td>
                                 <td class="px-6 py-4">
                                     <IssuePriorityBadge
                                         :priority="issue.priority"
@@ -228,10 +369,30 @@ const formatDate = (value: string) =>
                                 <td
                                     class="text-muted-foreground px-6 py-4 whitespace-nowrap"
                                 >
-                                    {{ formatDate(issue.reported_at) }}
+                                    <span
+                                        :title="formatDate(issue.reported_at)"
+                                    >
+                                        {{ elapsedSince(issue.reported_at) }}
+                                        geleden
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <IssueSlaBadge
+                                        :response="issue.sla.response"
+                                        :resolution="issue.sla.resolution"
+                                    />
                                 </td>
                                 <td class="text-muted-foreground px-6 py-4">
                                     {{ issue.assigned_to ?? 'Niet toegewezen' }}
+                                </td>
+                                <td
+                                    class="text-muted-foreground px-6 py-4 whitespace-nowrap"
+                                >
+                                    {{
+                                        issue.last_activity_at
+                                            ? formatDate(issue.last_activity_at)
+                                            : '—'
+                                    }}
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <Button
@@ -258,11 +419,21 @@ const formatDate = (value: string) =>
                 <div>
                     <h2 class="font-medium">Geen storingen gevonden</h2>
                     <p class="text-muted-foreground mt-1 text-sm">
-                        Pas je filters aan of meld een nieuwe storing.
+                        {{
+                            activeFilterCount
+                                ? 'Pas je filters aan of wis ze om opnieuw te zoeken.'
+                                : 'Er zijn nog geen storingen gemeld. Registreer de eerste storing om het overzicht te starten.'
+                        }}
                     </p>
                 </div>
-                <Button variant="outline" @click="clearFilters"
+                <Button
+                    v-if="activeFilterCount"
+                    variant="outline"
+                    @click="clearFilters"
                     >Filters wissen</Button
+                >
+                <Button v-else as-child
+                    ><Link :href="report()">Storing melden</Link></Button
                 ></CardContent
             >
             <div

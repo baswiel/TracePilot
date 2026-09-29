@@ -3,6 +3,8 @@ import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { CheckCircle2, CircleAlert, Clock3 } from '@lucide/vue';
 import { computed, reactive } from 'vue';
 import IssuePriorityBadge from '@/components/issues/IssuePriorityBadge.vue';
+import IssueSlaBadge from '@/components/issues/IssueSlaBadge.vue';
+import IssueStatusBadge from '@/components/issues/IssueStatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -13,7 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
-import { show } from '@/routes/issues';
+import { report, show } from '@/routes/issues';
 
 type Issue = {
     id: number;
@@ -141,32 +143,6 @@ const progressWidth = (issue: Issue) =>
         ? 0
         : Math.round((issue.checklist_completed / issue.checklist_total) * 100);
 
-const slaClass = (sla: Sla) => {
-    const states = [sla.response.state, sla.resolution.state];
-
-    if (states.some((state) => state === 'overdue' || state === 'breached')) {
-        return 'bg-red-50 text-red-700';
-    }
-
-    if (states.includes('at_risk')) return 'bg-orange-50 text-orange-700';
-    if (states.includes('unavailable')) return 'bg-slate-100 text-slate-600';
-
-    return 'bg-emerald-50 text-emerald-700';
-};
-
-const slaLabel = (sla: Sla) => {
-    const milestones = [sla.response, sla.resolution];
-    const critical = milestones.find((milestone) =>
-        ['overdue', 'breached', 'at_risk'].includes(milestone.state),
-    );
-
-    return (
-        critical?.label ??
-        milestones.find((milestone) => milestone.target_minutes)?.label ??
-        'Geen SLA'
-    );
-};
-
 defineOptions({
     layout: {
         breadcrumbs: [{ title: 'Overzicht', href: dashboard() }],
@@ -180,15 +156,22 @@ defineOptions({
     <div
         class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
     >
-        <section class="space-y-1 pt-1">
-            <h1
-                class="text-[clamp(1.875rem,3vw,2.5rem)] font-semibold tracking-[-0.035em] text-[#101d3f]"
+        <section
+            class="flex flex-col gap-4 pt-1 sm:flex-row sm:items-end sm:justify-between"
+        >
+            <div class="space-y-1">
+                <h1
+                    class="text-[clamp(1.875rem,3vw,2.5rem)] font-semibold tracking-[-0.035em] text-[#101d3f]"
+                >
+                    Goedemiddag, {{ firstName }}
+                </h1>
+                <p class="text-muted-foreground">
+                    Dit speelt er momenteel binnen je projecten.
+                </p>
+            </div>
+            <Button as-child
+                ><Link :href="report()">Storing melden</Link></Button
             >
-                Goedemiddag, {{ firstName }}
-            </h1>
-            <p class="text-muted-foreground">
-                Dit speelt er momenteel binnen je projecten.
-            </p>
         </section>
 
         <section class="grid gap-5 lg:grid-cols-3">
@@ -262,7 +245,7 @@ defineOptions({
                             {{ statistics.completed_this_month }}
                         </p>
                         <CardDescription class="mt-1"
-                            >+2 t.o.v. vorige maand</CardDescription
+                            >Administratief afgerond</CardDescription
                         >
                     </div>
                 </CardContent>
@@ -282,7 +265,7 @@ defineOptions({
                     </CardDescription>
                 </div>
                 <form
-                    class="grid w-full gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-2"
+                    class="grid w-full gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-4"
                     @submit.prevent="applyFilters"
                 >
                     <div class="grid gap-1">
@@ -318,6 +301,41 @@ defineOptions({
                             </option>
                         </select>
                     </div>
+                    <div class="grid gap-1">
+                        <Label class="sr-only" for="priority">Prioriteit</Label>
+                        <select
+                            id="priority"
+                            v-model="filters.priority"
+                            @change="applyFilters"
+                            class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
+                        >
+                            <option value="">Alle prioriteiten</option>
+                            <option value="p1">P1 · Kritiek</option>
+                            <option value="p2">P2 · Hoog</option>
+                            <option value="p3">P3 · Normaal</option>
+                            <option value="p4">P4 · Laag</option>
+                        </select>
+                    </div>
+                    <div class="grid gap-1">
+                        <Label class="sr-only" for="assigned_to"
+                            >Verantwoordelijke</Label
+                        >
+                        <select
+                            id="assigned_to"
+                            v-model="filters.assigned_to"
+                            @change="applyFilters"
+                            class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
+                        >
+                            <option value="">Iedere verantwoordelijke</option>
+                            <option
+                                v-for="teamMember in teamMembers"
+                                :key="teamMember.id"
+                                :value="teamMember.id"
+                            >
+                                {{ teamMember.name }}
+                            </option>
+                        </select>
+                    </div>
                 </form>
             </CardHeader>
             <CardContent class="space-y-5 p-0">
@@ -331,6 +349,9 @@ defineOptions({
                                     Prioriteit
                                 </th>
                                 <th class="px-6 py-4 font-medium">Status</th>
+                                <th class="px-6 py-4 font-medium">
+                                    Verantwoordelijke
+                                </th>
                                 <th class="px-6 py-4 font-medium">
                                     Open sinds
                                 </th>
@@ -357,36 +378,26 @@ defineOptions({
                                     />
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span
-                                        class="inline-flex items-center gap-2"
-                                    >
-                                        <span
-                                            :class="
-                                                issue.status === 'open'
-                                                    ? 'bg-red-500'
-                                                    : 'bg-orange-500'
-                                            "
-                                            class="size-2 rounded-full"
-                                        />
-                                        {{
-                                            issue.status === 'open'
-                                                ? 'Open'
-                                                : 'Afhandeling'
-                                        }}
-                                    </span>
+                                    <IssueStatusBadge :status="issue.status" />
+                                </td>
+                                <td class="text-muted-foreground px-6 py-4">
+                                    {{ issue.assigned_to ?? 'Niet toegewezen' }}
                                 </td>
                                 <td
                                     class="text-muted-foreground px-6 py-4 whitespace-nowrap"
                                 >
-                                    {{ elapsedSince(issue.reported_at) }}
+                                    <span
+                                        :title="formatDate(issue.reported_at)"
+                                    >
+                                        {{ elapsedSince(issue.reported_at) }}
+                                        open
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span
-                                        class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
-                                        :class="slaClass(issue.sla)"
-                                    >
-                                        {{ slaLabel(issue.sla) }}
-                                    </span>
+                                    <IssueSlaBadge
+                                        :response="issue.sla.response"
+                                        :resolution="issue.sla.resolution"
+                                    />
                                 </td>
                                 <td
                                     class="text-muted-foreground px-6 py-4 whitespace-nowrap"

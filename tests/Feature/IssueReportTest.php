@@ -88,4 +88,117 @@ class IssueReportTest extends TestCase
             ->assertJsonPath('props.report.summary.reported', 1)
             ->assertJsonPath('props.filters.project', $project->id);
     }
+
+    public function test_it_uses_the_last_thirty_days_as_the_default_reporting_period(): void
+    {
+        Carbon::setTestNow('2026-09-28 12:00:00');
+
+        try {
+            $user = User::factory()->create();
+            Issue::factory()->create(['reported_at' => now()->subDays(29)->startOfDay()]);
+            Issue::factory()->create(['reported_at' => now()->subDays(30)->endOfDay()]);
+
+            $this->actingAs($user)->asInertiaRequest()->get(route('reports.index'))
+                ->assertOk()
+                ->assertJsonPath('props.filters.period', 'month')
+                ->assertJsonPath('props.filters.from', '2026-08-30')
+                ->assertJsonPath('props.report.summary.reported', 1);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_it_applies_rolling_week_month_and_year_periods(): void
+    {
+        Carbon::setTestNow('2026-09-28 12:00:00');
+
+        try {
+            $user = User::factory()->create();
+            Issue::factory()->create(['reported_at' => '2026-09-22 00:00:00']);
+            Issue::factory()->create(['reported_at' => '2026-09-21 23:59:59']);
+            Issue::factory()->create(['reported_at' => '2025-09-28 00:00:00']);
+            Issue::factory()->create(['reported_at' => '2025-09-27 23:59:59']);
+
+            $this->actingAs($user)->asInertiaRequest()
+                ->get(route('reports.index', ['period' => 'week']))
+                ->assertJsonPath('props.report.summary.reported', 1);
+            $this->actingAs($user)->asInertiaRequest()
+                ->get(route('reports.index', ['period' => 'month']))
+                ->assertJsonPath('props.report.summary.reported', 2);
+            $this->actingAs($user)->asInertiaRequest()
+                ->get(route('reports.index', ['period' => 'year']))
+                ->assertJsonPath('props.report.summary.reported', 3);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_it_supports_a_custom_period_and_excludes_issues_outside_it(): void
+    {
+        $user = User::factory()->create();
+        Issue::factory()->create(['reported_at' => '2026-09-10 00:00:00']);
+        Issue::factory()->create(['reported_at' => '2026-09-12 23:59:59']);
+        Issue::factory()->create(['reported_at' => '2026-09-13 00:00:00']);
+
+        $this->actingAs($user)->asInertiaRequest()
+            ->get(route('reports.index', [
+                'period' => 'custom',
+                'from' => '2026-09-10',
+                'to' => '2026-09-12',
+            ]))
+            ->assertOk()
+            ->assertJsonPath('props.filters.period', 'custom')
+            ->assertJsonPath('props.report.summary.reported', 2);
+    }
+
+    public function test_it_rejects_incomplete_or_invalid_custom_periods(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from(route('reports.index'))
+            ->get(route('reports.index', ['period' => 'custom', 'from' => '2026-09-12']))
+            ->assertRedirect(route('reports.index'))
+            ->assertSessionHasErrors('from');
+
+        $this->actingAs($user)
+            ->from(route('reports.index'))
+            ->get(route('reports.index', [
+                'period' => 'custom',
+                'from' => '2026-09-12',
+                'to' => '2026-09-10',
+            ]))
+            ->assertRedirect(route('reports.index'))
+            ->assertSessionHasErrors('to');
+    }
+
+    public function test_it_compares_the_selected_period_with_the_previous_equal_period(): void
+    {
+        Carbon::setTestNow('2026-09-28 12:00:00');
+
+        try {
+            $user = User::factory()->create();
+            Issue::factory()->count(8)->create(['reported_at' => now()->subDays(2)]);
+            Issue::factory()->count(10)->create(['reported_at' => now()->subDays(10)]);
+
+            $this->actingAs($user)->asInertiaRequest()
+                ->get(route('reports.index', ['period' => 'week']))
+                ->assertJsonPath('props.report.summary.reported', 8)
+                ->assertJsonPath('props.report.comparison.reported', -20);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_it_returns_safe_empty_metrics_when_a_period_has_no_incidents(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->asInertiaRequest()
+            ->get(route('reports.index', ['period' => 'custom', 'from' => '2020-01-01', 'to' => '2020-01-02']))
+            ->assertOk()
+            ->assertJsonPath('props.report.summary.reported', 0)
+            ->assertJsonPath('props.report.comparison.reported', null)
+            ->assertJsonPath('props.report.trend.points.0.reported', 0);
+    }
 }

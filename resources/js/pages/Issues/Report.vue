@@ -34,7 +34,12 @@ const props = defineProps<{
     checklistTemplates: ChecklistTemplate[];
 }>();
 
-const nowForInput = () => new Date().toISOString().slice(0, 16);
+const nowForInput = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+
+    return now.toISOString().slice(0, 16);
+};
 
 const form = useForm({
     project_id: '',
@@ -76,7 +81,9 @@ defineOptions({
 <template>
     <Head title="Storing melden" />
 
-    <div class="mx-auto w-full max-w-2xl p-4 sm:p-6">
+    <div
+        class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 pt-2 pb-10 sm:px-8"
+    >
         <Card>
             <CardHeader>
                 <CardTitle>Storing melden</CardTitle>
@@ -108,7 +115,7 @@ defineOptions({
                             v-model="form.project_id"
                             required
                             autofocus
-                            class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                            class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                         >
                             <option disabled value="">Kies een project</option>
                             <option
@@ -148,7 +155,7 @@ defineOptions({
                             <select
                                 id="priority"
                                 v-model="form.priority"
-                                class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                                class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                             >
                                 <option value="p1">P1 — kritiek</option>
                                 <option value="p2">P2 — hoog</option>

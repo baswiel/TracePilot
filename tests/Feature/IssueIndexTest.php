@@ -16,7 +16,7 @@ class IssueIndexTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_lists_issues_of_every_status_with_newest_first(): void
+    public function test_it_prioritizes_active_issues_before_completed_issues(): void
     {
         $user = User::factory()->create();
         $older = Issue::factory()->create(['reported_at' => now()->subHour()]);
@@ -31,8 +31,8 @@ class IssueIndexTest extends TestCase
             ->assertOk()
             ->assertJsonPath('component', 'Issues/Index')
             ->assertJsonPath('props.issues.total', 2)
-            ->assertJsonPath('props.issues.data.0.id', $newer->id)
-            ->assertJsonPath('props.issues.data.1.id', $older->id);
+            ->assertJsonPath('props.issues.data.0.id', $older->id)
+            ->assertJsonPath('props.issues.data.1.id', $newer->id);
     }
 
     public function test_it_filters_issues_and_preserves_filters(): void
