@@ -108,13 +108,28 @@ defineOptions({
                 </div>
 
                 <form v-else class="space-y-5" @submit.prevent="submit">
+                    <div
+                        class="rounded-xl border border-blue-100 bg-blue-50/50 p-4"
+                    >
+                        <h2 class="text-sm font-semibold text-[#101d3f]">
+                            Snel registreren
+                        </h2>
+                        <p class="text-muted-foreground mt-1 text-sm">
+                            Leg nu alleen project, titel, prioriteit en
+                            starttijd vast. Vul details later aan.
+                        </p>
+                    </div>
                     <div class="grid gap-2">
-                        <Label for="project_id">Project</Label>
+                        <Label for="project_id"
+                            >Project <span aria-hidden="true">*</span></Label
+                        >
                         <select
                             id="project_id"
                             v-model="form.project_id"
                             required
                             autofocus
+                            :aria-invalid="Boolean(form.errors.project_id)"
+                            aria-describedby="project_id-error"
                             class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                         >
                             <option disabled value="">Kies een project</option>
@@ -129,29 +144,56 @@ defineOptions({
                                 </template>
                             </option>
                         </select>
-                        <InputError :message="form.errors.project_id" />
+                        <InputError
+                            id="project_id-error"
+                            :message="form.errors.project_id"
+                        />
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="title">Titel</Label>
-                        <Input id="title" v-model="form.title" required />
-                        <InputError :message="form.errors.title" />
+                        <Label for="title"
+                            >Titel <span aria-hidden="true">*</span></Label
+                        >
+                        <Input
+                            id="title"
+                            v-model="form.title"
+                            required
+                            :aria-invalid="Boolean(form.errors.title)"
+                            aria-describedby="title-error"
+                        />
+                        <InputError
+                            id="title-error"
+                            :message="form.errors.title"
+                        />
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="description">Omschrijving</Label>
+                        <Label for="description"
+                            >Omschrijving
+                            <span class="text-muted-foreground font-normal"
+                                >(optioneel)</span
+                            ></Label
+                        >
                         <textarea
                             id="description"
                             v-model="form.description"
                             rows="4"
+                            :aria-invalid="Boolean(form.errors.description)"
+                            aria-describedby="description-error"
                             class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                         />
-                        <InputError :message="form.errors.description" />
+                        <InputError
+                            id="description-error"
+                            :message="form.errors.description"
+                        />
                     </div>
 
                     <div class="grid gap-5 sm:grid-cols-2">
                         <div class="grid gap-2">
-                            <Label for="priority">Prioriteit</Label>
+                            <Label for="priority"
+                                >Prioriteit
+                                <span aria-hidden="true">*</span></Label
+                            >
                             <select
                                 id="priority"
                                 v-model="form.priority"
@@ -172,6 +214,7 @@ defineOptions({
                                         ? 'Gestart op'
                                         : 'Datum en tijd'
                                 }}
+                                <span aria-hidden="true">*</span>
                             </Label>
                             <Input
                                 id="reported_at"

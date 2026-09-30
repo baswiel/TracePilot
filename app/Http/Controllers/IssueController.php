@@ -36,12 +36,21 @@ class IssueController extends Controller
     {
         $validated = $request->validated();
 
-        $issues = $this->filteredIssues($validated)
+        $issuesQuery = $this->filteredIssues($validated)
             ->with(['project.slaLevel.targets', 'project.customer:id,name', 'teamMember:id,name'])
             ->withMax('activities', 'created_at')
-            ->orderByRaw("case status when 'open' then 1 when 'handling' then 2 else 3 end")
-            ->orderByRaw("case priority when 'p1' then 1 when 'p2' then 2 when 'p3' then 3 else 4 end")
-            ->orderBy('reported_at')
+            ->orderByRaw("case status when 'open' then 1 when 'handling' then 2 else 3 end");
+
+        $direction = $validated['direction'] ?? 'asc';
+        match ($validated['sort'] ?? 'priority') {
+            'reported_at' => $issuesQuery->orderBy('reported_at', $direction),
+            'last_activity' => $issuesQuery->orderBy('activities_max_created_at', $direction),
+            default => $issuesQuery
+                ->orderByRaw("case priority when 'p1' then 1 when 'p2' then 2 when 'p3' then 3 else 4 end {$direction}")
+                ->orderBy('reported_at'),
+        };
+
+        $issues = $issuesQuery
             ->paginate(15)
             ->withQueryString()
             ->through(fn (Issue $issue): array => [
@@ -71,6 +80,8 @@ class IssueController extends Controller
                 'assigned_to' => isset($validated['assigned_to']) ? (int) $validated['assigned_to'] : '',
                 'from' => $validated['from'] ?? '',
                 'until' => $validated['until'] ?? '',
+                'sort' => $validated['sort'] ?? 'priority',
+                'direction' => $direction,
             ],
             'projects' => Project::query()->orderBy('name')->get(['id', 'name']),
             'customers' => Customer::query()->orderBy('name')->get(['id', 'name']),

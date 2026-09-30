@@ -386,6 +386,39 @@ const checklistProgress = computed(() =>
         : 0,
 );
 
+const nextAction = computed(() => {
+    if (!props.issue.first_responded_at) {
+        return {
+            title: 'Eerste reactie registreren',
+            description: 'Leg vast dat het incident door het team is opgepakt.',
+            tone: 'border-red-200 bg-red-50',
+        };
+    }
+
+    if (!props.issue.checklist_progress.all_required_completed) {
+        return {
+            title: 'Checklist afronden',
+            description: `${props.issue.checklist_progress.required_total - props.issue.checklist_progress.required_completed} verplichte stappen staan nog open.`,
+            tone: 'border-orange-200 bg-orange-50',
+        };
+    }
+
+    if (props.issue.postmortem_required && !props.issue.postmortem) {
+        return {
+            title: 'Postmortem vastleggen',
+            description:
+                'Leg oorzaak, impact en verbeteracties vast voordat je afsluit.',
+            tone: 'border-orange-200 bg-orange-50',
+        };
+    }
+
+    return {
+        title: 'Geen directe actie nodig',
+        description: 'De verplichte incidentstappen zijn vastgelegd.',
+        tone: 'border-emerald-200 bg-emerald-50',
+    };
+});
+
 defineOptions({
     layout: {
         breadcrumbs: [{ title: 'Dashboard', href: dashboard() }],
@@ -413,6 +446,12 @@ defineOptions({
                         :response="issue.sla.response"
                         :resolution="issue.sla.resolution"
                     />
+                    <span class="text-muted-foreground text-sm">
+                        {{ issue.checklist_progress.required_completed }}/{{
+                            issue.checklist_progress.required_total
+                        }}
+                        verplichte stappen
+                    </span>
                 </div>
                 <p class="text-muted-foreground text-sm">
                     <Link
@@ -451,13 +490,6 @@ defineOptions({
             </div>
             <div class="flex shrink-0 flex-wrap gap-2">
                 <Button
-                    v-if="!issue.first_responded_at"
-                    :disabled="markingFirstResponse"
-                    @click="recordFirstResponse"
-                >
-                    <Clock3 /> Eerste reactie registreren
-                </Button>
-                <Button
                     v-if="!isEditing"
                     size="sm"
                     variant="outline"
@@ -466,6 +498,28 @@ defineOptions({
                     <Pencil /> Bewerken
                 </Button>
             </div>
+        </section>
+
+        <section
+            class="flex flex-col gap-2 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+            :class="nextAction.tone"
+            aria-live="polite"
+        >
+            <div>
+                <h2 class="text-sm font-semibold text-[#101d3f]">
+                    Volgende stap: {{ nextAction.title }}
+                </h2>
+                <p class="text-muted-foreground mt-1 text-sm">
+                    {{ nextAction.description }}
+                </p>
+            </div>
+            <Button
+                v-if="!issue.first_responded_at"
+                :disabled="markingFirstResponse"
+                @click="recordFirstResponse"
+            >
+                <Clock3 /> Eerste reactie registreren
+            </Button>
         </section>
 
         <section

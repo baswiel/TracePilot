@@ -24,8 +24,8 @@ return new class extends Migration
         });
 
         Schema::table('issues', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('assigned_to');
             $table->dropIndex(['assigned_to', 'status', 'reported_at']);
+            $table->dropConstrainedForeignId('assigned_to');
             $table->index(['team_member_id', 'status', 'reported_at']);
         });
     }

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue';
+import { ref } from 'vue';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +20,7 @@ import { destroy, edit, index, show, store } from '@/routes/customers';
 type Customer = { id: number; name: string; projects_count: number };
 const props = defineProps<{ customers: Customer[] }>();
 const form = useForm({ name: '' });
+const customerToDelete = ref<Customer | null>(null);
 defineOptions({
     layout: {
         breadcrumbs: [
@@ -31,9 +34,12 @@ const reset = () => {
     form.clearErrors();
 };
 const submit = () => form.post(store.url(), { onSuccess: reset });
-const remove = (customer: Customer) => {
-    if (window.confirm(`Wil je '${customer.name}' verwijderen?`))
-        router.delete(destroy(customer.id).url);
+const remove = () => {
+    if (!customerToDelete.value) return;
+    router.delete(destroy(customerToDelete.value.id).url, {
+        preserveScroll: true,
+        onSuccess: () => (customerToDelete.value = null),
+    });
 };
 </script>
 <template>
@@ -124,7 +130,7 @@ const remove = (customer: Customer) => {
                                 size="sm"
                                 variant="outline"
                                 :disabled="customer.projects_count > 0"
-                                @click="remove(customer)"
+                                @click="customerToDelete = customer"
                                 ><Trash2 /> Verwijderen</Button
                             >
                         </div>
@@ -142,5 +148,20 @@ const remove = (customer: Customer) => {
                 </div>
             </CardContent>
         </Card>
+        <ConfirmDeleteDialog
+            :open="Boolean(customerToDelete)"
+            @update:open="
+                (open) => {
+                    if (!open) customerToDelete = null;
+                }
+            "
+            title="Klant verwijderen"
+            :description="
+                customerToDelete
+                    ? `Weet je zeker dat je '${customerToDelete.name}' wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`
+                    : ''
+            "
+            @confirm="remove"
+        />
     </div>
 </template>

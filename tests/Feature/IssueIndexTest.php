@@ -63,6 +63,22 @@ class IssueIndexTest extends TestCase
             ->assertJsonPath('props.filters.status', 'completed');
     }
 
+    public function test_it_sorts_issues_by_the_requested_supported_column(): void
+    {
+        $user = User::factory()->create();
+        $older = Issue::factory()->create(['reported_at' => now()->subHours(2)]);
+        $newer = Issue::factory()->create(['reported_at' => now()->subHour()]);
+
+        $this->actingAs($user)
+            ->asInertiaRequest()
+            ->get(route('issues.index', ['sort' => 'reported_at', 'direction' => 'desc']))
+            ->assertOk()
+            ->assertJsonPath('props.filters.sort', 'reported_at')
+            ->assertJsonPath('props.filters.direction', 'desc')
+            ->assertJsonPath('props.issues.data.0.id', $newer->id)
+            ->assertJsonPath('props.issues.data.1.id', $older->id);
+    }
+
     public function test_it_exports_filtered_issues_for_google_sheets(): void
     {
         $user = User::factory()->create();

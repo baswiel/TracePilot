@@ -5,6 +5,7 @@ import {
     Download,
     Search,
     SlidersHorizontal,
+    ArrowDownUp,
 } from '@lucide/vue';
 import { computed, reactive, ref } from 'vue';
 import IssuePriorityBadge from '@/components/issues/IssuePriorityBadge.vue';
@@ -13,6 +14,7 @@ import IssueStatusBadge from '@/components/issues/IssueStatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
 import { exportMethod, index, report, show } from '@/routes/issues';
 
@@ -69,6 +71,8 @@ const props = defineProps<{
         assigned_to: number | '';
         from: string;
         until: string;
+        sort: 'priority' | 'reported_at' | 'last_activity';
+        direction: 'asc' | 'desc';
     };
     projects: SelectOption[];
     customers: SelectOption[];
@@ -118,6 +122,18 @@ const clearFilters = () => {
     });
     applyFilters();
 };
+
+const toggleSort = (sort: typeof filters.sort) => {
+    filters.direction =
+        filters.sort === sort && filters.direction === 'asc' ? 'desc' : 'asc';
+    filters.sort = sort;
+    applyFilters();
+};
+
+const sortLabel = (sort: typeof filters.sort) =>
+    filters.sort === sort
+        ? `Sorteer ${filters.direction === 'asc' ? 'aflopend' : 'oplopend'}`
+        : 'Sorteer op deze kolom';
 
 const exportUrl = () => exportMethod({ query: { ...filters } }).url;
 
@@ -181,47 +197,67 @@ const truncateTitle = (title: string) => {
                     @submit.prevent="applyFilters"
                 >
                     <div class="relative md:col-span-2 xl:col-span-1">
+                        <Label class="sr-only" for="issue-search">Zoeken</Label>
                         <Search
                             class="text-muted-foreground absolute top-3 left-3 size-4"
                         />
                         <Input
+                            id="issue-search"
                             v-model="filters.search"
                             class="h-10 pl-9"
                             placeholder="Zoek op storing, omschrijving of project"
                         />
                     </div>
-                    <select
-                        v-model="filters.project"
-                        class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
-                    >
-                        <option value="">Alle projecten</option>
-                        <option
-                            v-for="project in projects"
-                            :key="project.id"
-                            :value="project.id"
+                    <div class="grid gap-1">
+                        <Label class="sr-only" for="filter-project"
+                            >Project</Label
                         >
-                            {{ project.name }}
-                        </option>
-                    </select>
-                    <select
-                        v-model="filters.priority"
-                        class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
-                    >
-                        <option value="">Alle prioriteiten</option>
-                        <option value="p1">P1 · Kritiek</option>
-                        <option value="p2">P2 · Hoog</option>
-                        <option value="p3">P3 · Normaal</option>
-                        <option value="p4">P4 · Laag</option>
-                    </select>
-                    <select
-                        v-model="filters.status"
-                        class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
-                    >
-                        <option value="">Alle statussen</option>
-                        <option value="open">Open</option>
-                        <option value="handling">Afhandeling</option>
-                        <option value="completed">Afgerond</option>
-                    </select>
+                        <select
+                            id="filter-project"
+                            v-model="filters.project"
+                            class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
+                        >
+                            <option value="">Alle projecten</option>
+                            <option
+                                v-for="project in projects"
+                                :key="project.id"
+                                :value="project.id"
+                            >
+                                {{ project.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="grid gap-1">
+                        <Label class="sr-only" for="filter-priority"
+                            >Prioriteit</Label
+                        >
+                        <select
+                            id="filter-priority"
+                            v-model="filters.priority"
+                            class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
+                        >
+                            <option value="">Alle prioriteiten</option>
+                            <option value="p1">P1 · Kritiek</option>
+                            <option value="p2">P2 · Hoog</option>
+                            <option value="p3">P3 · Normaal</option>
+                            <option value="p4">P4 · Laag</option>
+                        </select>
+                    </div>
+                    <div class="grid gap-1">
+                        <Label class="sr-only" for="filter-status"
+                            >Status</Label
+                        >
+                        <select
+                            id="filter-status"
+                            v-model="filters.status"
+                            class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
+                        >
+                            <option value="">Alle statussen</option>
+                            <option value="open">Open</option>
+                            <option value="handling">Afhandeling</option>
+                            <option value="completed">Afgerond</option>
+                        </select>
+                    </div>
                     <div class="flex gap-2">
                         <Button type="submit">Filteren</Button
                         ><Button
@@ -239,32 +275,44 @@ const truncateTitle = (title: string) => {
                     v-if="showMoreFilters"
                     class="mt-3 grid gap-3 border-t pt-3 md:grid-cols-2 xl:grid-cols-4"
                 >
-                    <select
-                        v-model="filters.customer"
-                        class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
-                    >
-                        <option value="">Alle klanten</option>
-                        <option
-                            v-for="customer in customers"
-                            :key="customer.id"
-                            :value="customer.id"
+                    <div class="grid gap-1">
+                        <Label class="sr-only" for="filter-customer"
+                            >Klant</Label
                         >
-                            {{ customer.name }}
-                        </option>
-                    </select>
-                    <select
-                        v-model="filters.assigned_to"
-                        class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
-                    >
-                        <option value="">Iedere verantwoordelijke</option>
-                        <option
-                            v-for="teamMember in teamMembers"
-                            :key="teamMember.id"
-                            :value="teamMember.id"
+                        <select
+                            id="filter-customer"
+                            v-model="filters.customer"
+                            class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
                         >
-                            {{ teamMember.name }}
-                        </option>
-                    </select>
+                            <option value="">Alle klanten</option>
+                            <option
+                                v-for="customer in customers"
+                                :key="customer.id"
+                                :value="customer.id"
+                            >
+                                {{ customer.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="grid gap-1">
+                        <Label class="sr-only" for="filter-assignee"
+                            >Verantwoordelijke</Label
+                        >
+                        <select
+                            id="filter-assignee"
+                            v-model="filters.assigned_to"
+                            class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
+                        >
+                            <option value="">Iedere verantwoordelijke</option>
+                            <option
+                                v-for="teamMember in teamMembers"
+                                :key="teamMember.id"
+                                :value="teamMember.id"
+                            >
+                                {{ teamMember.name }}
+                            </option>
+                        </select>
+                    </div>
                     <div class="grid gap-1">
                         <label
                             class="text-muted-foreground text-xs font-medium"
@@ -305,23 +353,76 @@ const truncateTitle = (title: string) => {
 
         <Card class="gap-0 overflow-hidden py-0">
             <CardContent v-if="issues.data.length" class="p-0">
+                <p class="text-muted-foreground px-4 pt-3 text-xs sm:hidden">
+                    Veeg horizontaal om alle incidentgegevens te bekijken.
+                </p>
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[1150px] text-left text-sm">
+                    <table
+                        class="w-full min-w-[1150px] text-left text-sm"
+                        aria-label="Storingenoverzicht"
+                    >
                         <thead class="text-muted-foreground bg-[#fcfdff]">
                             <tr>
                                 <th class="px-6 py-4 font-medium">Storing</th>
                                 <th class="px-6 py-4 font-medium">Project</th>
                                 <th class="px-6 py-4 font-medium">
-                                    Prioriteit
+                                    <button
+                                        class="hover:text-foreground inline-flex items-center gap-1.5"
+                                        type="button"
+                                        :aria-label="sortLabel('priority')"
+                                        @click="toggleSort('priority')"
+                                    >
+                                        Prioriteit
+                                        <ArrowDownUp
+                                            class="size-3.5"
+                                            :class="
+                                                filters.sort === 'priority'
+                                                    ? 'text-primary'
+                                                    : ''
+                                            "
+                                        />
+                                    </button>
                                 </th>
                                 <th class="px-6 py-4 font-medium">Status</th>
-                                <th class="px-6 py-4 font-medium">Gemeld op</th>
+                                <th class="px-6 py-4 font-medium">
+                                    <button
+                                        class="hover:text-foreground inline-flex items-center gap-1.5"
+                                        type="button"
+                                        :aria-label="sortLabel('reported_at')"
+                                        @click="toggleSort('reported_at')"
+                                    >
+                                        Gemeld op
+                                        <ArrowDownUp
+                                            class="size-3.5"
+                                            :class="
+                                                filters.sort === 'reported_at'
+                                                    ? 'text-primary'
+                                                    : ''
+                                            "
+                                        />
+                                    </button>
+                                </th>
                                 <th class="px-6 py-4 font-medium">SLA</th>
                                 <th class="px-6 py-4 font-medium">
                                     Toegewezen aan
                                 </th>
                                 <th class="px-6 py-4 font-medium">
-                                    Laatste activiteit
+                                    <button
+                                        class="hover:text-foreground inline-flex items-center gap-1.5"
+                                        type="button"
+                                        :aria-label="sortLabel('last_activity')"
+                                        @click="toggleSort('last_activity')"
+                                    >
+                                        Laatste activiteit
+                                        <ArrowDownUp
+                                            class="size-3.5"
+                                            :class="
+                                                filters.sort === 'last_activity'
+                                                    ? 'text-primary'
+                                                    : ''
+                                            "
+                                        />
+                                    </button>
                                 </th>
                                 <th class="px-6 py-4">
                                     <span class="sr-only">Actie</span>

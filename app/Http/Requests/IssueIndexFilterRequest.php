@@ -26,6 +26,8 @@ class IssueIndexFilterRequest extends FormRequest
             'assigned_to' => ['nullable', 'integer', 'exists:team_members,id'],
             'from' => ['nullable', 'date'],
             'until' => ['nullable', 'date', 'after_or_equal:from'],
+            'sort' => ['nullable', 'in:priority,reported_at,last_activity'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ];
     }
 }

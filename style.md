@@ -126,6 +126,19 @@ Gebruik bij voorkeur de bestaande CSS-variabelen en semantische Tailwind-kleuren
   wanneer de SLA niet beschikbaar is.
 - Een voortgangsindicator is laag (`h-1.5`), volledig afgerond en gebruikt de
   statuskleur; geef daarnaast altijd een numerieke tekst zoals `2 van 4`.
+- SLA-percentages in rapportages tonen altijd ook de onderliggende aantallen,
+  bijvoorbeeld `18 van 20 binnen SLA`.
+- Grafieken tonen waarden ook zonder hover: plaats getallen bij datapunten en
+  bied daarnaast een compacte tekstuele samenvatting. Een dagelijkse tijdreeks
+  toont elke kalenderdag als compacte dagwaarde op de as; toon daarnaast
+  uitsluitend dagen met incidenten in de samenvatting. Gebruik bij langere
+  week- of maandreeksen een leesbaar, volledig periode-label.
+- Projectnamen in rapportages linken naar het storingenoverzicht, gefilterd op
+  project en de gekozen rapportageperiode.
+- Een rapportage toont direct onder de periodekeuze één korte operationele
+  conclusie, bijvoorbeeld het aantal incidenten dat nog opvolging vraagt.
+- Toon SLA-percentages in projecttabellen als semantische badges; `—` betekent
+  dat er geen bruikbare SLA-meting is, niet dat de score nul is.
 
 ### Filters, formulieren en knoppen
 
@@ -140,6 +153,13 @@ Gebruik bij voorkeur de bestaande CSS-variabelen en semantische Tailwind-kleuren
 - Gebruik iconen uit Lucide naast tekst waar ze de handeling verduidelijken;
   vervang een tekstlabel niet door alleen een icoon als dat de betekenis
   onduidelijk maakt.
+- Laat meerdere dashboardfilters eerst samen toepassen via één duidelijke knop;
+  voorkom een paginavernieuwing bij elke afzonderlijke selectie.
+- De snelle storingregistratie begint met alleen project, titel, prioriteit en
+  starttijd. Omschrijving is optioneel; historische afhandeling blijft een
+  afzonderlijke, expliciete vervolgstap.
+- Koppel validatiefouten aan hun veld met `aria-invalid` en `aria-describedby`;
+  toon verplichte velden met een tekstueel teken, niet alleen met kleur.
 
 ### Meldingen en lege staten
 
@@ -148,6 +168,9 @@ Gebruik bij voorkeur de bestaande CSS-variabelen en semantische Tailwind-kleuren
 - Lege staten zijn gecentreerd, compact en behulpzaam: een gedempt icoon,
   duidelijke titel en een concrete uitleg of vervolgstap. Vermijd illustraties
   die de operationele rust verstoren.
+- Gebruik voor een destructieve actie de gedeelde `ConfirmDeleteDialog` in
+  plaats van browserbevestigingen. Benoem het doelobject, het gevolg en bied
+  altijd een veilige annuleeractie.
 
 ## Navigatie en responsiviteit
 
@@ -163,6 +186,16 @@ Gebruik bij voorkeur de bestaande CSS-variabelen en semantische Tailwind-kleuren
   ondersteunt project-, status-, prioriteits- en verantwoordelijke-filters.
 - Houd tabelgegevens beschikbaar op mobiel via horizontaal scrollen in plaats
   van belangrijke informatie te verbergen.
+- Kondig horizontaal scrollende tabellen op mobiel kort aan. Maak sortering via
+  een zichtbare, focusbare kolomkop beschikbaar en behoud deze in de URL.
+
+### Incidentdetail
+
+- Plaats direct onder de incidentheader één semantisch actiepanel `Volgende
+stap`. Dit benoemt precies de eerstvolgende vereiste handeling, zoals eerste
+  reactie, een openstaande verplichte checkliststap of postmortem.
+- Toon naast status, prioriteit en SLA altijd de voortgang van verplichte
+  checkliststappen.
 
 ## Toegankelijkheid en kwaliteit
 

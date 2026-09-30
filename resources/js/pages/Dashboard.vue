@@ -95,13 +95,15 @@ const priorityDistribution = computed(() => ({
     p1: props.issues.data.filter((issue) => issue.priority === 'p1').length,
     p2: props.issues.data.filter((issue) => issue.priority === 'p2').length,
     p3: props.issues.data.filter((issue) => issue.priority === 'p3').length,
+    p4: props.issues.data.filter((issue) => issue.priority === 'p4').length,
 }));
 
 const totalVisibleIssues = computed(
     () =>
         priorityDistribution.value.p1 +
         priorityDistribution.value.p2 +
-        priorityDistribution.value.p3,
+        priorityDistribution.value.p3 +
+        priorityDistribution.value.p4,
 );
 
 const priorityGradient = computed(() => {
@@ -265,7 +267,7 @@ defineOptions({
                     </CardDescription>
                 </div>
                 <form
-                    class="grid w-full gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-4"
+                    class="grid w-full gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-5"
                     @submit.prevent="applyFilters"
                 >
                     <div class="grid gap-1">
@@ -273,7 +275,6 @@ defineOptions({
                         <select
                             id="project"
                             v-model="filters.project"
-                            @change="applyFilters"
                             class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
                         >
                             <option value="">Alle projecten</option>
@@ -291,7 +292,6 @@ defineOptions({
                         <select
                             id="status"
                             v-model="filters.status"
-                            @change="applyFilters"
                             class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
                         >
                             <option value="">Alle statussen</option>
@@ -306,7 +306,6 @@ defineOptions({
                         <select
                             id="priority"
                             v-model="filters.priority"
-                            @change="applyFilters"
                             class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
                         >
                             <option value="">Alle prioriteiten</option>
@@ -323,7 +322,6 @@ defineOptions({
                         <select
                             id="assigned_to"
                             v-model="filters.assigned_to"
-                            @change="applyFilters"
                             class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
                         >
                             <option value="">Iedere verantwoordelijke</option>
@@ -336,6 +334,7 @@ defineOptions({
                             </option>
                         </select>
                     </div>
+                    <Button type="submit" variant="outline">Toepassen</Button>
                 </form>
             </CardHeader>
             <CardContent class="space-y-5 p-0">
@@ -516,6 +515,16 @@ defineOptions({
                                 </dt>
                                 <dd class="font-semibold">
                                     {{ priorityDistribution.p3 }}
+                                </dd>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <dt>
+                                    <span
+                                        class="mr-2 inline-block size-2.5 rounded-full bg-slate-300"
+                                    />P4 Laag
+                                </dt>
+                                <dd class="font-semibold">
+                                    {{ priorityDistribution.p4 }}
                                 </dd>
                             </div>
                         </dl>

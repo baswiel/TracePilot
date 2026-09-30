@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import {
     BarChart3,
     CalendarRange,
     CheckCircle2,
     Clock3,
+    CircleAlert,
     Timer,
     TrendingDown,
     TrendingUp,
@@ -21,6 +22,7 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
+import { index as issuesIndex } from '@/routes/issues';
 import { index } from '@/routes/reports';
 
 type Report = {
@@ -134,15 +136,20 @@ const duration = (minutes: number | null) => {
 const percentage = (value: number | null) =>
     value === null ? '—' : `${value}%`;
 
-const comparison = (value: number | null, inverse = false) => {
+const comparison = (
+    value: number | null,
+    preference: 'increase' | 'decrease' | 'neutral' | true = 'neutral',
+) => {
     if (value === null) return null;
+
+    const normalizedPreference = preference === true ? 'decrease' : preference;
 
     return {
         icon: value >= 0 ? TrendingUp : TrendingDown,
         class:
-            value === 0
+            normalizedPreference === 'neutral' || value === 0
                 ? 'text-muted-foreground'
-                : value > 0 !== inverse
+                : (normalizedPreference === 'increase') === value > 0
                   ? 'text-emerald-700'
                   : 'text-rose-700',
         text: `${value > 0 ? '↑' : value < 0 ? '↓' : '→'} ${Math.abs(value)}% t.o.v. vorige periode`,
@@ -152,6 +159,49 @@ const comparison = (value: number | null, inverse = false) => {
 const trendMaximum = computed(() =>
     Math.max(...props.report.trend.points.map((point) => point.reported), 1),
 );
+
+const reportedTrendPoints = computed(() =>
+    props.report.trend.points.filter((point) => point.reported > 0),
+);
+
+const chartAxisLabel = (point: { label: string }) =>
+    props.report.trend.granularity === 'day'
+        ? point.label.split(' ')[0]
+        : point.label;
+
+const reportInsight = computed(() => {
+    if (props.report.summary.active > 0) {
+        return `${props.report.summary.active} ${props.report.summary.active === 1 ? 'storing vraagt' : 'storingen vragen'} nog opvolging.`;
+    }
+
+    if (props.report.summary.reported === 0) {
+        return 'Er zijn geen storingen in deze periode geregistreerd.';
+    }
+
+    return 'Er staan geen openstaande storingen uit deze periode meer open.';
+});
+
+const slaPercentageClass = (value: number | null) => {
+    if (value === null) return 'border-slate-200 bg-slate-50 text-slate-700';
+    if (value < 80) return 'border-red-200 bg-red-50 text-red-700';
+    if (value < 95) return 'border-orange-200 bg-orange-50 text-orange-700';
+
+    return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+};
+
+const clearProjectFilter = () => {
+    filters.project = '';
+    applyFilters();
+};
+
+const projectIssuesUrl = (projectId: number) =>
+    issuesIndex({
+        query: {
+            project: projectId,
+            from: props.period.from,
+            until: props.period.to,
+        },
+    });
 
 defineOptions({
     layout: {
@@ -240,6 +290,24 @@ defineOptions({
                 </div>
 
                 <div
+                    class="flex flex-wrap items-center gap-2 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-sm"
+                >
+                    <CircleAlert class="text-primary size-4 shrink-0" />
+                    <span class="font-medium text-[#101d3f]">{{
+                        reportInsight
+                    }}</span>
+                    <Button
+                        v-if="filters.project"
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        class="ml-auto"
+                        @click="clearProjectFilter"
+                        >Projectfilter wissen</Button
+                    >
+                </div>
+
+                <div
                     v-if="filters.period === 'custom'"
                     class="bg-muted/20 grid gap-4 rounded-lg border p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
                 >
@@ -280,13 +348,17 @@ defineOptions({
             </CardContent>
         </Card>
 
-        <section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <section
+            class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5"
+        >
             <Card
                 ><CardContent class="flex items-center gap-4 p-5"
                     ><BarChart3 class="size-8 text-blue-600" />
                     <div>
                         <p class="text-muted-foreground text-sm">Gemeld</p>
-                        <p class="text-3xl font-semibold">
+                        <p
+                            class="text-3xl font-semibold whitespace-nowrap tabular-nums"
+                        >
                             {{ report.summary.reported }}
                         </p>
                         <p
@@ -315,17 +387,32 @@ defineOptions({
                     ><CheckCircle2 class="size-8 text-emerald-600" />
                     <div>
                         <p class="text-muted-foreground text-sm">Afgerond</p>
-                        <p class="text-3xl font-semibold">
+                        <p
+                            class="text-3xl font-semibold whitespace-nowrap tabular-nums"
+                        >
                             {{ report.summary.completed }}
                         </p>
                         <p
-                            v-if="comparison(report.comparison.completed)"
+                            v-if="
+                                comparison(
+                                    report.comparison.completed,
+                                    'increase',
+                                )
+                            "
                             :class="[
                                 'mt-1 text-xs',
-                                comparison(report.comparison.completed)?.class,
+                                comparison(
+                                    report.comparison.completed,
+                                    'increase',
+                                )?.class,
                             ]"
                         >
-                            {{ comparison(report.comparison.completed)?.text }}
+                            {{
+                                comparison(
+                                    report.comparison.completed,
+                                    'increase',
+                                )?.text
+                            }}
                         </p>
                         <p v-else class="text-muted-foreground mt-1 text-xs">
                             Geen vergelijkbare vorige periode
@@ -340,7 +427,9 @@ defineOptions({
                         <p class="text-muted-foreground text-sm">
                             Gem. eerste reactie
                         </p>
-                        <p class="text-3xl font-semibold">
+                        <p
+                            class="text-3xl font-semibold whitespace-nowrap tabular-nums"
+                        >
                             {{
                                 duration(
                                     report.summary
@@ -386,7 +475,9 @@ defineOptions({
                         <p class="text-muted-foreground text-sm">
                             Gem. oplossing
                         </p>
-                        <p class="text-3xl font-semibold">
+                        <p
+                            class="text-3xl font-semibold whitespace-nowrap tabular-nums"
+                        >
                             {{
                                 duration(
                                     report.summary.average_resolution_minutes,
@@ -424,34 +515,57 @@ defineOptions({
                     </div></CardContent
                 ></Card
             >
+            <Card>
+                <CardContent class="flex items-center gap-4 p-5">
+                    <CircleAlert class="size-8 text-orange-500" />
+                    <div>
+                        <p class="text-muted-foreground text-sm">Nog open</p>
+                        <p class="text-3xl font-semibold tabular-nums">
+                            {{ report.summary.active }}
+                        </p>
+                        <p class="text-muted-foreground mt-1 text-xs">
+                            Vraagt opvolging
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
         </section>
 
         <Card>
             <CardHeader>
                 <CardTitle>Incidentontwikkeling</CardTitle>
-                <CardDescription
-                    >Gemelde storingen per
+                <CardDescription>
+                    Gemelde storingen per
                     {{
                         report.trend.granularity === 'day'
                             ? 'dag'
                             : report.trend.granularity === 'week'
                               ? 'week'
                               : 'maand'
-                    }}.</CardDescription
-                >
+                    }}<template v-if="report.trend.granularity === 'day'"
+                        >&nbsp;· elke markering is één kalenderdag</template
+                    >.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <div
-                    class="flex h-44 items-end gap-1"
-                    aria-label="Grafiek met gemelde storingen"
+                    v-if="report.summary.reported"
+                    class="flex h-48 items-end gap-1"
+                    role="img"
+                    aria-label="Grafiek met gemelde storingen per periode"
                 >
                     <div
                         v-for="point in report.trend.points"
                         :key="point.label"
-                        class="group flex h-full min-w-0 flex-1 flex-col justify-end"
-                        :title="`${point.label}: ${point.reported} gemeld`"
+                        class="group flex h-full min-w-0 flex-1 flex-col justify-end text-center"
+                        :aria-label="`${point.label}: ${point.reported} gemeld`"
                     >
                         <div class="relative flex flex-1 items-end">
+                            <span
+                                v-if="point.reported"
+                                class="text-muted-foreground absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] tabular-nums"
+                                >{{ point.reported }}</span
+                            >
                             <div
                                 class="bg-primary/80 group-hover:bg-primary w-full rounded-t transition-colors"
                                 :style="{
@@ -460,10 +574,32 @@ defineOptions({
                             />
                         </div>
                         <span
-                            class="text-muted-foreground mt-2 truncate text-center text-[10px]"
-                            >{{ point.label }}</span
+                            class="text-muted-foreground mt-2 h-3 text-center text-[10px] tabular-nums"
+                            :aria-label="point.label"
+                            >{{ chartAxisLabel(point) }}</span
                         >
                     </div>
+                </div>
+                <div
+                    v-if="reportedTrendPoints.length"
+                    class="mt-5 flex flex-wrap items-center gap-2 border-t pt-4 text-xs"
+                >
+                    <span class="text-muted-foreground font-medium"
+                        >Dagen met incidenten</span
+                    >
+                    <span
+                        v-for="point in reportedTrendPoints"
+                        :key="`summary-${point.label}`"
+                        class="border-border bg-muted/40 inline-flex items-center gap-1.5 rounded-md border px-2 py-1"
+                    >
+                        <span class="text-muted-foreground">{{
+                            point.label
+                        }}</span>
+                        <span
+                            class="text-foreground font-semibold tabular-nums"
+                            >{{ point.reported }}</span
+                        >
+                    </span>
                 </div>
                 <p
                     v-if="report.summary.reported === 0"
@@ -494,8 +630,14 @@ defineOptions({
                             {{ percentage(card.data.percentage) }}
                         </p>
                         <p class="text-muted-foreground mt-1 text-sm">
-                            {{ card.data.met }} binnen SLA ·
-                            {{ card.data.breached }} te laat
+                            <template v-if="card.data.tracked">
+                                {{ card.data.met }} van
+                                {{ card.data.tracked }} binnen SLA ·
+                                {{ card.data.breached }} te laat
+                            </template>
+                            <template v-else
+                                >Geen vastgelegde SLA-momenten</template
+                            >
                         </p>
                     </div>
                 </CardContent>
@@ -512,12 +654,17 @@ defineOptions({
                     <div
                         v-for="item in report.priorities"
                         :key="item.priority"
-                        class="flex items-center justify-between rounded-lg border p-3 text-sm"
+                        class="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg border p-3 text-sm sm:grid-cols-[auto_1fr_auto_auto]"
                     >
-                        <IssuePriorityBadge :priority="item.priority" /><span
-                            >{{ item.reported }} gemeld</span
-                        ><span>{{ item.completed }} afgerond</span
-                        ><span class="text-muted-foreground">{{
+                        <IssuePriorityBadge :priority="item.priority" />
+                        <span class="text-muted-foreground"
+                            >{{ item.reported }} gemeld ·
+                            {{ item.completed }} afgerond</span
+                        >
+                        <span class="text-muted-foreground hidden sm:inline"
+                            >Gem. oplossing</span
+                        >
+                        <span class="font-medium tabular-nums">{{
                             duration(item.average_resolution_minutes)
                         }}</span>
                     </div>
@@ -589,7 +736,12 @@ defineOptions({
                                 :key="project.id"
                             >
                                 <td class="px-6 py-4 font-medium">
-                                    {{ project.name }}
+                                    <Link
+                                        class="text-primary hover:underline"
+                                        :href="projectIssuesUrl(project.id)"
+                                    >
+                                        {{ project.name }}
+                                    </Link>
                                 </td>
                                 <td class="px-6 py-4">
                                     {{ project.reported }}
@@ -605,7 +757,16 @@ defineOptions({
                                     }}
                                 </td>
                                 <td class="px-6 py-4">
-                                    {{ percentage(project.sla_percentage) }}
+                                    <span
+                                        class="inline-flex rounded-lg border px-2.5 py-1 text-xs font-medium"
+                                        :class="
+                                            slaPercentageClass(
+                                                project.sla_percentage,
+                                            )
+                                        "
+                                    >
+                                        {{ percentage(project.sla_percentage) }}
+                                    </span>
                                 </td>
                             </tr>
                         </tbody>
