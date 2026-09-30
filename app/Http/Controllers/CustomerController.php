@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\IssueStatus;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
@@ -20,16 +21,51 @@ class CustomerController extends Controller
 
     public function store(StoreCustomerRequest $request): RedirectResponse
     {
-        Customer::query()->create($request->validated());
+        $customer = Customer::query()->create($request->validated());
 
-        return to_route('customers.index');
+        return to_route('customers.show', $customer);
+    }
+
+    public function show(Customer $customer): Response
+    {
+        $this->authorize('view', $customer);
+
+        return Inertia::render('Customers/Show', [
+            'customer' => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'created_at' => $customer->created_at->toDateTimeString(),
+            ],
+            'projects' => $customer->projects()
+                ->withCount([
+                    'issues as active_issues_count' => fn ($query) => $query
+                        ->where('status', '!=', IssueStatus::Completed->value),
+                ])
+                ->orderBy('name')
+                ->get()
+                ->map(fn ($project): array => [
+                    'id' => $project->id,
+                    'name' => $project->name,
+                    'is_active' => $project->is_active,
+                    'active_issues_count' => $project->active_issues_count,
+                ]),
+        ]);
+    }
+
+    public function edit(Customer $customer): Response
+    {
+        $this->authorize('update', $customer);
+
+        return Inertia::render('Customers/Edit', [
+            'customer' => $customer->only(['id', 'name']),
+        ]);
     }
 
     public function update(UpdateCustomerRequest $request, Customer $customer): RedirectResponse
     {
         $customer->update($request->validated());
 
-        return to_route('customers.index');
+        return to_route('customers.show', $customer);
     }
 
     public function destroy(Customer $customer): RedirectResponse

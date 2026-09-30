@@ -35,6 +35,13 @@ class StoreProjectRequest extends FormRequest
                 'different:first_responder_id',
                 'exists:team_members,id',
             ],
+            'third_responder_id' => [
+                'required',
+                'integer',
+                'different:first_responder_id',
+                'different:second_responder_id',
+                'exists:team_members,id',
+            ],
             'is_active' => ['required', 'boolean'],
         ];
     }

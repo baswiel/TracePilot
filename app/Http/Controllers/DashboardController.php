@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CalculateIssueSla;
 use App\Enums\IssueStatus;
 use App\Http\Requests\DashboardFilterRequest;
 use App\Models\Issue;
@@ -12,7 +13,7 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(DashboardFilterRequest $request): Response
+    public function __invoke(DashboardFilterRequest $request, CalculateIssueSla $calculateIssueSla): Response
     {
         $this->authorize('viewAny', Issue::class);
 
@@ -36,7 +37,7 @@ class DashboardController extends Controller
                 $validated['assigned_to'] ?? null,
                 fn ($query, int $teamMemberId) => $query->where('team_member_id', $teamMemberId),
             )
-            ->with(['project:id,name', 'teamMember:id,name'])
+            ->with(['project.slaLevel.targets', 'teamMember:id,name'])
             ->withCount([
                 'checklistItems as checklist_total',
                 'checklistItems as checklist_completed_count' => fn ($query) => $query
@@ -51,19 +52,31 @@ class DashboardController extends Controller
             ->orderBy('reported_at')
             ->paginate(15)
             ->withQueryString()
-            ->through(fn (Issue $issue): array => [
-                'id' => $issue->id,
-                'project' => $issue->project->name,
-                'title' => $issue->title,
-                'priority' => $issue->priority->value,
-                'status' => $issue->status->value,
-                'reported_at' => $issue->reported_at->toDateTimeString(),
-                'assigned_to' => $issue->teamMember?->name,
-                'checklist_completed' => $issue->checklist_completed_count,
-                'checklist_total' => $issue->checklist_total,
-                'required_checklist_completed' => $issue->required_checklist_completed_count,
-                'required_checklist_total' => $issue->required_checklist_total,
-            ]);
+            ->through(function (Issue $issue) use ($calculateIssueSla): array {
+                $sla = $calculateIssueSla->handle($issue);
+
+                return [
+                    'id' => $issue->id,
+                    'project' => $issue->project->name,
+                    'title' => $issue->title,
+                    'priority' => $issue->priority->value,
+                    'status' => $issue->status->value,
+                    'reported_at' => $issue->reported_at->toDateTimeString(),
+                    'assigned_to' => $issue->teamMember?->name,
+                    'checklist_completed' => $issue->checklist_completed_count,
+                    'checklist_total' => $issue->checklist_total,
+                    'required_checklist_completed' => $issue->required_checklist_completed_count,
+                    'required_checklist_total' => $issue->required_checklist_total,
+                    'sla' => $sla,
+                ];
+            });
+
+        $slaAttentionCount = Issue::query()
+            ->whereIn('status', [IssueStatus::Open->value, IssueStatus::Handling->value])
+            ->with('project.slaLevel.targets')
+            ->get()
+            ->filter(fn (Issue $issue): bool => $calculateIssueSla->handle($issue)['needs_attention'])
+            ->count();
 
         return Inertia::render('Dashboard', [
             'statistics' => [
@@ -73,6 +86,7 @@ class DashboardController extends Controller
                     ->where('status', IssueStatus::Completed->value)
                     ->whereBetween('completed_at', [now()->startOfMonth(), now()->endOfMonth()])
                     ->count(),
+                'sla_attention' => $slaAttentionCount,
             ],
             'issues' => $currentIssues,
             'filters' => [

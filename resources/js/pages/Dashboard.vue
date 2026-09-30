@@ -3,6 +3,8 @@ import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { CheckCircle2, CircleAlert, Clock3 } from '@lucide/vue';
 import { computed, reactive } from 'vue';
 import IssuePriorityBadge from '@/components/issues/IssuePriorityBadge.vue';
+import IssueSlaBadge from '@/components/issues/IssueSlaBadge.vue';
+import IssueStatusBadge from '@/components/issues/IssueStatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -13,7 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
-import { show } from '@/routes/issues';
+import { report, show } from '@/routes/issues';
 
 type Issue = {
     id: number;
@@ -27,6 +29,27 @@ type Issue = {
     checklist_total: number;
     required_checklist_completed: number;
     required_checklist_total: number;
+    sla: Sla;
+};
+
+type SlaMilestone = {
+    target_minutes: number | null;
+    deadline_at: string | null;
+    state:
+        | 'unavailable'
+        | 'on_track'
+        | 'at_risk'
+        | 'overdue'
+        | 'met'
+        | 'breached';
+    label: string;
+    remaining_minutes: number | null;
+};
+
+type Sla = {
+    response: SlaMilestone;
+    resolution: SlaMilestone;
+    needs_attention: boolean;
 };
 
 type PaginationLink = {
@@ -49,6 +72,7 @@ const props = defineProps<{
         open: number;
         handling: number;
         completed_this_month: number;
+        sla_attention: number;
     };
     issues: PaginatedIssues;
     filters: {
@@ -71,13 +95,15 @@ const priorityDistribution = computed(() => ({
     p1: props.issues.data.filter((issue) => issue.priority === 'p1').length,
     p2: props.issues.data.filter((issue) => issue.priority === 'p2').length,
     p3: props.issues.data.filter((issue) => issue.priority === 'p3').length,
+    p4: props.issues.data.filter((issue) => issue.priority === 'p4').length,
 }));
 
 const totalVisibleIssues = computed(
     () =>
         priorityDistribution.value.p1 +
         priorityDistribution.value.p2 +
-        priorityDistribution.value.p3,
+        priorityDistribution.value.p3 +
+        priorityDistribution.value.p4,
 );
 
 const priorityGradient = computed(() => {
@@ -132,15 +158,22 @@ defineOptions({
     <div
         class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
     >
-        <section class="space-y-1 pt-1">
-            <h1
-                class="text-[clamp(1.875rem,3vw,2.5rem)] font-semibold tracking-[-0.035em] text-[#101d3f]"
+        <section
+            class="flex flex-col gap-4 pt-1 sm:flex-row sm:items-end sm:justify-between"
+        >
+            <div class="space-y-1">
+                <h1
+                    class="text-[clamp(1.875rem,3vw,2.5rem)] font-semibold tracking-[-0.035em] text-[#101d3f]"
+                >
+                    Goedemiddag, {{ firstName }}
+                </h1>
+                <p class="text-muted-foreground">
+                    Dit speelt er momenteel binnen je projecten.
+                </p>
+            </div>
+            <Button as-child
+                ><Link :href="report()">Storing melden</Link></Button
             >
-                Goedemiddag, {{ firstName }}
-            </h1>
-            <p class="text-muted-foreground">
-                Dit speelt er momenteel binnen je projecten.
-            </p>
         </section>
 
         <section class="grid gap-5 lg:grid-cols-3">
@@ -214,7 +247,7 @@ defineOptions({
                             {{ statistics.completed_this_month }}
                         </p>
                         <CardDescription class="mt-1"
-                            >+2 t.o.v. vorige maand</CardDescription
+                            >Administratief afgerond</CardDescription
                         >
                     </div>
                 </CardContent>
@@ -234,7 +267,7 @@ defineOptions({
                     </CardDescription>
                 </div>
                 <form
-                    class="grid w-full gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-2"
+                    class="grid w-full gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-5"
                     @submit.prevent="applyFilters"
                 >
                     <div class="grid gap-1">
@@ -242,7 +275,6 @@ defineOptions({
                         <select
                             id="project"
                             v-model="filters.project"
-                            @change="applyFilters"
                             class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
                         >
                             <option value="">Alle projecten</option>
@@ -260,7 +292,6 @@ defineOptions({
                         <select
                             id="status"
                             v-model="filters.status"
-                            @change="applyFilters"
                             class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
                         >
                             <option value="">Alle statussen</option>
@@ -270,6 +301,40 @@ defineOptions({
                             </option>
                         </select>
                     </div>
+                    <div class="grid gap-1">
+                        <Label class="sr-only" for="priority">Prioriteit</Label>
+                        <select
+                            id="priority"
+                            v-model="filters.priority"
+                            class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
+                        >
+                            <option value="">Alle prioriteiten</option>
+                            <option value="p1">P1 · Kritiek</option>
+                            <option value="p2">P2 · Hoog</option>
+                            <option value="p3">P3 · Normaal</option>
+                            <option value="p4">P4 · Laag</option>
+                        </select>
+                    </div>
+                    <div class="grid gap-1">
+                        <Label class="sr-only" for="assigned_to"
+                            >Verantwoordelijke</Label
+                        >
+                        <select
+                            id="assigned_to"
+                            v-model="filters.assigned_to"
+                            class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
+                        >
+                            <option value="">Iedere verantwoordelijke</option>
+                            <option
+                                v-for="teamMember in teamMembers"
+                                :key="teamMember.id"
+                                :value="teamMember.id"
+                            >
+                                {{ teamMember.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <Button type="submit" variant="outline">Toepassen</Button>
                 </form>
             </CardHeader>
             <CardContent class="space-y-5 p-0">
@@ -284,8 +349,12 @@ defineOptions({
                                 </th>
                                 <th class="px-6 py-4 font-medium">Status</th>
                                 <th class="px-6 py-4 font-medium">
+                                    Verantwoordelijke
+                                </th>
+                                <th class="px-6 py-4 font-medium">
                                     Open sinds
                                 </th>
+                                <th class="px-6 py-4 font-medium">SLA</th>
                                 <th class="px-6 py-4 font-medium">Checklist</th>
                                 <th class="px-6 py-4">
                                     <span class="sr-only">Actie</span>
@@ -308,28 +377,26 @@ defineOptions({
                                     />
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span
-                                        class="inline-flex items-center gap-2"
-                                    >
-                                        <span
-                                            :class="
-                                                issue.status === 'open'
-                                                    ? 'bg-red-500'
-                                                    : 'bg-orange-500'
-                                            "
-                                            class="size-2 rounded-full"
-                                        />
-                                        {{
-                                            issue.status === 'open'
-                                                ? 'Open'
-                                                : 'Afhandeling'
-                                        }}
-                                    </span>
+                                    <IssueStatusBadge :status="issue.status" />
+                                </td>
+                                <td class="text-muted-foreground px-6 py-4">
+                                    {{ issue.assigned_to ?? 'Niet toegewezen' }}
                                 </td>
                                 <td
                                     class="text-muted-foreground px-6 py-4 whitespace-nowrap"
                                 >
-                                    {{ elapsedSince(issue.reported_at) }}
+                                    <span
+                                        :title="formatDate(issue.reported_at)"
+                                    >
+                                        {{ elapsedSince(issue.reported_at) }}
+                                        open
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <IssueSlaBadge
+                                        :response="issue.sla.response"
+                                        :resolution="issue.sla.resolution"
+                                    />
                                 </td>
                                 <td
                                     class="text-muted-foreground px-6 py-4 whitespace-nowrap"
@@ -450,6 +517,16 @@ defineOptions({
                                     {{ priorityDistribution.p3 }}
                                 </dd>
                             </div>
+                            <div class="flex items-center justify-between">
+                                <dt>
+                                    <span
+                                        class="mr-2 inline-block size-2.5 rounded-full bg-slate-300"
+                                    />P4 Laag
+                                </dt>
+                                <dd class="font-semibold">
+                                    {{ priorityDistribution.p4 }}
+                                </dd>
+                            </div>
                         </dl>
                     </div>
                 </CardContent>
@@ -467,11 +544,12 @@ defineOptions({
                         <CircleAlert class="size-10 shrink-0 text-orange-500" />
                         <div>
                             <p class="font-semibold text-[#101d3f]">
-                                {{ statistics.handling }} issues wachten op
-                                nazorg
+                                {{ statistics.sla_attention }} issues vragen
+                                SLA-aandacht
                             </p>
                             <p class="text-muted-foreground mt-1 text-sm">
-                                Bekijk de openstaande checkliststappen.
+                                De reactietijd of oplostijd verloopt binnenkort
+                                of is al overschreden.
                             </p>
                         </div>
                     </div>

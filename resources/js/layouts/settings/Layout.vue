@@ -10,6 +10,7 @@ import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import { index as editIssueChecklist } from '@/routes/issue-checklist';
 import { index as editSlaLevels } from '@/routes/sla-levels';
+import { edit as editBusinessHours } from '@/routes/business-hours';
 import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
@@ -32,6 +33,10 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'SLA-niveaus',
         href: editSlaLevels(),
+    },
+    {
+        title: 'Werkuren',
+        href: editBusinessHours(),
     },
 ];
 

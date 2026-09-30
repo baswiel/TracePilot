@@ -2,6 +2,7 @@
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2, Users } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,6 +33,7 @@ const editingMember = computed(
 );
 
 const form = useForm({ name: '', email: '' });
+const memberToDelete = ref<TeamMember | null>(null);
 
 defineOptions({
     layout: {
@@ -67,28 +69,30 @@ const submit = () => {
     form.post(store.url(), { onSuccess: resetForm });
 };
 
-const deleteMember = (member: TeamMember) => {
-    if (
-        !window.confirm(
-            `Weet je zeker dat je '${member.name}' wilt verwijderen?`,
-        )
-    ) {
-        return;
-    }
-
-    router.delete(destroy(member.id).url, { preserveScroll: true });
+const deleteMember = () => {
+    if (!memberToDelete.value) return;
+    router.delete(destroy(memberToDelete.value.id).url, {
+        preserveScroll: true,
+        onSuccess: () => (memberToDelete.value = null),
+    });
 };
 </script>
 
 <template>
     <Head title="Team" />
 
-    <div class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 sm:p-6">
+    <div
+        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+    >
         <section
             class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
         >
             <div>
-                <h1 class="text-2xl font-semibold tracking-tight">Team</h1>
+                <h1
+                    class="text-2xl font-semibold tracking-tight text-[#101d3f]"
+                >
+                    Team
+                </h1>
                 <p class="text-muted-foreground mt-1 text-sm">
                     Beheer de medewerkers die je aan storingen kunt toewijzen.
                 </p>
@@ -198,7 +202,7 @@ const deleteMember = (member: TeamMember) => {
                             <Button
                                 size="sm"
                                 variant="outline"
-                                @click="deleteMember(member)"
+                                @click="memberToDelete = member"
                                 ><Trash2 /> Verwijderen</Button
                             >
                         </div>
@@ -216,5 +220,20 @@ const deleteMember = (member: TeamMember) => {
                 </div>
             </CardContent>
         </Card>
+        <ConfirmDeleteDialog
+            :open="Boolean(memberToDelete)"
+            @update:open="
+                (open) => {
+                    if (!open) memberToDelete = null;
+                }
+            "
+            title="Teamlid verwijderen"
+            :description="
+                memberToDelete
+                    ? `Weet je zeker dat je '${memberToDelete.name}' wilt verwijderen? Openstaande toewijzingen worden verwijderd.`
+                    : ''
+            "
+            @confirm="deleteMember"
+        />
     </div>
 </template>

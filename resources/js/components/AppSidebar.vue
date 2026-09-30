@@ -2,9 +2,11 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     ClipboardList,
+    ChartNoAxesCombined,
     Building2,
     FolderKanban,
     LayoutGrid,
+    ShieldCheck,
     Settings,
     Users,
 } from '@lucide/vue';
@@ -23,8 +25,10 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as reports } from '@/routes/reports';
 import { index as issues } from '@/routes/issues';
 import { index as projects } from '@/routes/projects';
+import { index as responders } from '@/routes/responders';
 import { index as team } from '@/routes/team';
 import { index as customers } from '@/routes/customers';
 import { edit as editProfile } from '@/routes/profile';
@@ -53,6 +57,16 @@ const mainNavItems = computed<NavItem[]>(() => [
         href: issues(),
         icon: ClipboardList,
         badge: page.props.activeIssuesCount,
+    },
+    {
+        title: 'Rapportages',
+        href: reports(),
+        icon: ChartNoAxesCombined,
+    },
+    {
+        title: 'Responders',
+        href: responders(),
+        icon: ShieldCheck,
     },
     {
         title: 'Team',

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\IssueCause;
 use App\Enums\IssuePriority;
+use App\Enums\IssueStatus;
 use App\Models\Issue;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
@@ -30,12 +32,78 @@ class StoreIssueRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'priority' => ['required', Rule::enum(IssuePriority::class)],
             'reported_at' => ['required', 'date'],
-            'team_member_id' => ['nullable', 'integer', Rule::exists('team_members', 'id')],
+            'is_historical' => ['sometimes', 'boolean'],
+            'first_responded_at' => ['nullable', 'date', 'after_or_equal:reported_at'],
+            'resolved_at' => [
+                'nullable',
+                'date',
+                'after_or_equal:reported_at',
+                Rule::when($this->filled('first_responded_at'), ['after_or_equal:first_responded_at']),
+            ],
+            'status' => ['nullable', Rule::enum(IssueStatus::class)],
+            'resolution_summary' => ['nullable', 'string'],
+            'cause' => ['nullable', Rule::enum(IssueCause::class)],
+            'internal_note' => ['nullable', 'string'],
+            'checklist_completed' => ['nullable', 'array'],
+            'checklist_completed.*' => ['integer', Rule::exists('issue_checklist_templates', 'id')],
         ];
     }
 
+    public function after(): array
+    {
+        return [function ($validator): void {
+            if (! $this->boolean('is_historical')) {
+                return;
+            }
+
+            $status = $this->input('status');
+            $completedTemplateIds = array_map('intval', $this->input('checklist_completed', []));
+            $templates = \App\Models\IssueChecklistTemplate::query()
+                ->where('is_active', true)
+                ->get(['id', 'is_required', 'marks_issue_resolved']);
+            $resolutionTemplateId = $templates->firstWhere('marks_issue_resolved', true)?->id;
+
+            $requestedStatus = is_string($status) ? IssueStatus::tryFrom($status) : null;
+
+            if ($requestedStatus === null) {
+                $validator->errors()->add('status', 'Kies een eindstatus voor de historische storing.');
+
+                return;
+            }
+
+            if ($requestedStatus !== IssueStatus::Open && ! $this->filled('resolved_at')) {
+                $validator->errors()->add('resolved_at', 'Vul in wanneer de storing technisch was opgelost.');
+            }
+
+            if ($requestedStatus !== IssueStatus::Open && ! in_array($resolutionTemplateId, $completedTemplateIds, true)) {
+                $validator->errors()->add('checklist_completed', 'Vink het oplossingsitem aan om deze status vast te leggen.');
+            }
+
+            $requiredTemplateIds = $templates->where('is_required', true)->pluck('id');
+            $allRequiredItemsCompleted = $requiredTemplateIds->isNotEmpty()
+                && $requiredTemplateIds->diff($completedTemplateIds)->isEmpty();
+            $derivedStatus = match (true) {
+                $allRequiredItemsCompleted => IssueStatus::Completed,
+                in_array($resolutionTemplateId, $completedTemplateIds, true) => IssueStatus::Handling,
+                default => IssueStatus::Open,
+            };
+
+            if ($requestedStatus === IssueStatus::Completed) {
+                $missingRequiredItems = $requiredTemplateIds->diff($completedTemplateIds);
+
+                if ($missingRequiredItems->isNotEmpty()) {
+                    $validator->errors()->add('checklist_completed', 'Vink alle verplichte checklistitems aan om de storing af te ronden.');
+                }
+            }
+
+            if ($requestedStatus !== $derivedStatus) {
+                $validator->errors()->add('status', 'De gekozen status moet aansluiten op de ingevulde checklist.');
+            }
+        }];
+    }
+
     /**
-     * @return array{title: string, description: string|null, priority: IssuePriority, reported_at: Carbon, team_member_id: int|null}
+     * @return array<string, mixed>
      */
     public function issueAttributes(): array
     {
@@ -46,7 +114,14 @@ class StoreIssueRequest extends FormRequest
             'description' => $validated['description'] ?? null,
             'priority' => IssuePriority::from($validated['priority']),
             'reported_at' => Carbon::parse($validated['reported_at']),
-            'team_member_id' => $validated['team_member_id'] ?? null,
+            'is_historical' => $validated['is_historical'] ?? false,
+            'first_responded_at' => isset($validated['first_responded_at']) ? Carbon::parse($validated['first_responded_at']) : null,
+            'resolved_at' => isset($validated['resolved_at']) ? Carbon::parse($validated['resolved_at']) : null,
+            'status' => isset($validated['status']) ? IssueStatus::from($validated['status']) : IssueStatus::Open,
+            'resolution_summary' => $validated['resolution_summary'] ?? null,
+            'cause' => isset($validated['cause']) ? IssueCause::from($validated['cause']) : null,
+            'internal_note' => $validated['internal_note'] ?? null,
+            'checklist_completed' => array_map('intval', $validated['checklist_completed'] ?? []),
         ];
     }
 }

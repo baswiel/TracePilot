@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\BusinessHoursController;
 use App\Http\Controllers\Settings\IssueChecklistTemplateController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -30,6 +31,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('user-password.update');
 
     Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');
+
+    Route::get('settings/werkuren', [BusinessHoursController::class, 'edit'])->name('business-hours.edit');
+    Route::patch('settings/werkuren', [BusinessHoursController::class, 'update'])->name('business-hours.update');
 
     Route::get('settings/issue-checklist', [IssueChecklistTemplateController::class, 'index'])
         ->name('issue-checklist.index');
