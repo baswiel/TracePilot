@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nowForInput } from '@/lib/dates';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -33,13 +34,6 @@ const props = defineProps<{
     projects: Project[];
     checklistTemplates: ChecklistTemplate[];
 }>();
-
-const nowForInput = () => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-
-    return now.toISOString().slice(0, 16);
-};
 
 const form = useForm({
     project_id: '',

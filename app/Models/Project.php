@@ -43,6 +43,11 @@ use Illuminate\Support\Carbon;
 ])]
 class Project extends Model
 {
+    public function customerDisplayName(): ?string
+    {
+        return $this->customer === null ? $this->customer_name : $this->customer->name;
+    }
+
     /** @use HasFactory<ProjectFactory> */
     use HasFactory;
 

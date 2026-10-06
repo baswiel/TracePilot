@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PagePagination from '@/components/PagePagination.vue';
+import type { Paginated } from '@/types/pagination';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
@@ -18,7 +20,7 @@ import { dashboard } from '@/routes';
 import { destroy, edit, index, show, store } from '@/routes/customers';
 
 type Customer = { id: number; name: string; projects_count: number };
-const props = defineProps<{ customers: Customer[] }>();
+const props = defineProps<{ customers: Paginated<Customer> }>();
 const form = useForm({ name: '' });
 const customerToDelete = ref<Customer | null>(null);
 defineOptions({
@@ -83,11 +85,18 @@ const remove = () => {
                             v-model="form.name"
                             required
                             placeholder="Bijvoorbeeld: Acme B.V."
+                            :aria-invalid="Boolean(form.errors.name)"
+                            aria-describedby="customer-name-error"
                         />
-                        <InputError :message="form.errors.name" />
+                        <InputError
+                            id="customer-name-error"
+                            :message="form.errors.name"
+                        />
                     </div>
                     <div class="flex gap-2">
-                        <Button type="submit"><Plus /> Toevoegen</Button>
+                        <Button :disabled="form.processing" type="submit"
+                            ><Plus /> Toevoegen</Button
+                        >
                     </div>
                 </form>
             </CardContent>
@@ -98,9 +107,9 @@ const remove = () => {
                 ><CardTitle>Klantenlijst</CardTitle></CardHeader
             >
             <CardContent class="p-0">
-                <div v-if="customers.length" class="divide-y">
+                <div v-if="customers.data.length" class="divide-y">
                     <div
-                        v-for="customer in customers"
+                        v-for="customer in customers.data"
                         :key="customer.id"
                         class="hover:bg-muted/50 flex items-center justify-between gap-3 p-4 transition-colors sm:p-5"
                     >
@@ -163,5 +172,6 @@ const remove = () => {
             "
             @confirm="remove"
         />
+        <PagePagination :page="customers" />
     </div>
 </template>

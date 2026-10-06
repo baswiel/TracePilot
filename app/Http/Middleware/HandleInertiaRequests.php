@@ -43,7 +43,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user()?->only(['id', 'name', 'email', 'email_verified_at', 'created_at', 'updated_at']),
             ],
             'activeIssuesCount' => fn (): int => $request->user()
                 ? Issue::query()
@@ -55,7 +55,13 @@ class HandleInertiaRequests extends Middleware
                     'projects' => Project::query()
                         ->where('is_active', true)
                         ->orderBy('name')
-                        ->get(['id', 'name', 'customer_name']),
+                        ->with('customer:id,name')
+                        ->get(['id', 'name', 'customer_id', 'customer_name'])
+                        ->map(fn (Project $project): array => [
+                            'id' => $project->id,
+                            'name' => $project->name,
+                            'customer_name' => $project->customerDisplayName(),
+                        ])->all(),
                     'teamMembers' => TeamMember::query()
                         ->orderBy('name')
                         ->get(['id', 'name', 'email']),

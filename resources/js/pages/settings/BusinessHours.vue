@@ -79,8 +79,13 @@ const toggleDay = (day: number, checked: boolean) => {
                         v-model="form.starts_at"
                         type="time"
                         required
+                        :aria-invalid="Boolean(form.errors.starts_at)"
+                        aria-describedby="hours-starts_at-error"
                     />
-                    <InputError :message="form.errors.starts_at" />
+                    <InputError
+                        id="hours-starts_at-error"
+                        :message="form.errors.starts_at"
+                    />
                 </div>
                 <div class="grid gap-2">
                     <Label for="business-hours-end">Tot</Label>
@@ -89,8 +94,13 @@ const toggleDay = (day: number, checked: boolean) => {
                         v-model="form.ends_at"
                         type="time"
                         required
+                        :aria-invalid="Boolean(form.errors.ends_at)"
+                        aria-describedby="hours-ends_at-error"
                     />
-                    <InputError :message="form.errors.ends_at" />
+                    <InputError
+                        id="hours-ends_at-error"
+                        :message="form.errors.ends_at"
+                    />
                 </div>
             </div>
 

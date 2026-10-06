@@ -12,7 +12,7 @@ class UpdateIssueDetails
     /**
      * Update editable issue details and record the change atomically.
      *
-     * @param  array{title: string, description: string|null, priority: IssuePriority, team_member_id: int|null, knowledge_base_recorded: bool, is_trend: bool}  $attributes
+     * @param  array{title: string, description: string|null, priority: IssuePriority, team_member_id: int|null, knowledge_base_recorded: bool, is_trend: bool, reported_at: string, first_responded_at: string|null, resolved_at: string|null}  $attributes
      */
     public function handle(Issue $issue, User $actor, array $attributes): Issue
     {

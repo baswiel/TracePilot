@@ -29,12 +29,12 @@ class ResponderIndexTest extends TestCase
             ->get(route('responders.index'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Responders/Index')
-                ->has('responders', 2)
-                ->where('responders.0.name', 'Noor Bakker')
-                ->where('responders.0.projects.0.id', $project->id)
-                ->where('responders.0.projects.0.roles.0', 'Tweede responder')
-                ->where('responders.1.name', 'Sam Jansen')
-                ->where('responders.1.projects.0.id', $project->id)
-                ->where('responders.1.projects.0.roles.0', 'Eerste responder'));
+                ->has('responders.data', 2)
+                ->where('responders.data.0.name', 'Noor Bakker')
+                ->where('responders.data.0.projects.0.id', $project->id)
+                ->where('responders.data.0.projects.0.roles.0', 'Tweede responder')
+                ->where('responders.data.1.name', 'Sam Jansen')
+                ->where('responders.data.1.projects.0.id', $project->id)
+                ->where('responders.data.1.projects.0.roles.0', 'Eerste responder'));
     }
 }

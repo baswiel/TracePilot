@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { IssuePriority } from '@/types/issues';
+import { formatDate } from '@/lib/dates';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { CheckCircle2, CircleAlert, Clock3 } from '@lucide/vue';
 import { computed, reactive } from 'vue';
@@ -21,7 +23,7 @@ type Issue = {
     id: number;
     project: string;
     title: string;
-    priority: 'p1' | 'p2' | 'p3' | 'p4';
+    priority: IssuePriority;
     status: 'open' | 'handling';
     reported_at: string;
     assigned_to: string | null;
@@ -32,26 +34,7 @@ type Issue = {
     sla: Sla;
 };
 
-type SlaMilestone = {
-    target_minutes: number | null;
-    deadline_at: string | null;
-    state:
-        | 'unavailable'
-        | 'on_track'
-        | 'at_risk'
-        | 'overdue'
-        | 'met'
-        | 'breached';
-    label: string;
-    remaining_minutes: number | null;
-};
-
-type Sla = {
-    response: SlaMilestone;
-    resolution: SlaMilestone;
-    needs_attention: boolean;
-};
-
+import type { IssueSla as Sla } from '@/types/issues';
 type PaginationLink = {
     url: string | null;
     label: string;
@@ -122,12 +105,6 @@ const applyFilters = () => {
     });
 };
 
-const formatDate = (value: string) =>
-    new Intl.DateTimeFormat('nl-NL', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    }).format(new Date(value));
-
 const elapsedSince = (value: string) => {
     const minutes = Math.max(
         0,
@@ -146,6 +123,7 @@ const progressWidth = (issue: Issue) =>
         : Math.round((issue.checklist_completed / issue.checklist_total) * 100);
 
 defineOptions({
+    inheritAttrs: false,
     layout: {
         breadcrumbs: [{ title: 'Overzicht', href: dashboard() }],
     },

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property string|null $activities_max_created_at
  * @property int $project_id
  * @property string $title
  * @property string|null $description

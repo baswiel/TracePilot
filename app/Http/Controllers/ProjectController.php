@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\IssueStatus;
+use App\Http\Requests\ProjectIndexFilterRequest;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectActiveRequest;
 use App\Http\Requests\UpdateProjectRequest;
@@ -13,21 +14,17 @@ use App\Models\SlaLevel;
 use App\Models\SlaTarget;
 use App\Models\TeamMember;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProjectController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(ProjectIndexFilterRequest $request): Response
     {
         $this->authorize('viewAny', Project::class);
 
-        $validated = $request->validate([
-            'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'in:active,inactive'],
-        ]);
+        $validated = $request->validated();
 
         $projects = Project::query()
             ->when(
@@ -58,7 +55,7 @@ class ProjectController extends Controller
             ->through(fn (Project $project): array => [
                 'id' => $project->id,
                 'name' => $project->name,
-                'customer_name' => $project->customer?->name,
+                'customer_name' => $project->customerDisplayName(),
                 'is_active' => $project->is_active,
                 'active_issues_count' => $project->active_issues_count,
                 'latest_issue_at' => $project->issues_max_reported_at,
@@ -116,7 +113,7 @@ class ProjectController extends Controller
             'project' => [
                 'id' => $project->id,
                 'name' => $project->name,
-                'customer_name' => $project->customer?->name,
+                'customer_name' => $project->customerDisplayName(),
                 'description' => $project->description,
                 'sla_level' => $project->slaLevel === null ? null : [
                     'id' => $project->slaLevel->id,

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Issue;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class IssueReportRequest extends FormRequest
 {
@@ -25,6 +26,7 @@ class IssueReportRequest extends FormRequest
         ];
     }
 
+    /** @return array<int, \Closure(Validator): void> */
     public function after(): array
     {
         return [function ($validator): void {

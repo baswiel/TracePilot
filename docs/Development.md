@@ -22,7 +22,7 @@ SQLite is de standaarddatabase. Configureer voor MySQL of PostgreSQL de
 bijbehorende `DB_*`-variabelen en voer daarna `php artisan migrate` uit.
 
 `php artisan migrate --seed` maakt lokale demogegevens aan, waaronder de
-gebruiker `test@example.com` met wachtwoord `password`. Gebruik deze gegevens
+gebruiker `bas.vanderwiel@rapide.software` met wachtwoord `password`. Gebruik deze gegevens
 uitsluitend lokaal en wijzig het wachtwoord voordat een account buiten een
 lokale omgeving wordt gebruikt.
 

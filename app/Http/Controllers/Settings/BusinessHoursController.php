@@ -13,8 +13,10 @@ class BusinessHoursController extends Controller
 {
     public function edit(): Response
     {
+        $this->authorize('viewAny', BusinessHours::class);
+
         return Inertia::render('settings/BusinessHours', [
-            'businessHours' => $this->businessHours(),
+            'businessHours' => $this->businessHours()->only(['working_days', 'starts_at', 'ends_at']),
         ]);
     }
 

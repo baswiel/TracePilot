@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PagePagination from '@/components/PagePagination.vue';
+import type { Paginated } from '@/types/pagination';
 import { Head, Link } from '@inertiajs/vue3';
 import { FolderKanban, Pencil, Plus } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +24,7 @@ type Project = {
     active_issues_count: number;
 };
 
-defineProps<{ customer: Customer; projects: Project[] }>();
+defineProps<{ customer: Customer; projects: Paginated<Project> }>();
 
 defineOptions({
     layout: {
@@ -76,9 +78,9 @@ const formatDate = (value: string) =>
                 </CardDescription>
             </CardHeader>
             <CardContent class="p-0">
-                <div v-if="projects.length" class="divide-y">
+                <div v-if="projects.data.length" class="divide-y">
                     <Link
-                        v-for="project in projects"
+                        v-for="project in projects.data"
                         :key="project.id"
                         :href="showProject(project.id)"
                         class="focus-visible:ring-ring hover:bg-muted/50 flex items-center justify-between gap-4 p-4 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset sm:p-5"
@@ -122,5 +124,6 @@ const formatDate = (value: string) =>
                 </div>
             </CardContent>
         </Card>
+        <PagePagination :page="projects" />
     </div>
 </template>

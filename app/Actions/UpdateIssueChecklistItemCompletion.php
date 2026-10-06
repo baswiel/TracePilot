@@ -18,7 +18,7 @@ class UpdateIssueChecklistItemCompletion
     public function handle(
         IssueChecklistItem $item,
         bool $isCompleted,
-        ?User $actor = null,
+        User $actor,
         bool $isNotApplicable = false,
         ?string $resolutionSummary = null,
         ?bool $postmortemRequired = null,
@@ -51,7 +51,7 @@ class UpdateIssueChecklistItemCompletion
                 'is_completed' => $isCompleted,
                 'is_not_applicable' => $isNotApplicable,
                 'completed_at' => $isCompleted ? now() : null,
-                'completed_by' => $isCompleted ? $actor?->id : null,
+                'completed_by' => $isCompleted ? $actor->id : null,
             ]);
 
             if ($item->marks_issue_resolved) {
@@ -77,12 +77,12 @@ class UpdateIssueChecklistItemCompletion
                             'is_completed' => ! $postmortemRequired,
                             'is_not_applicable' => ! $postmortemRequired,
                             'completed_at' => ! $postmortemRequired ? now() : null,
-                            'completed_by' => ! $postmortemRequired ? $actor?->id : null,
+                            'completed_by' => ! $postmortemRequired ? $actor->id : null,
                         ]);
 
                         if ($postmortemItemWasCompleted !== ! $postmortemRequired || $postmortemItemWasNotApplicable !== ! $postmortemRequired) {
                             $issue->activities()->create([
-                                'user_id' => $actor?->id,
+                                'user_id' => $actor->id,
                                 'action' => $postmortemRequired
                                     ? 'checklist_item_reopened'
                                     : 'checklist_item_not_applicable',
@@ -100,7 +100,7 @@ class UpdateIssueChecklistItemCompletion
             $issue = $this->syncIssueStatus->handle($issue);
 
             $issue->activities()->create([
-                'user_id' => $actor?->id,
+                'user_id' => $actor->id,
                 'action' => $isNotApplicable
                     ? 'checklist_item_not_applicable'
                     : ($isCompleted ? 'checklist_item_completed' : 'checklist_item_reopened'),

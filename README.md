@@ -63,8 +63,8 @@ php artisan db:seed --class=IssueChecklistTemplateSeeder
 ```
 
 `php artisan migrate --seed` voert ook de standaardseeders uit en maakt een
-lokale testgebruiker aan (`test@example.com`, wachtwoord: `password`) en de
-demo-projecten ‘Klantportaal’ en ‘Website’. Wijzig het wachtwoord via de
+lokale testgebruiker aan (`bas.vanderwiel@rapide.software`, wachtwoord: `password`) en de
+demo-projecten onder andere ‘WieKiesJij’ en ‘Motor2go’. Wijzig het wachtwoord via de
 reguliere wachtwoordflow voordat je deze gebruiker buiten lokaal gebruik inzet.
 
 ## Ontwikkelcommando’s

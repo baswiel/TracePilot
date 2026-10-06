@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { IssuePriority } from '@/types/issues';
 import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
 
 const props = defineProps<{
-    priority: 'p1' | 'p2' | 'p3' | 'p4';
+    priority: IssuePriority;
 }>();
 
 const display = computed(() => {

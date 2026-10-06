@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { IssuePriority } from '@/types/issues';
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
     BarChart3,
@@ -44,7 +45,7 @@ type Report = {
         resolution: SlaSummary;
     };
     priorities: Array<{
-        priority: 'p1' | 'p2' | 'p3' | 'p4';
+        priority: IssuePriority;
         reported: number;
         completed: number;
         average_resolution_minutes: number | null;

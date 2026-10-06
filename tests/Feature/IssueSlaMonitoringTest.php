@@ -2,18 +2,44 @@
 
 namespace Tests\Feature;
 
+use App\Actions\CalculateIssueSla;
 use App\Enums\IssuePriority;
+use App\Models\BusinessHours;
 use App\Models\Issue;
 use App\Models\Project;
 use App\Models\SlaLevel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class IssueSlaMonitoringTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_loaded_sla_targets_are_reused_without_per_issue_queries(): void
+    {
+        BusinessHours::query()->create(['working_days' => [1, 2, 3, 4, 5], 'starts_at' => '09:00', 'ends_at' => '17:00']);
+        $level = SlaLevel::query()->create(['name' => 'Gold']);
+        $level->targets()->create(['priority' => 'p1', 'response_minutes' => 30, 'resolution_minutes' => 120]);
+        $project = Project::factory()->create(['sla_level_id' => $level->id]);
+        Issue::factory()->count(5)->for($project)->create(['priority' => 'p1']);
+        $issues = Issue::query()->with('project.slaLevel.targets')->get();
+        $calculate = app(CalculateIssueSla::class);
+        $calculate->handle($issues->first());
+
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+        try {
+            foreach ($issues as $issue) {
+                $this->assertSame(30, $calculate->handle($issue)['response']['target_minutes']);
+            }
+            $this->assertCount(0, DB::getQueryLog());
+        } finally {
+            DB::disableQueryLog();
+        }
+    }
 
     public function test_it_calculates_sla_deadlines_from_the_project_sla_level(): void
     {

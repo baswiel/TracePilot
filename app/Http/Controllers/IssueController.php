@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Actions\CalculateIssueSla;
 use App\Actions\CreateIssue;
 use App\Actions\MarkIssueFirstResponse;
+use App\Actions\StoreIssueTimelineEntry;
 use App\Actions\UpdateIssueChecklistItemCompletion;
 use App\Actions\UpdateIssueDetails;
+use App\Actions\UpdateIssuePostmortem;
 use App\Enums\IssueCause;
 use App\Http\Requests\IssueIndexFilterRequest;
 use App\Http\Requests\StoreIssueRequest;
@@ -24,7 +26,6 @@ use App\Models\TeamMember;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -46,7 +47,9 @@ class IssueController extends Controller
             'reported_at' => $issuesQuery->orderBy('reported_at', $direction),
             'last_activity' => $issuesQuery->orderBy('activities_max_created_at', $direction),
             default => $issuesQuery
-                ->orderByRaw("case priority when 'p1' then 1 when 'p2' then 2 when 'p3' then 3 else 4 end {$direction}")
+                ->orderByRaw($direction === 'desc'
+                    ? "case priority when 'p1' then 1 when 'p2' then 2 when 'p3' then 3 else 4 end desc"
+                    : "case priority when 'p1' then 1 when 'p2' then 2 when 'p3' then 3 else 4 end asc")
                 ->orderBy('reported_at'),
         };
 
@@ -56,7 +59,7 @@ class IssueController extends Controller
             ->through(fn (Issue $issue): array => [
                 'id' => $issue->id,
                 'project' => $issue->project->name,
-                'customer' => $issue->project->customer?->name ?? $issue->project->customer_name,
+                'customer' => $issue->project->customerDisplayName(),
                 'title' => $issue->title,
                 'priority' => $issue->priority->value,
                 'status' => $issue->status->value,
@@ -96,18 +99,21 @@ class IssueController extends Controller
     {
         $issues = $this->filteredIssues($request->validated())
             ->with([
-                'project:id,customer_name,contact_name,first_responder_id,second_responder_id,third_responder_id',
+                'project:id,customer_id,customer_name,contact_name,first_responder_id,second_responder_id,third_responder_id',
+                'project.customer:id,name',
                 'project.firstResponder:id,name',
                 'project.secondResponder:id,name',
                 'project.thirdResponder:id,name',
                 'teamMember:id,name',
                 'checklistItems:id,issue_id,name,is_completed,is_not_applicable',
             ])
-            ->latest('reported_at')
-            ->get();
+            ->latest('reported_at');
 
         return response()->streamDownload(function () use ($issues): void {
             $stream = fopen('php://output', 'wb');
+            if ($stream === false) {
+                throw new \RuntimeException('CSV-uitvoer kan niet worden geopend.');
+            }
             fwrite($stream, "\xEF\xBB\xBF");
             fputcsv($stream, [
                 'Datum Incident', 'Klant', 'Contactpersoon', 'Betrokkenen vanuit Rapide',
@@ -115,10 +121,10 @@ class IssueController extends Controller
                 'Uitkomst opgenomen in Kennisbank', 'Trend?', 'Type storing',
             ]);
 
-            foreach ($issues as $issue) {
+            foreach ($issues->lazy(250) as $issue) {
                 fputcsv($stream, [
                     $issue->reported_at->format('d-m-Y H:i'),
-                    $issue->project->customer_name,
+                    $issue->project->customerDisplayName(),
                     $issue->project->contact_name,
                     $this->rapideContacts($issue),
                     $issue->title,
@@ -138,6 +144,7 @@ class IssueController extends Controller
 
     /**
      * @param  array<string, mixed>  $filters
+     * @return Builder<Issue>
      */
     private function filteredIssues(array $filters): Builder
     {
@@ -214,7 +221,13 @@ class IssueController extends Controller
             'projects' => Project::query()
                 ->where('is_active', true)
                 ->orderBy('name')
-                ->get(['id', 'name', 'customer_name']),
+                ->with('customer:id,name')
+                ->get(['id', 'name', 'customer_id', 'customer_name'])
+                ->map(fn (Project $project): array => [
+                    'id' => $project->id,
+                    'name' => $project->name,
+                    'customer_name' => $project->customerDisplayName(),
+                ]),
             'checklistTemplates' => IssueChecklistTemplate::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')
@@ -241,6 +254,7 @@ class IssueController extends Controller
 
         $issue->load([
             'project.slaLevel.targets',
+            'project.customer:id,name',
             'project.firstResponder',
             'project.secondResponder',
             'project.thirdResponder',
@@ -261,9 +275,11 @@ class IssueController extends Controller
                 'status' => $issue->status->value,
                 'reported_at' => $issue->reported_at->toDateTimeString(),
                 'reported_at_label' => $issue->reported_at->format('d-m-Y H:i'),
-                'first_responded_at' => $issue->first_responded_at?->format('d-m-Y H:i'),
+                'first_responded_at' => $issue->first_responded_at?->toDateTimeString(),
+                'first_responded_at_label' => $issue->first_responded_at?->format('d-m-Y H:i'),
                 'elapsed_duration' => $this->elapsedDuration($issue),
-                'resolved_at' => $issue->resolved_at?->format('d-m-Y H:i'),
+                'resolved_at' => $issue->resolved_at?->toDateTimeString(),
+                'resolved_at_label' => $issue->resolved_at?->format('d-m-Y H:i'),
                 'resolution_summary' => $issue->resolution_summary,
                 'cause' => $issue->cause?->value,
                 'postmortem_required' => $issue->postmortem_required,
@@ -273,7 +289,7 @@ class IssueController extends Controller
                 'project' => [
                     'id' => $issue->project->id,
                     'name' => $issue->project->name,
-                    'customer_name' => $issue->project->customer_name,
+                    'customer_name' => $issue->project->customerDisplayName(),
                     'first_responder' => $this->teamMemberData($issue->project->firstResponder),
                     'second_responder' => $this->teamMemberData($issue->project->secondResponder),
                     'third_responder' => $this->teamMemberData($issue->project->thirdResponder),
@@ -345,99 +361,24 @@ class IssueController extends Controller
         return back();
     }
 
-    public function storeTimelineEntry(StoreIssueTimelineEntryRequest $request, Issue $issue): RedirectResponse
+    public function storeTimelineEntry(StoreIssueTimelineEntryRequest $request, Issue $issue, StoreIssueTimelineEntry $storeTimelineEntry): RedirectResponse
     {
         $this->authorize('update', $issue);
 
-        $validated = $request->validated();
-        $mentions = TeamMember::query()
-            ->whereIn('id', $validated['mention_ids'] ?? [])
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn (TeamMember $teamMember): array => [
-                'id' => $teamMember->id,
-                'name' => $teamMember->name,
-            ])
-            ->values()
-            ->all();
-
-        $metadata = ['mentions' => $mentions];
-
-        if ($request->hasFile('attachment')) {
-            $attachment = $request->file('attachment');
-            $path = $attachment->store("issue-attachments/{$issue->id}", 'local');
-
-            $metadata['attachment'] = [
-                'path' => $path,
-                'name' => $attachment->getClientOriginalName(),
-                'mime_type' => $attachment->getMimeType(),
-            ];
-        }
-
-        $issue->activities()->create([
-            'user_id' => $request->user()->id,
-            'action' => $validated['type'],
-            'description' => $validated['body'],
-            'metadata' => $metadata,
-        ]);
+        $storeTimelineEntry->handle($issue, $request->user(), $request->timelineAttributes(), $request->file('attachment'));
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => $validated['type'] === 'decision' ? 'Besluit toegevoegd.' : 'Interne opmerking toegevoegd.',
+            'message' => $request->validated('type') === 'decision' ? 'Besluit toegevoegd.' : 'Interne opmerking toegevoegd.',
         ]);
 
         return back();
     }
 
-    public function updatePostmortem(UpdateIssuePostmortemRequest $request, Issue $issue): RedirectResponse
+    public function updatePostmortem(UpdateIssuePostmortemRequest $request, Issue $issue, UpdateIssuePostmortem $updatePostmortem): RedirectResponse
     {
         $this->authorize('update', $issue);
-        abort_unless($issue->postmortem_required, 404);
-        $validated = $request->validated();
-
-        DB::transaction(function () use ($issue, $request, $validated): void {
-            $issue = Issue::query()->lockForUpdate()->findOrFail($issue->id);
-            $postmortem = $issue->postmortem()->firstOrNew();
-            $postmortem->fill([
-                'root_cause' => $validated['root_cause'],
-                'impact' => $validated['impact'],
-            ]);
-
-            if (! $postmortem->exists) {
-                $postmortem->created_by = $request->user()->id;
-            }
-
-            $postmortem->save();
-            $existingItems = $postmortem->actionItems()->lockForUpdate()->get()->keyBy('id');
-            $keptItemIds = [];
-
-            foreach ($validated['action_items'] ?? [] as $sortOrder => $attributes) {
-                $actionItem = isset($attributes['id'])
-                    ? $existingItems->get($attributes['id'])
-                    : null;
-
-                abort_unless($actionItem !== null || ! isset($attributes['id']), 404);
-                $actionItem ??= $postmortem->actionItems()->make();
-                $actionItem->fill([
-                    'title' => $attributes['title'],
-                    'owner_team_member_id' => $attributes['owner_team_member_id'] ?? null,
-                    'due_date' => $attributes['due_date'] ?? null,
-                    'completed_at' => $attributes['is_completed']
-                        ? ($actionItem->completed_at ?? now())
-                        : null,
-                    'sort_order' => $sortOrder,
-                ]);
-                $actionItem->save();
-                $keptItemIds[] = $actionItem->id;
-            }
-
-            $postmortem->actionItems()->whereNotIn('id', $keptItemIds)->delete();
-            $issue->activities()->create([
-                'user_id' => $request->user()->id,
-                'action' => 'postmortem_updated',
-                'description' => 'Postmortem bijgewerkt.',
-            ]);
-        });
+        $updatePostmortem->handle($issue, $request->user(), $request->postmortemAttributes());
 
         Inertia::flash('toast', [
             'type' => 'success',

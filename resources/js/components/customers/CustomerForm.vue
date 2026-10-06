@@ -25,9 +25,7 @@ const submit = () => form.patch(update(props.customer.id).url);
         </div>
 
         <div class="flex flex-wrap gap-2">
-            <Button type="submit" :disabled="form.processing">
-                Opslaan
-            </Button>
+            <Button type="submit" :disabled="form.processing"> Opslaan </Button>
             <Button variant="outline" as-child>
                 <Link :href="cancelHref">Annuleren</Link>
             </Button>

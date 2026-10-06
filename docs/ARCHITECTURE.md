@@ -6,17 +6,17 @@
 
 ## 1. Systeemoverzicht
 
-| Onderdeel | Techniek | Verantwoordelijkheid |
-| --- | --- | --- |
-| Backend | PHP 8.3+, Laravel 13 | HTTP, validatie, autorisatie, domeinmutaties en Inertia-responses. |
-| Frontend | Vue 3, TypeScript, Inertia 3 | Schermen en interactie op basis van serverprops. |
-| Styling | Tailwind CSS 4, Reka UI-primitieven | Semantische tokens, componenten en responsiviteit. |
-| Database | Eloquent; standaard SQLite | Persistente bron voor klant, project, storing, checklist, SLA en tijdlijn. |
-| Auth | Laravel Fortify, sessieguard | Login, registratie, reset, verificatie, 2FA en passkeys. |
-| Bestand | Laravel Storage, disk `local` | Private tijdlijnbijlagen en geautoriseerde downloads. |
-| Cache/queue | Laravel-configuratie, standaard database | Frameworkinfrastructuur; geen eigen domeincache of domeinjob. |
-| Mail | Laravel mail; lokaal `log` | Fortify-verificatie en wachtwoordherstel. |
-| Build | Vite Plus, Wayfinder, Vue TSC | Assets, getypeerde routehelpers en frontendtypes. |
+| Onderdeel   | Techniek                                 | Verantwoordelijkheid                                                       |
+| ----------- | ---------------------------------------- | -------------------------------------------------------------------------- |
+| Backend     | PHP 8.3+, Laravel 13                     | HTTP, validatie, autorisatie, domeinmutaties en Inertia-responses.         |
+| Frontend    | Vue 3, TypeScript, Inertia 3             | Schermen en interactie op basis van serverprops.                           |
+| Styling     | Tailwind CSS 4, Reka UI-primitieven      | Semantische tokens, componenten en responsiviteit.                         |
+| Database    | Eloquent; standaard SQLite               | Persistente bron voor klant, project, storing, checklist, SLA en tijdlijn. |
+| Auth        | Laravel Fortify, sessieguard             | Login, registratie, reset, verificatie, 2FA en passkeys.                   |
+| Bestand     | Laravel Storage, disk `local`            | Private tijdlijnbijlagen en geautoriseerde downloads.                      |
+| Cache/queue | Laravel-configuratie, standaard database | Frameworkinfrastructuur; geen eigen domeincache of domeinjob.              |
+| Mail        | Laravel mail; lokaal `log`               | Fortify-verificatie en wachtwoordherstel.                                  |
+| Build       | Vite Plus, Wayfinder, Vue TSC            | Assets, getypeerde routehelpers en frontendtypes.                          |
 
 ```text
 Browser (Vue/Inertia)
@@ -34,16 +34,16 @@ Controller ──► FormRequest / Policy
 
 ## 2. Architectuurprincipes
 
-| Principe | Concrete regel voor nieuwe code |
-| --- | --- |
-| Eén bron per regel | Status **MOET** via `SyncIssueStatus`, SLA via `CalculateIssueSla`; kopieer die formules niet in Vue of controllers. |
-| Duidelijke HTTP-grens | Form Requests **MOETEN** niet-triviale input valideren en autoriseren; controllers verbinden invoer, use-case/query en response. |
-| Atomiciteit | Multi-record-mutaties **MOETEN** één transactie gebruiken; concurrerende issue/checklist-mutaties **MOETEN** binnen die transactie locken. |
-| Expliciete waarden | `IssuePriority`, `IssueStatus` en `IssueCause` **MOETEN** de serverwaarden blijven bepalen. |
-| Projectcontext | Een genest record **MOET** bij het issue in de URL horen; route model binding alleen is niet voldoende. |
-| Hergebruik | Bestaande Actions, requests, badges, formulieren en UI-primitieven **MOETEN** worden onderzocht voor iets nieuws wordt toegevoegd. |
-| Minimaal aantal lagen | Repository, DTO, contract of adapter **MAG** alleen bij een concrete grens, hergebruik of testnoodzaak worden toegevoegd. |
-| Fail closed | Ontbrekende actor, verkeerde parent of ontbrekende autorisatie **MAG NIET** op een frontendcontrole worden afgewenteld. |
+| Principe              | Concrete regel voor nieuwe code                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Eén bron per regel    | Status **MOET** via `SyncIssueStatus`, SLA via `CalculateIssueSla`; kopieer die formules niet in Vue of controllers.                       |
+| Duidelijke HTTP-grens | Form Requests **MOETEN** niet-triviale input valideren en autoriseren; controllers verbinden invoer, use-case/query en response.           |
+| Atomiciteit           | Multi-record-mutaties **MOETEN** één transactie gebruiken; concurrerende issue/checklist-mutaties **MOETEN** binnen die transactie locken. |
+| Expliciete waarden    | `IssuePriority`, `IssueStatus` en `IssueCause` **MOETEN** de serverwaarden blijven bepalen.                                                |
+| Projectcontext        | Een genest record **MOET** bij het issue in de URL horen; route model binding alleen is niet voldoende.                                    |
+| Hergebruik            | Bestaande Actions, requests, badges, formulieren en UI-primitieven **MOETEN** worden onderzocht voor iets nieuws wordt toegevoegd.         |
+| Minimaal aantal lagen | Repository, DTO, contract of adapter **MAG** alleen bij een concrete grens, hergebruik of testnoodzaak worden toegevoegd.                  |
+| Fail closed           | Ontbrekende actor, verkeerde parent of ontbrekende autorisatie **MAG NIET** op een frontendcontrole worden afgewenteld.                    |
 
 Een eenvoudige enkelvoudige CRUD-mutatie **MAG** in een controller blijven, zoals `CustomerController::update`, zolang zij geen gedeelde invariant, auditactiviteit of multi-record-transactie raakt. De incidentlevenscyclus **MOET** een Action gebruiken. Dit onderscheid sluit aan bij de dominante code zonder de bestaande grote `IssueController` tot standaard te verheffen.
 
@@ -70,13 +70,13 @@ tests/{Feature,Unit}/
 
 `Http` **MAG** Actions, Policies en Models gebruiken. Actions **MOGEN** Models, Enums en kleine Support-objecten gebruiken, maar **MOGEN NIET** van Inertia, Vue of een Request afhangen. Models **MOETEN** relaties, casts en lokale modelinvarianten dragen; workflows over meerdere modellen **MOETEN** naar een Action. Leesqueries **MOGEN** in een controller wanneer één scherm ze gebruikt; gedeelde domeinselecties **MOETEN** bij hergebruik op één herkenbare plaats worden samengebracht. Nieuwe appmappen **MOGEN NIET** worden ingevoerd uitsluitend om een theoretisch lagenmodel na te bootsen.
 
-| Domeingebied (PRODUCT.md §4) | Primaire code | Grens |
-| --- | --- | --- |
-| Klant, project, responders | `Customer`, `Project`, `TeamMember` en beheercontrollers | Project is context van iedere storing. |
-| Storingslevenscyclus | `Issue`, `CreateIssue`, `UpdateIssueDetails`, `MarkIssueFirstResponse` | Status komt uit checklist. |
-| Checklist, tijdlijn, postmortem | Templates/items, `SyncIssueStatus`, `IssueActivity`, `IssuePostmortem` | Snapshot en audit horen bij de mutatie. |
-| SLA, rapport | `CalculateIssueSla`, `BuildIssueReport`, `IssueReportPeriod`, `BusinessHours` | Berekening op server. |
-| Account | `User`, Fortify, policies | Een `TeamMember` is geen account. |
+| Domeingebied (PRODUCT.md §4)    | Primaire code                                                                 | Grens                                   |
+| ------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------- |
+| Klant, project, responders      | `Customer`, `Project`, `TeamMember` en beheercontrollers                      | Project is context van iedere storing.  |
+| Storingslevenscyclus            | `Issue`, `CreateIssue`, `UpdateIssueDetails`, `MarkIssueFirstResponse`        | Status komt uit checklist.              |
+| Checklist, tijdlijn, postmortem | Templates/items, `SyncIssueStatus`, `IssueActivity`, `IssuePostmortem`        | Snapshot en audit horen bij de mutatie. |
+| SLA, rapport                    | `CalculateIssueSla`, `BuildIssueReport`, `IssueReportPeriod`, `BusinessHours` | Berekening op server.                   |
+| Account                         | `User`, Fortify, policies                                                     | Een `TeamMember` is geen account.       |
 
 ## 4. Backend-bouwstenen
 
@@ -113,7 +113,7 @@ Test geldige invoer, ongeldige waarden, ontbrekende actor en parentmismatch.
 
 Een Action **MOET** één herkenbare use-case of berekening benoemen: `CreateIssue`, `UpdateIssueChecklistItemCompletion`, `CalculateIssueSla`, `BuildIssueReport`. Gebruik constructorinjectie voor een andere Action, zoals checklistupdate → `SyncIssueStatus`. Multi-record-mutaties **MOETEN** een transactie gebruiken; bij concurrerende checklistwijziging **MOET** het issue/item binnen die transactie opnieuw worden gelezen en gelockt. Herhaalde identieke acties **MOGEN NIET** dubbele audit of tijdstempels schrijven wanneer idempotentie onderdeel van de flow is. Berekeningen **MOGEN NIET** afhankelijk zijn van Vue-formattering; `CalculateIssueSla::handle($issue, $now)` maakt tijdgrenzen testbaar.
 
-Een nieuwe Action **MOET** gedragstests krijgen. Test rollback wanneer gedeeltelijke opslag een concrete risicofactor is, zoals bij `CreateIssue`. De tijdelijke mutable velden in `CreateIssue` zijn een bestaande uitzondering: kopieer die **MAG NIET** als patroon; houd aanroepdata **BIJ VOORKEUR** lokaal in `handle()`.
+Een nieuwe Action **MOET** gedragstests krijgen. Test rollback wanneer gedeeltelijke opslag een concrete risicofactor is, zoals bij `CreateIssue`. Aanroepdata in Actions **MOET** lokaal in `handle()` of expliciete parameters blijven; `CreateIssue` geeft checklistgegevens rechtstreeks aan de snapshotmethode door.
 
 ```php
 return DB::transaction(function () use ($item): Issue {
@@ -206,22 +206,22 @@ De hiërarchie is: `components/ui/*` (primitives zoals Button, Card, Dialog), ge
 
 De tests zijn overwegend PHPUnit Feature-tests met `RefreshDatabase`. `phpunit.xml` gebruikt SQLite `:memory:`, arraycache/-sessie/-mail en synchrone queue. Er zijn alleen voorbeeld-Unit-tests en geen geconfigureerde frontendcomponent- of E2E-runner. Nieuwe domeinfunctionaliteit **MOET** via gedragstests worden bewezen: geslaagde flow, validatiefout, gast/verboden toegang, parentbinding en relevante status-/audit-/SLA-grenzen. De bestaande tests voor `CreateIssue` dekken snapshot en rollback; voor checklistacties heropenen, idempotentie en statusovergangen. Volg dat patroon, niet alleen een assert op HTTP 200.
 
-| Wijziging | Minimaal bewijs |
-| --- | --- |
-| Nieuwe route/mutatie | Feature-test voor request, policy, validatie en response/redirect. |
+| Wijziging                  | Minimaal bewijs                                                                                       |
+| -------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Nieuwe route/mutatie       | Feature-test voor request, policy, validatie en response/redirect.                                    |
 | Domeininvariant/berekening | Grensgevallen, lege input, herhaling en tijdgrenzen; test de Action direct als HTTP niet relevant is. |
-| Database-/relatiewijziging | Test constraint, deletegedrag en relaties; bij bestaande data ook migratiepad controleren. |
-| Query/rapport | Test cohort, filter, paginering en nulnoemer; meet N+1 bij nieuwe relaties in lijsten. |
-| Bestandsactie | `Storage::fake('local')`, type/grootte, verkeerde issuebinding en downloadrecht. |
-| Alleen presentatie | Typecheck, formatter/linter, build en gerichte controle van mobiel, toetsenbord en dark mode. |
+| Database-/relatiewijziging | Test constraint, deletegedrag en relaties; bij bestaande data ook migratiepad controleren.            |
+| Query/rapport              | Test cohort, filter, paginering en nulnoemer; meet N+1 bij nieuwe relaties in lijsten.                |
+| Bestandsactie              | `Storage::fake('local')`, type/grootte, verkeerde issuebinding en downloadrecht.                      |
+| Alleen presentatie         | Typecheck, formatter/linter, build en gerichte controle van mobiel, toetsenbord en dark mode.         |
 
-Er is geen tenancy; schrijf geen schijnbare cross-tenant-tests. Als klantisolatie wordt ingevoerd, worden negatieve cross-customer-tests verplicht. `php artisan test` draait PHPUnit; `composer test` draait ook PHP-formatcheck en PHPStan. CI voert via `composer ci:check` frontendcheck en Vue-typecontrole uit. De huidige CI heeft geen afzonderlijke `npm run build`-gate; bouw lokaal bij asset-/Vitewijzigingen.
+Er is geen tenancy; schrijf geen schijnbare cross-tenant-tests. Als klantisolatie wordt ingevoerd, worden negatieve cross-customer-tests verplicht. `php artisan test` draait PHPUnit; `composer test` draait ook PHP-formatcheck en PHPStan. CI voert via `composer ci:check` frontendcheck en Vue-typecontrole uit. CI voert `npm run build` uit via `composer setup`; `composer ci:check` controleert vervolgens lint, types en gedrag. Bouw ook lokaal bij asset-/Vitewijzigingen.
 
 ## 11. Seeders, factories en lokale testdata
 
 `DatabaseSeeder` roept de seeders voor gebruiker, teamleden, klanten, SLA-niveaus, projecten en checklisttemplates aan. Factories maken tests onafhankelijk: `IssueFactory` maakt project en gebruiker, `IssueChecklistTemplateFactory` heeft `resolutionMarker()` en `inactive()`, `ProjectFactory` heeft `inactive()`. Tests **MOETEN** de kleinste benodigde dataset via factories opzetten; ze **MOGEN NIET** afhankelijk zijn van alle demo-seeds tenzij juist de seedinhoud wordt getest. Nieuwe domeinmodellen **MOETEN** een factory krijgen als meerdere tests ze zelfstandig nodig hebben. Factory-states **MOETEN** een betekenisvolle domeintoestand benoemen.
 
-Seeders **MOETEN** herhaalbaar zijn waar zij bij lokale setup opnieuw gedraaid worden (`updateOrCreate`/`firstOrCreate` is bestaand patroon). Voeg alleen representatieve demo-/configuratiedata toe, geen productiegeheimen. `UserSeeder` maakt momenteel een geverifieerd lokaal account met een bekend wachtwoord; dat **MAG NIET** als productieprovisioning worden gebruikt. Er is bovendien een verschil tussen de actuele seed en de oude README/Development-tekst over testaccount en demo-projecten; neem de seedcode als huidige feitelijke bron totdat de documentatie is opgeschoond. Productcontracten, zoals definitieve SLA-minuten, **MOGEN NIET** uit toevallige seedgegevens worden afgeleid.
+Seeders **MOETEN** herhaalbaar zijn waar zij bij lokale setup opnieuw gedraaid worden (`updateOrCreate`/`firstOrCreate` is bestaand patroon). Voeg alleen representatieve demo-/configuratiedata toe, geen productiegeheimen. `UserSeeder` maakt momenteel een geverifieerd lokaal account met een bekend wachtwoord; dat **MAG NIET** als productieprovisioning worden gebruikt. README en Development beschrijven het huidige lokale seedaccount en voorbeeldprojecten; de seedcode blijft de feitelijke bron. Productcontracten, zoals definitieve SLA-minuten, **MOGEN NIET** uit toevallige seedgegevens worden afgeleid.
 
 ## 12. Security
 
@@ -260,7 +260,7 @@ Dit is het bestaande verschil tussen een checklistitem dat met zijn issue verdwi
 
 ## 16. Performance
 
-Lijstcontrollers **MOETEN** relaties die per rij worden gebruikt eager loaden en aantallen via `withCount` ophalen; `DashboardController` en `IssueController::index` tonen dat patroon. Groeiende lijsten **MOETEN** pagineren; huidige standaard is 15 storingen en 10 projecten per pagina. Een nieuwe rapport- of exportquery die alle storingen in geheugen laadt **MOET** bij verwacht volume worden begrensd, gestreamd/gechunked of van een onderbouwde limiet voorzien. `IssueController::export` en `BuildIssueReport` laden momenteel de volledige selectie; beschouw dat als schaalrisico, niet als toekomstig standaardpatroon.
+Lijstcontrollers **MOETEN** relaties die per rij worden gebruikt eager loaden en aantallen via `withCount` ophalen; `DashboardController` en `IssueController::index` tonen dat patroon. Groeiende lijsten **MOETEN** pagineren; huidige standaard is 15 storingen en 10 projecten per pagina. Een nieuwe rapport- of exportquery die alle storingen in geheugen laadt **MOET** bij verwacht volume worden begrensd, gestreamd/gechunked of van een onderbouwde limiet voorzien. `IssueController::export`, `BuildIssueReport` en de SLA-dashboardteller verwerken batches van 250 storingen. Rapportage bewaart uitsluitend accumulatietotalen, projectresultaten en trendpunten, geen volledige selectie. SLA-berekening gebruikt de eager geladen doelcollectie.
 
 Voeg bij een nieuwe relationele kolom in een overzicht een N+1-controle toe. Filter/sorteer alleen op gevalideerde velden en controleer indexen via queryplan wanneer een grote tabel wordt geraakt. `HandleInertiaRequests` telt en haalt meldingen voor elke aangemelde pagina op; nieuwe gedeelde queries **MOETEN** een expliciete kostenafweging krijgen. Cache **MAG** pas bij gemeten herhaald werk en met invalidatiestrategie; er is nu geen domeincache. Een background job **MAG** zware niet-interactieve taken verplaatsen, mits productflow, retries en voortgang zijn ontworpen. Frontendbundelwijzigingen **MOETEN** met `npm run build` worden gecontroleerd wanneer Vite, dependencies of imports veranderen.
 
@@ -278,51 +278,51 @@ Een agent **MAG NIET** alleen op een succesvol buildresultaat vertrouwen als een
 
 ## 19. Anti-patterns
 
-| ❌ Niet | ✅ Wel |
-| --- | --- |
-| Status in een controller of Vue herberekenen | `SyncIssueStatus` gebruiken. |
-| SLA in badges/rapporten anders berekenen | `CalculateIssueSla` gebruiken. |
-| Een actieve checklisttemplate achteraf op bestaande issues toepassen | Snapshot bij creatie respecteren. |
-| Een genest item alleen op ID binden | `item.issue_id` met route-issue vergelijken. |
-| Autorisatie alleen door een verborgen knop | Policy/Form Request op server. |
-| Ruwe `$request->all()` mass assignen | Gevalideerde, expliciete velden. |
-| Sorteringsinput in SQL interpoleren | Whitelist uit Form Request. |
-| Multi-record-checklist zonder transactie/lock | Action met lock en status-sync. |
-| Elke controllerquery in een fictieve repository wrappen | Schermquery laten staan of gedeelde query abstraheren bij hergebruik. |
-| Een nieuwe Action met mutable toestand tussen aanroepen | Aanroepdata lokaal of als parameters houden. |
-| Alle relaties lazy laden in paginarijen | `with`, `withCount`, selecties. |
-| Onbegrensde lijst als standaard | Serverpaginering of expliciete limiet. |
-| Hele Eloquent-modellen als browserprops lekken | Bewuste prop-mapping. |
-| Een eigen fetch/cache-stack voor domeinschermen | Inertia-props, `useForm`, router. |
-| URL's als strings aan elkaar plakken | Wayfinder-routehelpers. |
-| Gegenereerde routes handmatig bewerken | Generator opnieuw draaien. |
-| `any` gebruiken voor bekende props | Exact TS-type en nullability. |
-| Een tweede prioriteit/status/SLA-badge bouwen | Bestaande issuecomponent uitbreiden. |
-| Hardgecodeerde statuskleur zonder tekst | Semantisch token plus label/icoon. |
-| `window.confirm` voor verwijderen | `ConfirmDeleteDialog`. |
-| Publieke URL voor een private bijlage | Geautoriseerde downloadroute. |
-| “Postmortem verstuurd” gelijkstellen aan echte verzending | Huidige handmatige checklistsemantiek documenteren tot productbesluit. |
-| Klantfilter als tenantautorisatie behandelen | Huidige globale toegang erkennen en productbesluit vragen. |
-| Demo-seedwachtwoord als productaccount gebruiken | Apart veilig accountbeheer. |
-| Een externe integratie zonder fake/retrybeleid | Ontworpen contract, foutpad en test. |
+| ❌ Niet                                                              | ✅ Wel                                                                 |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Status in een controller of Vue herberekenen                         | `SyncIssueStatus` gebruiken.                                           |
+| SLA in badges/rapporten anders berekenen                             | `CalculateIssueSla` gebruiken.                                         |
+| Een actieve checklisttemplate achteraf op bestaande issues toepassen | Snapshot bij creatie respecteren.                                      |
+| Een genest item alleen op ID binden                                  | `item.issue_id` met route-issue vergelijken.                           |
+| Autorisatie alleen door een verborgen knop                           | Policy/Form Request op server.                                         |
+| Ruwe `$request->all()` mass assignen                                 | Gevalideerde, expliciete velden.                                       |
+| Sorteringsinput in SQL interpoleren                                  | Whitelist uit Form Request.                                            |
+| Multi-record-checklist zonder transactie/lock                        | Action met lock en status-sync.                                        |
+| Elke controllerquery in een fictieve repository wrappen              | Schermquery laten staan of gedeelde query abstraheren bij hergebruik.  |
+| Een nieuwe Action met mutable toestand tussen aanroepen              | Aanroepdata lokaal of als parameters houden.                           |
+| Alle relaties lazy laden in paginarijen                              | `with`, `withCount`, selecties.                                        |
+| Onbegrensde lijst als standaard                                      | Serverpaginering of expliciete limiet.                                 |
+| Hele Eloquent-modellen als browserprops lekken                       | Bewuste prop-mapping.                                                  |
+| Een eigen fetch/cache-stack voor domeinschermen                      | Inertia-props, `useForm`, router.                                      |
+| URL's als strings aan elkaar plakken                                 | Wayfinder-routehelpers.                                                |
+| Gegenereerde routes handmatig bewerken                               | Generator opnieuw draaien.                                             |
+| `any` gebruiken voor bekende props                                   | Exact TS-type en nullability.                                          |
+| Een tweede prioriteit/status/SLA-badge bouwen                        | Bestaande issuecomponent uitbreiden.                                   |
+| Hardgecodeerde statuskleur zonder tekst                              | Semantisch token plus label/icoon.                                     |
+| `window.confirm` voor verwijderen                                    | `ConfirmDeleteDialog`.                                                 |
+| Publieke URL voor een private bijlage                                | Geautoriseerde downloadroute.                                          |
+| “Postmortem verstuurd” gelijkstellen aan echte verzending            | Huidige handmatige checklistsemantiek documenteren tot productbesluit. |
+| Klantfilter als tenantautorisatie behandelen                         | Huidige globale toegang erkennen en productbesluit vragen.             |
+| Demo-seedwachtwoord als productaccount gebruiken                     | Apart veilig accountbeheer.                                            |
+| Een externe integratie zonder fake/retrybeleid                       | Ontworpen contract, foutpad en test.                                   |
 
 ## 20. Development workflow
 
 Installeer volgens README/[Development.md](Development.md): PHP 8.3+, Node 22+, `composer install`, `npm install`, `.env`, `php artisan key:generate`, database en `php artisan migrate --seed`. `composer run dev` start de lokale ontwikkelomgeving. De bestaande CI draait op push naar `main` en pull requests; er is geen repositoryregel voor branchnaam of verplichte PR-tekst af te leiden. Gebruik bij commits de Conventional Commits-afspraak uit de projectinstructies.
 
-| Doel | Bestaand commando |
-| --- | --- |
-| Migrations | `php artisan migrate` |
+| Doel                             | Bestaand commando                            |
+| -------------------------------- | -------------------------------------------- |
+| Migrations                       | `php artisan migrate`                        |
 | Frontendroutes/types regenereren | `php artisan wayfinder:generate --with-form` |
-| PHPUnit | `php artisan test` |
-| PHP-formatcontrole | `composer lint:check` |
-| PHP-formatfix | `composer lint` |
-| PHPStan | `composer types:check` |
-| Frontend lint/formatcontrole | `npm run check` |
-| Frontend automatische fix | `npm run check:fix` |
-| Vue-typecontrole | `npm run types:check` |
-| Frontendbuild | `npm run build` |
-| Gecombineerde lokale/CI-gate | `composer ci:check` |
+| PHPUnit                          | `php artisan test`                           |
+| PHP-formatcontrole               | `composer lint:check`                        |
+| PHP-formatfix                    | `composer lint`                              |
+| PHPStan                          | `composer types:check`                       |
+| Frontend lint/formatcontrole     | `npm run check`                              |
+| Frontend automatische fix        | `npm run check:fix`                          |
+| Vue-typecontrole                 | `npm run types:check`                        |
+| Frontendbuild                    | `npm run build`                              |
+| Gecombineerde lokale/CI-gate     | `composer ci:check`                          |
 
 `composer ci:check` voert `npm run check`, `npm run types:check` en `composer test` uit; `composer test` omvat Pint-check, PHPStan en PHPUnit. `.github/workflows/tests.yml` gebruikt `composer setup` en daarna `composer ci:check`. Nieuwe migrations **MOETEN** als nieuwe bestanden worden toegevoegd en met tests op het testdatabasepad werken. Na route-/requestwijzigingen **MOET** Wayfinder opnieuw gegenereerd worden; gegenereerde bestanden staan in `.gitignore` en worden niet handmatig vastgelegd. De lintconfig in `vite.config.ts` negeert gegenereerde paden en een deel van de UI-primitieven; `npm run check` bewijst dus niet automatisch elke componentstijl.
 
@@ -345,15 +345,15 @@ Een feature/PR is technisch gereed wanneer alle toepasselijke punten zijn gecont
 
 ### Bestaande automatische handhaving
 
-| Regel | Huidige handhaving | Grens |
-| --- | --- | --- |
-| Formaat PHP | Pint via `composer lint:check` en CI | Toetst geen laaggrenzen. |
-| PHP-typen | PHPStan/Larastan level 7 via `composer types:check` | Toetst geen productregel. |
-| Frontend formaat/lint | Vite Plus `npm run check` met `denyWarnings` en type-aware lint | Gegenereerde en bepaalde UI-paden zijn uitgesloten. |
-| Vue-typen | `vue-tsc --noEmit` via CI | Serverpropcontract kan nog runtime afwijken. |
-| Gedrag | PHPUnit Feature-tests in CI | Dekt alleen beschreven cases. |
-| Data-invarianten | FK's, unieke constraints, Form Requests, policies en Action-/modelchecks | Sommige regels leven alleen in applicatiecode. |
-| CI | GitHub Actions op push `main` en PR | Geen aparte build-, architectuur- of frontend-E2E-gate. |
+| Regel                 | Huidige handhaving                                                       | Grens                                                                           |
+| --------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| Formaat PHP           | Pint via `composer lint:check` en CI                                     | Toetst geen laaggrenzen.                                                        |
+| PHP-typen             | PHPStan/Larastan level 7 via `composer types:check`                      | Toetst geen productregel.                                                       |
+| Frontend formaat/lint | Vite Plus `npm run check` met `denyWarnings` en type-aware lint          | Gegenereerde en bepaalde UI-paden zijn uitgesloten.                             |
+| Vue-typen             | `vue-tsc --noEmit` via CI                                                | Serverpropcontract kan nog runtime afwijken.                                    |
+| Gedrag                | PHPUnit Feature-tests in CI                                              | Dekt alleen beschreven cases.                                                   |
+| Data-invarianten      | FK's, unieke constraints, Form Requests, policies en Action-/modelchecks | Sommige regels leven alleen in applicatiecode.                                  |
+| CI                    | GitHub Actions op push `main` en PR                                      | Build via `composer setup`; nog geen aparte architectuur- of frontend-E2E-gate. |
 
 ### Architectuurregels die we nog automatisch kunnen afdwingen
 
@@ -364,27 +364,27 @@ Deze voorstellen zijn **niet** geïmplementeerd:
 3. Een test kan controleren dat alle `IssueStatus`- en `IssuePriority`-waarden overeenkomen met de TypeScript-unions/badges.
 4. Een contracttest kan kritieke Inertia-props van dashboard en issue-detail tegen een typed schema of snapshot controleren; kies eerst een onderhoudbaar schema.
 5. Een gerichte query-count-test kan dashboard, issueoverzicht en rapportage op nieuwe N+1-relaties bewaken.
-6. Een aanvullende CI-stap `npm run build` kan bundel- en assetfouten vangen die typecheck/lint missen.
+6. De bestaande build in `composer setup` vangt bundel- en assetfouten; behoud deze controle als de CI-setup wordt opgesplitst.
 7. Een test kan de twee statusberekeningspaden bij lege/legacy-checklists gelijk trekken nadat PRODUCT.md de gewenste regel vastlegt.
 8. Een static rule kan direct `window.confirm`, ongecontroleerde `v-html` en handgeschreven domein-URL's in niet-gegenereerde Vue-paden signaleren.
 
 ## 22. Bestaande afwijkingen en architectuurbeslissingen die nog nodig zijn
 
-| Bevinding | Huidige plaats | Norm/benodigde keuze |
-| --- | --- | --- |
-| Grote controller coördineert ook postmortemtransactie, tijdlijnopslag en export. | `IssueController` | Nieuwe complexe mutaties krijgen Actions; bepaal bij toekomstig onderhoud of bestaande methoden stapsgewijs worden uitgeplaatst. |
-| SLA-niveaus worden in een settingscontroller opgeslagen met transactie. | `Settings/SlaLevelController` | Bepaal of iedere configuratiemutatie met meerdere records een Action moet krijgen; voor nieuwe complexe mutaties geldt §4.3. |
-| Templates controleren een invariant zowel in modelhook als Action. | `IssueChecklistTemplate`, `ManageIssueChecklistTemplates` | Bepaal of de dubbele bewaking gewenst is of centraal moet worden gemaakt, met behoud van racebescherming. |
-| Lege verplichte checklist krijgt niet overal dezelfde status. | `CreateIssue`, `SyncIssueStatus` | Productbesluit nodig vóór technische consolidatie; zie PRODUCT.md §Geconstateerde inconsistenties. |
-| Postmortemgedrag hangt van itemnaam af. | `UpdateIssueChecklistItemCompletion`, CSV-export | Productbesluit over expliciet type/marker nodig; bouw geen nieuwe naamherkenning. |
-| Oude `project_team_member`-pivot bestaat naast drie responderkolommen. | migration versus `Project`/UI | Bepaal of pivot legacy is en veilig migreerbaar. |
-| `customer_name` en `customer_id` leveren verschillende scherm-/exportdata. | `Project`, `IssueController` | Bepaal canonieke bron en eventuele historische snapshot vóór verdere mapping. |
-| Gedeelde props doen per aangemelde pagina queries. | `HandleInertiaRequests` | Bepaal bij gemeten schaalproblemen of lazy props, cache of paginacontext nodig zijn. |
-| Export en rapport laden hele selectie in geheugen. | `IssueController::export`, `BuildIssueReport` | Bepaal verwacht volume en streaming/aggregatiegrens voordat export wordt uitgebreid. |
-| `config/app.php` staat op UTC; werkuren zijn globaal en invoer is lokaal geformuleerd. | datum-/SLA-paden | Bepaal tijdzonecontract en of SLA-afspraken historisch vastgelegd worden. |
-| Zelfregistratie en brede policies bestaan naast een “intern” product. | Fortify, Policies | Productbesluit over toegangsmodel nodig vóór rollen/tenantisolatie. |
-| `verified` staat op routes, maar `User` implementeert `MustVerifyEmail` niet. | `routes/*`, `User`, Laravel `EnsureEmailIsVerified` | Bepaal of verificatie verplicht is; voeg pas dan contract en negatieve toegangstest toe. |
-| De huidige frontend heeft geen component-/E2E-testtool. | `package.json` | Bepaal bij groei van clientlogica welke runner en gate passend zijn. |
+| Bevinding                                                                              | Huidige plaats                                                       | Norm/benodigde keuze                                                                                                                  |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Issuecontroller bevat nog schermmapping en CSV-presentatie.                            | `IssueController`                                                    | Tijdlijn en postmortem zijn uitgeplaatst naar `StoreIssueTimelineEntry` en `UpdateIssuePostmortem`; nieuwe workflows blijven Actions. |
+| SLA-niveau en doelen worden samen opgeslagen.                                          | `SaveSlaLevel`                                                       | Eén transactie, lock bij update en rollbacktest; controller coördineert uitsluitend request en redirect.                              |
+| Templates controleren een invariant zowel in modelhook als Action.                     | `IssueChecklistTemplate`, `ManageIssueChecklistTemplates`            | Bepaal of de dubbele bewaking gewenst is of centraal moet worden gemaakt, met behoud van racebescherming.                             |
+| Lege verplichte checklist kent nog expliciete legacysemantiek.                         | `SyncIssueStatus::determineStatus`                                   | Eén berekening; behoud de compatibiliteitsoptie totdat PRODUCT.md het gewenste gedrag vastlegt.                                       |
+| Postmortemgedrag hangt van itemnaam af.                                                | `UpdateIssueChecklistItemCompletion`, CSV-export                     | Productbesluit over expliciet type/marker nodig; bouw geen nieuwe naamherkenning.                                                     |
+| Oude `project_team_member`-pivot bestaat naast drie responderkolommen.                 | migration versus `Project`/UI                                        | Bepaal of pivot legacy is en veilig migreerbaar.                                                                                      |
+| Klantnaam heeft één leidende bron en een legacy fallback.                              | `Project::customerDisplayName()`                                     | Actuele `Customer.name` is leidend; oude projectnaam is fallback zonder relatie.                                                      |
+| Gedeelde props doen per aangemelde pagina queries.                                     | `HandleInertiaRequests`                                              | Bepaal bij gemeten schaalproblemen of lazy props, cache of paginacontext nodig zijn.                                                  |
+| Export, rapport en SLA-teller verwerken batches.                                       | `IssueController::export`, `BuildIssueReport`, `DashboardController` | Batchgrootte 250; bewaak queryaantallen en verwerking over batchgrenzen.                                                              |
+| `config/app.php` staat op UTC; werkuren zijn globaal en invoer is lokaal geformuleerd. | datum-/SLA-paden                                                     | Bepaal tijdzonecontract en of SLA-afspraken historisch vastgelegd worden.                                                             |
+| Zelfregistratie en brede policies bestaan naast een “intern” product.                  | Fortify, Policies                                                    | Productbesluit over toegangsmodel nodig vóór rollen/tenantisolatie.                                                                   |
+| `verified` staat op routes, maar `User` implementeert `MustVerifyEmail` niet.          | `routes/*`, `User`, Laravel `EnsureEmailIsVerified`                  | Bepaal of verificatie verplicht is; voeg pas dan contract en negatieve toegangstest toe.                                              |
+| De huidige frontend heeft geen component-/E2E-testtool.                                | `package.json`                                                       | Bepaal bij groei van clientlogica welke runner en gate passend zijn.                                                                  |
 
 De vragen in deze tabel zijn geen stilzwijgende toestemming voor codewijziging. Leg een genomen productbesluit eerst vast in PRODUCT.md en pas daarna deze norm aan.
 
@@ -398,3 +398,13 @@ De vragen in deze tabel zijn geen stilzwijgende toestemming voor codewijziging. 
 6. Welke tijdzone geldt voor invoer, werkuren, SLA-deadlines en historische weergave?
 7. Vanaf welk selectievolume moeten CSV-export en rapportage streamen of aggregeren, en hoort dit synchroon te blijven?
 8. Wanneer wordt frontendcomponent- of E2E-testen een verplichte gate, en met welke runner?
+
+## Uitgevoerde architectuurconvergentie — 30 september 2026
+
+Historische auditmomenten zijn toegestaan in de expliciete modelvelden. Detailprops scheiden machineleesbare datums en labels. Projectfilters hebben een Form Request; globale werkuren hebben een policy. Tijdlijn- en postmortemmutaties gebruiken Actions, en mislukte tijdlijnopslag verwijdert een reeds opgeslagen bijlage. Action-aanroepen bewaken actief project en verplichte checklistactor.
+
+Klant-, team- en responderlijsten en klantprojecten pagineren met twintig records. Dashboard-SLA en rapportage verwerken batches; CSV streamt batches met eager geladen relaties. De regressietests controleren meerdere batches, paginering, SLA-queryhergebruik, rollback, bijlagevalidatie en verkeerde parentrelaties.
+
+Issue-details, tijdlijn, postmortemformulier en SLA-details zijn afzonderlijke featurecomponenten. Issue- en SLA-typen en datum-/SLA-presentatiehelpers zijn gedeeld. Destructieve bevestigingen gebruiken `ConfirmDeleteDialog`; de bevestigingsknop kan ook archiveren of (de)activeren benoemen.
+
+De expliciet behouden productkeuzes staan in PRODUCT.md. De dubbele templatebewaking blijft bewust aanwezig: de Action beschermt de volledige actieve set binnen de transactie, de modelhook vangt directe modelwrites voor de oplossingsmarker op. Dit vervangt geen concurrentietest op een productiedatabase.
