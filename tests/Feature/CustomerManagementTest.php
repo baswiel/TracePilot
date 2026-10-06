@@ -17,7 +17,7 @@ class CustomerManagementTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)->post(route('customers.store'), ['name' => 'Acme B.V.'])
-            ->assertRedirect(route('customers.index'));
+            ->assertRedirect(route('customers.show', Customer::query()->sole()));
 
         $customer = Customer::query()->sole();
         $project = Project::factory()->create(['customer_id' => $customer->id]);
@@ -48,7 +48,7 @@ class CustomerManagementTest extends TestCase
             ->assertOk()
             ->assertJsonPath('component', 'Customers/Show')
             ->assertJsonPath('props.customer.name', 'Acme B.V.')
-            ->assertJsonPath('props.projects.0.id', $project->id);
+            ->assertJsonPath('props.projects.data.0.id', $project->id);
 
         $this->actingAs($user)
             ->asInertiaRequest()

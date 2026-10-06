@@ -18,8 +18,8 @@ export type UseCurrentUrlReturn = {
     whenCurrentUrl: <T, F = null>(
         urlToCheck: NonNullable<InertiaLinkProps['href']>,
         ifTrue: T,
-        ifFalse?: F,
-    ) => T | F;
+        ifFalse?: F | null,
+    ) => T | F | null;
 };
 
 const page = usePage();
@@ -65,10 +65,10 @@ export function useCurrentUrl(): UseCurrentUrlReturn {
         return isCurrentUrl(urlToCheck, currentUrl, true);
     }
 
-    function whenCurrentUrl(
+    function whenCurrentUrl<T, F = null>(
         urlToCheck: NonNullable<InertiaLinkProps['href']>,
-        ifTrue: any,
-        ifFalse: any = null,
+        ifTrue: T,
+        ifFalse: F | null = null,
     ) {
         return isCurrentUrl(urlToCheck) ? ifTrue : ifFalse;
     }

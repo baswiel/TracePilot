@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests\Settings;
 
+use App\Models\BusinessHours;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateBusinessHoursRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        return $this->user()?->can('update', BusinessHours::class) === true;
     }
 
     /**

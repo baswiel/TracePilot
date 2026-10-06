@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nowForInput } from '@/lib/dates';
 import { useForm } from '@inertiajs/vue3';
 import { computed, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
@@ -19,12 +20,7 @@ type Project = { id: number; name: string; customer_name: string | null };
 
 const props = defineProps<{ projects: Project[] }>();
 const open = defineModel<boolean>('open', { default: false });
-const nowForInput = () => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
 
-    return now.toISOString().slice(0, 16);
-};
 const form = useForm({
     project_id: '',
     title: '',

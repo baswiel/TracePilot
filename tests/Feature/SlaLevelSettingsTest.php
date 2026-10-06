@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Actions\SaveSlaLevel;
 use App\Models\Project;
 use App\Models\SlaLevel;
+use App\Models\SlaTarget;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use RuntimeException;
 use Tests\TestCase;
 
 class SlaLevelSettingsTest extends TestCase
@@ -51,6 +54,33 @@ class SlaLevelSettingsTest extends TestCase
             ->post(route('sla-levels.store'), ['name' => 'Gold', 'targets' => $targets])
             ->assertRedirect(route('sla-levels.index'))
             ->assertSessionHasErrors('targets.3.priority');
+    }
+
+    public function test_failed_target_storage_rolls_back_the_entire_level(): void
+    {
+        $save = app(SaveSlaLevel::class);
+        $level = $save->handle(null, 'Gold', $this->targets());
+        SlaTarget::creating(function (): void {
+            throw new RuntimeException('Doelopslag mislukt.');
+        });
+
+        try {
+            foreach ([$level, null] as $existingLevel) {
+                try {
+                    $save->handle($existingLevel, 'Silver', $this->targets());
+                    $this->fail('Opslag had moeten mislukken.');
+                } catch (RuntimeException $exception) {
+                    $this->assertSame('Doelopslag mislukt.', $exception->getMessage());
+                }
+            }
+        } finally {
+            SlaTarget::flushEventListeners();
+        }
+
+        $this->assertDatabaseCount('sla_levels', 1);
+        $this->assertSame('Gold', $level->refresh()->name);
+        $this->assertCount(4, $level->targets()->get());
+        $this->assertDatabaseMissing('sla_levels', ['name' => 'Silver']);
     }
 
     /** @return array<int, array{priority: string, response_minutes: int, resolution_minutes: int}> */

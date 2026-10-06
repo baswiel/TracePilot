@@ -18,15 +18,11 @@ class SyncIssueStatus
         $resolutionItemCompleted = $items->contains(
             fn (IssueChecklistItem $item): bool => $item->marks_issue_resolved && $item->is_completed,
         );
-        $allRequiredItemsCompleted = $items
-            ->where('is_required', true)
-            ->every(fn (IssueChecklistItem $item): bool => $item->is_completed);
-
-        $status = match (true) {
-            $allRequiredItemsCompleted => IssueStatus::Completed,
-            $resolutionItemCompleted => IssueStatus::Handling,
-            default => IssueStatus::Open,
-        };
+        $status = $this->determineStatus($items->map(fn (IssueChecklistItem $item): array => [
+            'is_required' => $item->is_required,
+            'marks_issue_resolved' => $item->marks_issue_resolved,
+            'is_completed' => $item->is_completed,
+        ]), completeWithoutRequiredItems: true);
 
         $issue->fill([
             'status' => $status,
@@ -40,5 +36,26 @@ class SyncIssueStatus
         $issue->save();
 
         return $issue;
+    }
+
+    /** @param iterable<array{is_required: bool, marks_issue_resolved: bool, is_completed: bool}> $items */
+    public function determineStatus(iterable $items, bool $completeWithoutRequiredItems = false): IssueStatus
+    {
+        $hasRequiredItems = false;
+        $allRequiredItemsCompleted = true;
+        $resolutionItemCompleted = false;
+        foreach ($items as $item) {
+            if ($item['is_required']) {
+                $hasRequiredItems = true;
+                $allRequiredItemsCompleted = $allRequiredItemsCompleted && $item['is_completed'];
+            }
+            $resolutionItemCompleted = $resolutionItemCompleted || ($item['marks_issue_resolved'] && $item['is_completed']);
+        }
+
+        return match (true) {
+            ($hasRequiredItems || $completeWithoutRequiredItems) && $allRequiredItemsCompleted => IssueStatus::Completed,
+            $resolutionItemCompleted => IssueStatus::Handling,
+            default => IssueStatus::Open,
+        };
     }
 }

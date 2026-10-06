@@ -9,7 +9,15 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 
-defineProps<{ title: string; description: string; processing?: boolean }>();
+withDefaults(
+    defineProps<{
+        title: string;
+        description: string;
+        processing?: boolean;
+        confirmLabel?: string;
+    }>(),
+    { confirmLabel: 'Verwijderen' },
+);
 const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{ confirm: [] }>();
 </script>
@@ -30,7 +38,7 @@ const emit = defineEmits<{ confirm: [] }>();
                     variant="destructive"
                     :disabled="processing"
                     @click="emit('confirm')"
-                    >Verwijderen</Button
+                    >{{ confirmLabel }}</Button
                 >
             </DialogFooter>
         </DialogContent>

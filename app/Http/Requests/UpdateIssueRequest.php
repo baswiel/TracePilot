@@ -40,7 +40,7 @@ class UpdateIssueRequest extends FormRequest
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{title: string, description: string|null, priority: IssuePriority, team_member_id: int|null, knowledge_base_recorded: bool, is_trend: bool, reported_at: string, first_responded_at: string|null, resolved_at: string|null}
      */
     public function issueAttributes(): array
     {

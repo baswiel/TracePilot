@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { IssuePriority, IssueStatus } from '@/types/issues';
+import { formatDate } from '@/lib/dates';
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
     ClipboardList,
@@ -23,8 +25,8 @@ type Issue = {
     project: string;
     customer: string | null;
     title: string;
-    priority: 'p1' | 'p2' | 'p3' | 'p4';
-    status: 'open' | 'handling' | 'completed';
+    priority: IssuePriority;
+    status: IssueStatus;
     reported_at: string;
     first_responded_at: string | null;
     resolved_at: string | null;
@@ -34,21 +36,7 @@ type Issue = {
     sla: Sla;
 };
 
-type SlaMilestone = {
-    target_minutes: number | null;
-    state:
-        | 'unavailable'
-        | 'on_track'
-        | 'at_risk'
-        | 'overdue'
-        | 'met'
-        | 'breached';
-    label: string;
-    remaining_minutes: number | null;
-};
-
-type Sla = { response: SlaMilestone; resolution: SlaMilestone };
-
+import type { IssueSla as Sla } from '@/types/issues';
 type Pagination = {
     data: Issue[];
     current_page: number;
@@ -136,12 +124,6 @@ const sortLabel = (sort: typeof filters.sort) =>
         : 'Sorteer op deze kolom';
 
 const exportUrl = () => exportMethod({ query: { ...filters } }).url;
-
-const formatDate = (value: string) =>
-    new Intl.DateTimeFormat('nl-NL', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    }).format(new Date(value));
 
 const elapsedSince = (value: string) => {
     const minutes = Math.max(

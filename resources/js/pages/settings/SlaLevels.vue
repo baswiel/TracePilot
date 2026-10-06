@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import type { IssuePriority } from '@/types/issues';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { destroy, index, store, update } from '@/routes/sla-levels';
 
 type Target = {
-    priority: 'p1' | 'p2' | 'p3' | 'p4';
+    priority: IssuePriority;
     response_minutes: number;
     resolution_minutes: number;
 };
@@ -59,9 +61,21 @@ const submit = () =>
     editingLevel.value
         ? form.patch(update(editingLevel.value.id).url, { onSuccess: reset })
         : form.post(store.url(), { onSuccess: reset });
-const remove = (level: SlaLevel) => {
-    if (window.confirm(`Wil je SLA-niveau '${level.name}' verwijderen?`))
-        router.delete(destroy(level.id).url);
+const levelToDelete = ref<SlaLevel | null>(null);
+const deleting = ref(false);
+const remove = () => {
+    if (!levelToDelete.value || deleting.value) return;
+    router.delete(destroy(levelToDelete.value.id).url, {
+        onStart: () => {
+            deleting.value = true;
+        },
+        onFinish: () => {
+            deleting.value = false;
+        },
+        onSuccess: () => {
+            levelToDelete.value = null;
+        },
+    });
 };
 const priorityLabel = (priority: Target['priority']) => priority.toUpperCase();
 </script>
@@ -106,8 +120,13 @@ const priorityLabel = (priority: Target['priority']) => priority.toUpperCase();
                             v-model="form.name"
                             required
                             placeholder="Bijvoorbeeld: Gold"
+                            :aria-invalid="Boolean(form.errors.name)"
+                            aria-describedby="sla-name-error"
                         />
-                        <InputError :message="form.errors.name" />
+                        <InputError
+                            id="sla-name-error"
+                            :message="form.errors.name"
+                        />
                     </div>
                     <div class="overflow-x-auto rounded-lg border">
                         <table class="w-full min-w-115 text-sm">
@@ -194,7 +213,10 @@ const priorityLabel = (priority: Target['priority']) => priority.toUpperCase();
                 ><span class="flex gap-2"
                     ><Button size="sm" variant="outline" @click="edit(level)"
                         ><Pencil /> Bewerken</Button
-                    ><Button size="sm" variant="outline" @click="remove(level)"
+                    ><Button
+                        size="sm"
+                        variant="outline"
+                        @click="levelToDelete = level"
                         ><Trash2 /> Verwijderen</Button
                     ></span
                 >
@@ -203,5 +225,13 @@ const priorityLabel = (priority: Target['priority']) => priority.toUpperCase();
                 Nog geen SLA-niveaus ingesteld.
             </p>
         </div>
+        <ConfirmDeleteDialog
+            :open="Boolean(levelToDelete)"
+            @update:open="!$event && (levelToDelete = null)"
+            title="SLA-niveau verwijderen"
+            :description="`Wil je '${levelToDelete?.name ?? ''}' verwijderen? Dit kan niet ongedaan worden gemaakt.`"
+            :processing="deleting"
+            @confirm="remove"
+        />
     </div>
 </template>

@@ -2,13 +2,16 @@
 
 namespace App\Http\Requests;
 
+use App\Actions\SyncIssueStatus;
 use App\Enums\IssueCause;
 use App\Enums\IssuePriority;
 use App\Enums\IssueStatus;
 use App\Models\Issue;
+use App\Models\IssueChecklistTemplate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreIssueRequest extends FormRequest
 {
@@ -49,6 +52,7 @@ class StoreIssueRequest extends FormRequest
         ];
     }
 
+    /** @return array<int, \Closure(Validator): void> */
     public function after(): array
     {
         return [function ($validator): void {
@@ -58,7 +62,7 @@ class StoreIssueRequest extends FormRequest
 
             $status = $this->input('status');
             $completedTemplateIds = array_map('intval', $this->input('checklist_completed', []));
-            $templates = \App\Models\IssueChecklistTemplate::query()
+            $templates = IssueChecklistTemplate::query()
                 ->where('is_active', true)
                 ->get(['id', 'is_required', 'marks_issue_resolved']);
             $resolutionTemplateId = $templates->firstWhere('marks_issue_resolved', true)?->id;
@@ -80,13 +84,11 @@ class StoreIssueRequest extends FormRequest
             }
 
             $requiredTemplateIds = $templates->where('is_required', true)->pluck('id');
-            $allRequiredItemsCompleted = $requiredTemplateIds->isNotEmpty()
-                && $requiredTemplateIds->diff($completedTemplateIds)->isEmpty();
-            $derivedStatus = match (true) {
-                $allRequiredItemsCompleted => IssueStatus::Completed,
-                in_array($resolutionTemplateId, $completedTemplateIds, true) => IssueStatus::Handling,
-                default => IssueStatus::Open,
-            };
+            $derivedStatus = app(SyncIssueStatus::class)->determineStatus($templates->map(fn ($template): array => [
+                'is_required' => $template->is_required,
+                'marks_issue_resolved' => $template->marks_issue_resolved,
+                'is_completed' => in_array($template->id, $completedTemplateIds, true),
+            ]));
 
             if ($requestedStatus === IssueStatus::Completed) {
                 $missingRequiredItems = $requiredTemplateIds->diff($completedTemplateIds);
@@ -103,7 +105,7 @@ class StoreIssueRequest extends FormRequest
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{title: string, description: string|null, priority: IssuePriority, reported_at: Carbon, is_historical: bool, first_responded_at: Carbon|null, resolved_at: Carbon|null, status: IssueStatus, resolution_summary: string|null, cause: IssueCause|null, internal_note: string|null, checklist_completed: array<int>}
      */
     public function issueAttributes(): array
     {

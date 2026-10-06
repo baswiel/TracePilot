@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PagePagination from '@/components/PagePagination.vue';
+import type { Paginated } from '@/types/pagination';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2, Users } from '@lucide/vue';
 import { computed, ref } from 'vue';
@@ -24,12 +26,13 @@ type TeamMember = {
     assigned_issues_count: number;
 };
 
-const props = defineProps<{ teamMembers: TeamMember[] }>();
+const props = defineProps<{ teamMembers: Paginated<TeamMember> }>();
 const editingId = ref<number | null>(null);
 const editingMember = computed(
     () =>
-        props.teamMembers.find((member) => member.id === editingId.value) ??
-        null,
+        props.teamMembers.data.find(
+            (member) => member.id === editingId.value,
+        ) ?? null,
 );
 
 const form = useForm({ name: '', email: '' });
@@ -121,8 +124,13 @@ const deleteMember = () => {
                             v-model="form.name"
                             required
                             placeholder="Bijvoorbeeld: Sam Jansen"
+                            :aria-invalid="Boolean(form.errors.name)"
+                            aria-describedby="team-name-error"
                         />
-                        <InputError :message="form.errors.name" />
+                        <InputError
+                            id="team-name-error"
+                            :message="form.errors.name"
+                        />
                     </div>
                     <div class="grid gap-2">
                         <Label for="email"
@@ -136,8 +144,13 @@ const deleteMember = () => {
                             v-model="form.email"
                             type="email"
                             placeholder="sam@bedrijf.nl"
+                            :aria-invalid="Boolean(form.errors.email)"
+                            aria-describedby="team-email-error"
                         />
-                        <InputError :message="form.errors.email" />
+                        <InputError
+                            id="team-email-error"
+                            :message="form.errors.email"
+                        />
                     </div>
                     <div class="flex flex-wrap gap-3 sm:col-span-2">
                         <Button :disabled="form.processing" type="submit">
@@ -169,9 +182,9 @@ const deleteMember = () => {
                 >
             </CardHeader>
             <CardContent class="p-0">
-                <div v-if="teamMembers.length" class="divide-y">
+                <div v-if="teamMembers.data.length" class="divide-y">
                     <article
-                        v-for="member in teamMembers"
+                        v-for="member in teamMembers.data"
                         :key="member.id"
                         class="hover:bg-muted/50 flex flex-col gap-4 p-4 transition-colors sm:flex-row sm:items-center sm:justify-between sm:p-5"
                     >
@@ -235,5 +248,6 @@ const deleteMember = () => {
             "
             @confirm="deleteMember"
         />
+        <PagePagination :page="teamMembers" />
     </div>
 </template>

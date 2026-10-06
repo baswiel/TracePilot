@@ -10,6 +10,7 @@ import {
     Trash2,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import InputError from '@/components/InputError.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
@@ -97,13 +98,7 @@ const moveTemplate = (template: Template, direction: 'up' | 'down') => {
     );
 };
 
-const toggleActive = (template: Template) => {
-    const action = template.is_active ? 'deactiveren' : 'activeren';
-
-    if (!window.confirm(`Wil je '${template.name}' ${action}?`)) {
-        return;
-    }
-
+const applyActive = (template: Template) => {
     router.patch(
         update(template.id).url,
         {
@@ -117,16 +112,28 @@ const toggleActive = (template: Template) => {
     );
 };
 
-const deleteTemplate = (template: Template) => {
-    if (
-        !window.confirm(
-            `Weet je zeker dat je '${template.name}' wilt verwijderen?`,
-        )
-    ) {
-        return;
-    }
-
-    router.delete(destroy(template.id).url, { preserveScroll: true });
+const templateToDelete = ref<Template | null>(null);
+const templateToToggle = ref<Template | null>(null);
+const deleting = ref(false);
+const deleteTemplate = () => {
+    if (!templateToDelete.value || deleting.value) return;
+    router.delete(destroy(templateToDelete.value.id).url, {
+        preserveScroll: true,
+        onStart: () => {
+            deleting.value = true;
+        },
+        onFinish: () => {
+            deleting.value = false;
+        },
+        onSuccess: () => {
+            templateToDelete.value = null;
+        },
+    });
+};
+const confirmToggle = () => {
+    if (!templateToToggle.value) return;
+    applyActive(templateToToggle.value);
+    templateToToggle.value = null;
 };
 </script>
 
@@ -160,8 +167,13 @@ const deleteTemplate = (template: Template) => {
                             v-model="form.name"
                             required
                             placeholder="Bijvoorbeeld: Storing opgelost"
+                            :aria-invalid="Boolean(form.errors.name)"
+                            aria-describedby="checklist-name-error"
                         />
-                        <InputError :message="form.errors.name" />
+                        <InputError
+                            id="checklist-name-error"
+                            :message="form.errors.name"
+                        />
                     </div>
 
                     <div class="grid gap-2">
@@ -173,7 +185,10 @@ const deleteTemplate = (template: Template) => {
                             type="number"
                             required
                         />
-                        <InputError :message="form.errors.sort_order" />
+                        <InputError
+                            id="checklist-sort_order-error"
+                            :message="form.errors.sort_order"
+                        />
                     </div>
 
                     <div class="space-y-3 rounded-lg border p-4">
@@ -320,7 +335,7 @@ const deleteTemplate = (template: Template) => {
                             <Button
                                 size="sm"
                                 variant="outline"
-                                @click="toggleActive(template)"
+                                @click="templateToToggle = template"
                                 ><Power />
                                 {{
                                     template.is_active
@@ -332,7 +347,7 @@ const deleteTemplate = (template: Template) => {
                                 v-if="!template.is_active"
                                 size="sm"
                                 variant="destructive"
-                                @click="deleteTemplate(template)"
+                                @click="templateToDelete = template"
                                 ><Trash2 /> Verwijderen</Button
                             >
                         </div>
@@ -349,5 +364,23 @@ const deleteTemplate = (template: Template) => {
                 </div>
             </CardContent>
         </Card>
+        <ConfirmDeleteDialog
+            :open="Boolean(templateToDelete)"
+            @update:open="!$event && (templateToDelete = null)"
+            title="Checklist-item verwijderen"
+            :description="`Wil je '${templateToDelete?.name ?? ''}' verwijderen? Bestaande storingen houden hun checklist.`"
+            :processing="deleting"
+            @confirm="deleteTemplate"
+        />
+        <ConfirmDeleteDialog
+            :open="Boolean(templateToToggle)"
+            @update:open="!$event && (templateToToggle = null)"
+            title="Checklist-item wijzigen"
+            :description="`Wil je '${templateToToggle?.name ?? ''}' ${templateToToggle?.is_active ? 'deactiveren' : 'activeren'}? Dit geldt voor nieuwe storingen.`"
+            :confirm-label="
+                templateToToggle?.is_active ? 'Deactiveren' : 'Activeren'
+            "
+            @confirm="confirmToggle"
+        />
     </div>
 </template>

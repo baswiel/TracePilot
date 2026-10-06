@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,7 +39,7 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Profiel bijgewerkt.']);
 
         return to_route('profile.edit');
     }
@@ -50,8 +51,11 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        Auth::logout();
+        if ($user->createdIssues()->exists()) {
+            throw ValidationException::withMessages(['password' => 'Je account kan niet worden verwijderd zolang het aangemaakte storingen heeft.']);
+        }
 
+        Auth::logout();
         $user->delete();
 
         $request->session()->invalidate();

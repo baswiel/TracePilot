@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\IssuePriority;
 use App\Enums\IssueStatus;
+use App\Models\Customer;
 use App\Models\Issue;
 use App\Models\IssueChecklistItem;
 use App\Models\Project;
@@ -15,6 +16,23 @@ use Tests\TestCase;
 class IssueIndexTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_current_customer_name_is_used_in_detail_options_and_export(): void
+    {
+        $user = User::factory()->create();
+        $customer = Customer::factory()->create(['name' => 'Actuele klant']);
+        $project = Project::factory()->create(['customer_id' => $customer->id, 'customer_name' => 'Oude klant']);
+        $issue = Issue::factory()->for($project)->create();
+
+        $this->actingAs($user)->asInertiaRequest()->get(route('issues.show', $issue))
+            ->assertJsonPath('props.issue.project.customer_name', 'Actuele klant')
+            ->assertJsonPath('props.reportIssueOptions.projects.0.customer_name', 'Actuele klant');
+        $this->get(route('issues.report'))->assertJsonPath('props.projects.0.customer_name', 'Actuele klant');
+        $this->flushHeaders();
+        $content = $this->get(route('issues.export'))->streamedContent();
+        $this->assertStringContainsString('Actuele klant', $content);
+        $this->assertStringNotContainsString('Oude klant', $content);
+    }
 
     public function test_it_prioritizes_active_issues_before_completed_issues(): void
     {

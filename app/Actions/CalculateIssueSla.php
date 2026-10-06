@@ -17,15 +17,13 @@ class CalculateIssueSla
     {
         $now ??= now();
         $target = $issue->project->slaLevel
-            ?->targets()
-            ->where('priority', $issue->priority)
-            ->first();
+            ?->targets->firstWhere('priority', $issue->priority);
         $responseMinutes = $issue->project->sla_level_id === null
             ? $issue->project->sla_first_response_minutes
-            : $target->response_minutes;
+            : $target?->response_minutes;
         $resolutionMinutes = $issue->project->sla_level_id === null
             ? $issue->project->sla_resolution_minutes
-            : $target->resolution_minutes;
+            : $target?->resolution_minutes;
         $response = $this->milestone(
             $issue->reported_at,
             $responseMinutes,

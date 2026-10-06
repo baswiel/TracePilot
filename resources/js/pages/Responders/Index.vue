@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PagePagination from '@/components/PagePagination.vue';
+import type { Paginated } from '@/types/pagination';
 import { Head, Link } from '@inertiajs/vue3';
 import { CircleUserRound, FolderKanban } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +30,7 @@ type Responder = {
     projects: Project[];
 };
 
-defineProps<{ responders: Responder[] }>();
+defineProps<{ responders: Paginated<Responder> }>();
 
 defineOptions({
     layout: {
@@ -55,8 +57,8 @@ defineOptions({
             </p>
         </section>
 
-        <div v-if="responders.length" class="grid gap-5 lg:grid-cols-2">
-            <Card v-for="responder in responders" :key="responder.id">
+        <div v-if="responders.data.length" class="grid gap-5 lg:grid-cols-2">
+            <Card v-for="responder in responders.data" :key="responder.id">
                 <CardHeader class="border-b">
                     <div class="flex items-start gap-3">
                         <div
@@ -132,5 +134,6 @@ defineOptions({
                 </p>
             </CardContent>
         </Card>
+        <PagePagination :page="responders" />
     </div>
 </template>

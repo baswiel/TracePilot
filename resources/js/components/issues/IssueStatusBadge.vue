@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { IssueStatus } from '@/types/issues';
 import { computed } from 'vue';
 
 const props = defineProps<{
-    status: 'open' | 'handling' | 'completed';
+    status: IssueStatus;
 }>();
 
 const display = computed(() => {

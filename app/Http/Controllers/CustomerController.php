@@ -16,7 +16,7 @@ class CustomerController extends Controller
     {
         $this->authorize('viewAny', Customer::class);
 
-        return Inertia::render('Customers/Index', ['customers' => Customer::query()->withCount('projects')->orderBy('name')->get()]);
+        return Inertia::render('Customers/Index', ['customers' => Customer::query()->withCount('projects')->orderBy('name')->paginate(20)->withQueryString()->through(fn (Customer $customer): array => ['id' => $customer->id, 'name' => $customer->name, 'projects_count' => $customer->projects_count])]);
     }
 
     public function store(StoreCustomerRequest $request): RedirectResponse
@@ -42,8 +42,9 @@ class CustomerController extends Controller
                         ->where('status', '!=', IssueStatus::Completed->value),
                 ])
                 ->orderBy('name')
-                ->get()
-                ->map(fn ($project): array => [
+                ->paginate(20)
+                ->withQueryString()
+                ->through(fn ($project): array => [
                     'id' => $project->id,
                     'name' => $project->name,
                     'is_active' => $project->is_active,

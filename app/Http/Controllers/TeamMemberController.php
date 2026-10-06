@@ -19,8 +19,9 @@ class TeamMemberController extends Controller
             'teamMembers' => TeamMember::query()
                 ->withCount('assignedIssues')
                 ->orderBy('name')
-                ->get()
-                ->map(fn (TeamMember $teamMember): array => [
+                ->paginate(20)
+                ->withQueryString()
+                ->through(fn (TeamMember $teamMember): array => [
                     'id' => $teamMember->id,
                     'name' => $teamMember->name,
                     'email' => $teamMember->email,

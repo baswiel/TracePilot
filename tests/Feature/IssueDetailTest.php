@@ -2,16 +2,21 @@
 
 namespace Tests\Feature;
 
+use App\Actions\StoreIssueTimelineEntry;
+use App\Actions\UpdateIssuePostmortem;
 use App\Enums\IssuePriority;
 use App\Enums\IssueStatus;
 use App\Models\Issue;
+use App\Models\IssueActivity;
 use App\Models\IssueChecklistItem;
+use App\Models\PostmortemActionItem;
 use App\Models\Project;
 use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Tests\TestCase;
 
 class IssueDetailTest extends TestCase
@@ -219,6 +224,7 @@ class IssueDetailTest extends TestCase
                 'team_member_id' => $assignee->id,
                 'knowledge_base_recorded' => true,
                 'is_trend' => true,
+                'reported_at' => $issue->reported_at->toDateTimeString(),
             ])
             ->assertRedirect(route('issues.show', $issue));
 
@@ -237,6 +243,36 @@ class IssueDetailTest extends TestCase
             'action' => 'issue_updated',
             'description' => 'Issuegegevens bijgewerkt.',
         ]);
+    }
+
+    public function test_editing_details_preserves_existing_milestone_timestamps(): void
+    {
+        $user = User::factory()->create();
+        $issue = Issue::factory()->create([
+            'reported_at' => '2026-09-28 10:15:00',
+            'first_responded_at' => '2026-09-28 10:24:00',
+            'resolved_at' => '2026-09-28 11:48:00',
+        ]);
+
+        $this->actingAs($user)->asInertiaRequest()->get(route('issues.show', $issue))
+            ->assertJsonPath('props.issue.first_responded_at', '2026-09-28 10:24:00')
+            ->assertJsonPath('props.issue.resolved_at', '2026-09-28 11:48:00');
+
+        $this->put(route('issues.update', $issue), [
+            'title' => 'Bijgewerkte titel',
+            'description' => $issue->description,
+            'priority' => $issue->priority->value,
+            'knowledge_base_recorded' => false,
+            'is_trend' => false,
+            'reported_at' => '2026-09-28T10:15',
+            'first_responded_at' => '2026-09-28T10:24',
+            'resolved_at' => '2026-09-28T11:48',
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        $issue->refresh();
+        $this->assertTrue($issue->first_responded_at->equalTo('2026-09-28 10:24:00'));
+        $this->assertTrue($issue->resolved_at->equalTo('2026-09-28 11:48:00'));
+        $this->assertSame(['title'], $issue->activities()->sole()->metadata['changed_fields']);
     }
 
     public function test_updating_issue_details_validates_the_input(): void
@@ -306,7 +342,7 @@ class IssueDetailTest extends TestCase
     public function test_a_user_can_save_a_postmortem_with_owned_action_items(): void
     {
         $user = User::factory()->create();
-        $issue = Issue::factory()->create();
+        $issue = Issue::factory()->create(['postmortem_required' => true]);
         $owner = TeamMember::factory()->create(['name' => 'Jamie Smit']);
 
         $this->actingAs($user)
@@ -332,8 +368,8 @@ class IssueDetailTest extends TestCase
             'issue_postmortem_id' => $postmortem->id,
             'title' => 'Voeg een regressietest voor cache-invalidering toe',
             'owner_team_member_id' => $owner->id,
-            'due_date' => '2026-09-30',
         ]);
+        $this->assertSame('2026-09-30', $postmortem->actionItems->sole()->due_date->toDateString());
         $this->assertDatabaseHas('issue_activities', [
             'issue_id' => $issue->id,
             'user_id' => $user->id,
@@ -371,6 +407,96 @@ class IssueDetailTest extends TestCase
             'action' => 'checklist_item_not_applicable',
             'description' => "Checklist-item '{$postmortemItem->name}' gemarkeerd als niet van toepassing.",
         ]);
+    }
+
+    public function test_attachment_download_rejects_another_issue_and_missing_files(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create();
+        $issue = Issue::factory()->create();
+        $other = Issue::factory()->create();
+        $activity = IssueActivity::factory()->for($issue)->create([
+            'metadata' => ['attachment' => ['path' => 'missing.txt', 'name' => 'missing.txt']],
+        ]);
+        $this->actingAs($user)->get(route('issues.timeline.attachment.download', [$other, $activity]))->assertNotFound();
+        $this->get(route('issues.timeline.attachment.download', [$issue, $activity]))->assertNotFound();
+    }
+
+    public function test_invalid_or_oversized_attachments_are_rejected(): void
+    {
+        Storage::fake('local');
+        $issue = Issue::factory()->create();
+        $this->actingAs(User::factory()->create());
+        foreach ([UploadedFile::fake()->create('program.exe', 1, 'application/x-msdownload'), UploadedFile::fake()->create('large.pdf', 10241, 'application/pdf')] as $file) {
+            $this->post(route('issues.timeline.store', $issue), ['type' => 'comment', 'body' => 'Bijlage', 'attachment' => $file])
+                ->assertSessionHasErrors('attachment');
+        }
+        $this->assertDatabaseCount('issue_activities', 0);
+        $this->assertSame([], Storage::disk('local')->allFiles());
+    }
+
+    public function test_failed_activity_storage_removes_the_uploaded_attachment(): void
+    {
+        Storage::fake('local');
+        $issue = Issue::factory()->create();
+        $user = User::factory()->create();
+        IssueActivity::creating(function (): void {
+            throw new RuntimeException('Opslag mislukt.');
+        });
+        try {
+            try {
+                app(StoreIssueTimelineEntry::class)->handle($issue, $user, ['type' => 'comment', 'body' => 'Bijlage'], UploadedFile::fake()->create('note.txt', 1, 'text/plain'));
+                $this->fail('Opslag had moeten mislukken.');
+            } catch (RuntimeException $exception) {
+                $this->assertSame('Opslag mislukt.', $exception->getMessage());
+            }
+        } finally {
+            IssueActivity::flushEventListeners();
+        }
+        $this->assertDatabaseCount('issue_activities', 0);
+        $this->assertSame([], Storage::disk('local')->allFiles());
+    }
+
+    public function test_postmortem_rejects_action_items_from_another_issue(): void
+    {
+        $actor = User::factory()->create();
+        $issue = Issue::factory()->create(['postmortem_required' => true]);
+        $other = Issue::factory()->create(['postmortem_required' => true]);
+        $postmortem = app(UpdateIssuePostmortem::class)->handle($other, $actor, [
+            'root_cause' => 'Oorzaak', 'impact' => 'Impact',
+            'action_items' => [['title' => 'Actie', 'is_completed' => false]],
+        ]);
+        $this->actingAs($actor)->put(route('issues.postmortem.update', $issue), [
+            'root_cause' => 'Wijziging', 'impact' => 'Impact',
+            'action_items' => [['id' => $postmortem->actionItems->sole()->id, 'title' => 'Gewijzigd', 'is_completed' => false]],
+        ])->assertSessionHasErrors('action_items.0.id');
+        $this->assertNull($issue->refresh()->postmortem);
+        $this->assertSame('Actie', $postmortem->actionItems->sole()->refresh()->title);
+    }
+
+    public function test_failed_postmortem_action_storage_rolls_back_all_changes(): void
+    {
+        $actor = User::factory()->create();
+        $issue = Issue::factory()->create(['postmortem_required' => true]);
+        PostmortemActionItem::creating(function (): void {
+            throw new RuntimeException('Actieopslag mislukt.');
+        });
+        try {
+            try {
+                app(UpdateIssuePostmortem::class)->handle($issue, $actor, [
+                    'root_cause' => 'Oorzaak', 'impact' => 'Impact',
+                    'action_items' => [['title' => 'Actie', 'is_completed' => false]],
+                ]);
+                $this->fail('Opslag had moeten mislukken.');
+            } catch (RuntimeException $exception) {
+                $this->assertSame('Actieopslag mislukt.', $exception->getMessage());
+            }
+        } finally {
+            PostmortemActionItem::flushEventListeners();
+        }
+        $this->assertDatabaseCount('issue_postmortems', 0);
+        $this->assertDatabaseCount('postmortem_action_items', 0);
+        $this->assertDatabaseCount('issue_activities', 0);
     }
 
     /**

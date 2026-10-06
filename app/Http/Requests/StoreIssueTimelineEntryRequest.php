@@ -15,6 +15,12 @@ class StoreIssueTimelineEntryRequest extends FormRequest
         return $issue instanceof Issue && $this->user()?->can('update', $issue) === true;
     }
 
+    /** @return array{type: string, body: string, mention_ids: array<int>} */
+    public function timelineAttributes(): array
+    {
+        return ['type' => $this->validated('type'), 'body' => $this->validated('body'), 'mention_ids' => $this->validated('mention_ids') ?? []];
+    }
+
     /**
      * @return array<string, array<int, mixed>>
      */

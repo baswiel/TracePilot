@@ -1,17 +1,9 @@
 <script setup lang="ts">
+import { slaTone } from '@/lib/issues';
+import type { SlaMilestone } from '@/types/issues';
 import { computed } from 'vue';
 
-type Milestone = {
-    state:
-        | 'unavailable'
-        | 'on_track'
-        | 'at_risk'
-        | 'overdue'
-        | 'met'
-        | 'breached';
-    label: string;
-    remaining_minutes: number | null;
-};
+type Milestone = Pick<SlaMilestone, 'state' | 'label' | 'remaining_minutes'>;
 
 const props = defineProps<{ response: Milestone; resolution: Milestone }>();
 
@@ -33,14 +25,7 @@ const display = computed(() => {
               : `${Math.floor(absolute / 60)} u ${absolute % 60} min`;
 
     return {
-        class: {
-            unavailable: 'border-slate-200 bg-slate-50 text-slate-700',
-            on_track: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-            at_risk: 'border-orange-200 bg-orange-50 text-orange-700',
-            overdue: 'border-red-200 bg-red-50 text-red-700',
-            met: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-            breached: 'border-red-200 bg-red-50 text-red-700',
-        }[milestone.value.state],
+        class: slaTone(milestone.value.state),
         label: milestone.value.label,
         time:
             minutes === null

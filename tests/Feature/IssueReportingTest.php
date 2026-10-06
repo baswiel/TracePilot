@@ -2,15 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Actions\CalculateIssueSla;
 use App\Actions\CreateIssue;
+use App\Actions\SyncIssueStatus;
 use App\Enums\IssuePriority;
 use App\Enums\IssueStatus;
-use App\Actions\CalculateIssueSla;
 use App\Models\Issue;
 use App\Models\IssueChecklistTemplate;
 use App\Models\Project;
 use App\Models\TeamMember;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
@@ -238,9 +240,9 @@ class IssueReportingTest extends TestCase
         $project = Project::factory()->create();
         $creator = User::factory()->create();
         IssueChecklistTemplate::factory()->create();
-        $createIssue = new class extends CreateIssue
+        $createIssue = new class(app(SyncIssueStatus::class)) extends CreateIssue
         {
-            protected function createChecklistItems(Issue $issue, Collection $templates): void
+            protected function createChecklistItems(Issue $issue, Collection $templates, User $actor, array $completedTemplateIds, ?CarbonInterface $completedAt): void
             {
                 throw new RuntimeException('Checklist kan niet worden opgeslagen.');
             }

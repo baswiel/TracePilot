@@ -37,6 +37,8 @@
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
 
+    --color-success: var(--tracepilot-success);
+    --color-warning: var(--tracepilot-warning);
     --color-destructive: var(--destructive);
     --color-destructive-foreground: var(--destructive-foreground);
 

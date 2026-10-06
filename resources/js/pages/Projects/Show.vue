@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import type { IssuePriority, IssueStatus } from '@/types/issues';
+import { formatDate } from '@/lib/dates';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { AlertCircle, FileText, Pencil, Plus } from '@lucide/vue';
 import { ref } from 'vue';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import IssuePriorityBadge from '@/components/issues/IssuePriorityBadge.vue';
 import IssueStatusBadge from '@/components/issues/IssueStatusBadge.vue';
 import { Badge } from '@/components/ui/badge';
@@ -20,8 +23,8 @@ import projectRoutes, { edit, index } from '@/routes/projects';
 type Issue = {
     id: number;
     title: string;
-    priority: 'p1' | 'p2' | 'p3' | 'p4';
-    status: 'open' | 'handling' | 'completed';
+    priority: IssuePriority;
+    status: IssueStatus;
     reported_at: string;
     completed_at: string | null;
     duration_minutes: number | null;
@@ -36,7 +39,7 @@ type Project = {
         id: number;
         name: string;
         targets: Array<{
-            priority: 'p1' | 'p2' | 'p3' | 'p4';
+            priority: IssuePriority;
             response_minutes: number;
             resolution_minutes: number;
         }>;
@@ -67,16 +70,16 @@ defineOptions({
     },
 });
 
+const confirmArchive = ref(false);
 const setActive = () => {
-    if (
-        props.project.is_active &&
-        !window.confirm(
-            `Wil je '${props.project.name}' archiveren? Nieuwe storingen kunnen dan niet meer aan dit project worden gekoppeld.`,
-        )
-    ) {
+    if (props.project.is_active) {
+        confirmArchive.value = true;
         return;
     }
-
+    applyActive();
+};
+const applyActive = () => {
+    confirmArchive.value = false;
     router.patch(
         projectRoutes.active.update(props.project.id).url,
         { is_active: !props.project.is_active },
@@ -91,12 +94,6 @@ const setActive = () => {
         },
     );
 };
-
-const formatDate = (value: string) =>
-    new Intl.DateTimeFormat('nl-NL', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    }).format(new Date(value));
 
 const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
@@ -449,5 +446,13 @@ const formatDuration = (minutes: number) => {
                 </CardContent>
             </Card>
         </section>
+        <ConfirmDeleteDialog
+            v-model:open="confirmArchive"
+            title="Project archiveren"
+            :description="`Wil je '${project.name}' archiveren? Nieuwe storingen kunnen dan niet meer aan dit project worden gekoppeld.`"
+            confirm-label="Archiveren"
+            :processing="isUpdatingActive"
+            @confirm="applyActive"
+        />
     </div>
 </template>

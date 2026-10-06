@@ -60,12 +60,12 @@ Dit is de roadmap voor het huidige interne storingenproduct. [PRODUCT.md](PRODUC
 **Afhankelijk van:** fase 2 en incidentregels. **Resultaat:** actuele en historische storingen zijn betrouwbaar te registreren en te corrigeren.
 
 - [x] **Normale melding:** actief project, titel, `p1`–`p4`, meldtijd en optionele omschrijving zijn gevalideerd; `CreateIssue` schrijft issue, checklistkopie en activiteit atomair; UI en Feature-tests bestaan (PRODUCT.md §4.2).
-- [ ] **Historische melding conform huidige Definition of Done:**
+- [x] **Historische melding conform huidige Definition of Done:**
     - [x] Backend/UI voor reactie-/oplostijd, status, oplossing, oorzaak, notitie en checklistselectie, met validatie en rollbacktest, zijn aanwezig (PRODUCT.md §4.2).
-    - [ ] Herstel de mislukte `IssueReportingTest` voor historische `first_response_recorded.created_at`: activiteit gebruikt nu registratietijd in plaats van verwachte gebeurtenistijd; bewaak SLA en tijdlijn samen (PRODUCT.md §4.2).
-- [ ] **Detail en bijwerken conform huidige Definition of Done:**
+    - [x] Historische `first_response_recorded.created_at` bewaart de gebeurtenistijd; tijdlijn en SLA zijn samen getest (PRODUCT.md §4.2).
+- [x] **Detail en bijwerken conform huidige Definition of Done:**
     - [x] Formulier/server voor titel, omschrijving, prioriteit, behandelaar, vlaggen en mijlpaaltijden, idempotente activiteit en eenmalige eerste reactie bestaan (PRODUCT.md §4.2).
-    - [ ] Herstel de mislukte `IssueDetailTest`: detailupdate bewaart de ingezonden titel, omschrijving, behandelaar en vlaggen momenteel niet zoals getest; onderzoek request/action/redirect en test de volledige bewerkflow opnieuw.
+    - [x] Detailupdate bewaart titel, omschrijving, behandelaar, vlaggen en mijlpaaltijden; de volledige request/action-flow is getest.
 - [ ] **Correcties en audit sluitend:**
     - [x] `UpdateIssueRequest` valideert tijdsvolgorde; `issue_updated` schrijft gewijzigde veldnamen.
     - [ ] Trek na besluit `UpdateIssueDetails`-contract, UI, historie en SLA-weergave gelijk; bewaar oude/nieuwe waarde, actor en reden waar vereist; test terugzetten en tijdscorrecties (PRODUCT.md §Geconstateerde inconsistenties I2).
@@ -79,12 +79,12 @@ Dit is de roadmap voor het huidige interne storingenproduct. [PRODUCT.md](PRODUC
 - [x] **Templates/snapshots:** beheren/verplaatsen/deactiveren, minstens één actief verplicht item, hoogstens één oplossingsmarker; alleen nieuwe storingen kopiëren actieve templates (PRODUCT.md §4.3).
 - [x] **Checklistmutatie:** voltooien, heropenen, n.v.t.; parent-issue binding, atomaire opslag, idempotentie, actor en statusovergangen zijn getest (PRODUCT.md §4.3).
 - [x] **Tijdlijn/bijlage:** opmerkingen/besluiten met teamlidvermelding, private bijlage met type-/groottevalidatie en geautoriseerde downloadroute bestaan (PRODUCT.md §4.4).
-- [ ] **Postmortemopslag conform huidige Definition of Done:**
+- [x] **Postmortemopslag conform huidige Definition of Done:**
     - [x] Oorzaak, impact, maximaal twintig vervangbare actiepunten, UI, routeguard en Feature-test bestaan (PRODUCT.md §4.4).
-    - [ ] Herstel de actuele `IssueDetailTest`-regressie: postmortemopslag retourneert 404 in plaats van een succesvolle redirect; test routebinding, voorwaarden en eigenaarschap opnieuw.
+    - [x] Postmortemtest gebruikt de vereiste vlag; routevoorwaarden, vreemde actiepunten en rollback zijn getest.
 - [ ] **Statusinvariant voor elke checklist:**
     - [x] `open` → `handling` → `completed` en heropenen zijn geïmplementeerd.
-    - [ ] Trek `CreateIssue::statusFor` en `SyncIssueStatus` gelijk voor nul verplichte items/legacy-snapshots; test overgangen, n.v.t. van oplossing en concurrentie volgens besluit (PRODUCT.md §Geconstateerde inconsistenties I3; ARCHITECTURE.md §21).
+    - [ ] Maak de gedeelde `SyncIssueStatus::determineStatus`-berekening uniform voor nul verplichte items/legacy-snapshots; test overgangen, n.v.t. van oplossing en concurrentie volgens besluit (PRODUCT.md §Geconstateerde inconsistenties I3; ARCHITECTURE.md §21).
 - [ ] **Postmortemstap zonder naamherkenning:** vervang naamzoekactie in oplosactie/CSV door gekozen expliciete marker, met migratie voor oude snapshots; test hernoemde/vertaalde templates. Maak ‘verstuurd’ alleen een echte status na verzendbesluit (PRODUCT.md §Geconstateerde inconsistenties I4).
 - [ ] **Levenscyclus bij heropenen:** laat `postmortem_required`, bestaande `IssuePostmortem`, UI en n.v.t.-stap gekozen beleid volgen; test heropenen, opnieuw oplossen en bestaande actiepunten (PRODUCT.md §Geconstateerde inconsistenties I8).
 - [ ] **Actiepunten/verzending indien besloten:** voeg blocking/voortgang of een echte verzendflow inclusief ontvanger, afleverstatus, foutpad en idempotentie toe volgens gekozen productregel (PRODUCT.md §Open vragen 11–12; ARCHITECTURE.md §14).
@@ -99,7 +99,7 @@ Dit is de roadmap voor het huidige interne storingenproduct. [PRODUCT.md](PRODUC
 - [ ] **Seeddoelen corrigeren/duiden:** gezaaide ‘werkdag’ van 1.440 minuten duurt bij 09:00–17:00 drie werkdagen; pas na contractbesluit seed, UI-uitleg, bestaande data en tests aan (PRODUCT.md §Geconstateerde inconsistenties I6).
 - [ ] **Historisch SLA-beleid:** snapshot doelen/werkuren op meldmoment óf maak herberekening van oude issues expliciet; test project-/niveau-/urenwijziging na een melding (PRODUCT.md §Open vragen 13).
 - [ ] **Tijdzone/kalender:** definieer invoer-/weergavetijdzone; voeg gekozen feestdagen/projecturen toe met configuratie, tests rond daggrenzen/DST en passende demo-data (PRODUCT.md §Open vragen 14; ARCHITECTURE.md §15).
-- [ ] **Atomaire niveauwijziging:** behoud transactie voor prioriteitsdoelen; overweeg Action bij onderhoud aan `SlaLevelController` en test rollback met gekoppelde projecten (ARCHITECTURE.md §4.3, §22).
+- [x] **Atomaire niveauwijziging:** `SaveSlaLevel` slaat niveau en doelen in één transactie op, lockt updates en heeft een rollbacktest (ARCHITECTURE.md §4.3).
 
 ## Fase 6 — Dagelijks overzicht, rapporten en export
 
@@ -109,7 +109,7 @@ Dit is de roadmap voor het huidige interne storingenproduct. [PRODUCT.md](PRODUC
 - [x] **Storingsoverzicht:** zoeken/filteren/sorteren via toegestane velden, paginering en CSV van gefilterde selectie hebben tests (PRODUCT.md §4.6).
 - [x] **Rapportage:** gekozen/rollende periode, projectfilter, vorige periode, volume, prioriteit, oorzaak, trends, tijden en SLA-/projectresultaten hebben tests (PRODUCT.md §4.6).
 - [ ] **Consistente uitvoer:** neem gekozen klantbron, postmortemmarker en historisch-SLA-beleid over in detail, CSV en rapport; test lege/gewijzigde relaties (PRODUCT.md §Geconstateerde inconsistenties I1, I4).
-- [ ] **Schaalgrens:** bepaal volume, stream/chunk CSV en aggregeer of begrens `BuildIssueReport`; test grote selectie, correcte filters en begrensd geheugen (ARCHITECTURE.md §16, §22).
+- [x] **Batchverwerking:** CSV streamt en rapportage aggregeert in batches van 250; regressietests overschrijden een batch en controleren aantallen en uitvoer (ARCHITECTURE.md §16, §22). Productievolumes en geheugen blijven te meten bij grotere uitrol.
 - [ ] **Queryregressie:** query-count-tests voor dashboard, issueoverzicht en rapport; controleer eager loading/indexen en meet gedeelde `HandleInertiaRequests`-queries (ARCHITECTURE.md §16, §21).
 - [ ] **Kernpropcontract:** kies onderhoudbaar schema voor Inertia-props van dashboard/issuedetail en test de server-TS-grens die `vue-tsc` niet bewijst (ARCHITECTURE.md §8.1, §21).
 
@@ -133,9 +133,9 @@ Dit is de roadmap voor het huidige interne storingenproduct. [PRODUCT.md](PRODUC
 
 ## Technische schuld / architectuurconvergentie
 
-- [ ] **`IssueController` bevat postmortemtransactie, bijlageopslag en CSV:** verplaats bij functionele wijziging complexe multi-record-mutaties naar Actions en maak export afzonderlijk toetsbaar; verkleint regressierisico (fasen 4, 6; ARCHITECTURE.md §22).
-- [ ] **Template-invariant leeft in modelhook én Action:** kies één eigenaar of documenteer beide verdedigingslagen met race-/rollbacktest (fase 4; ARCHITECTURE.md §22).
-- [ ] **`SlaLevelController` beheert multi-record-doelen:** verplaats bij fase 5-onderhoud naar Action als dit de transactieregel eenduidig maakt (ARCHITECTURE.md §22).
+- [x] **`IssueController`-workflows:** postmortem en bijlageopslag zijn verplaatst naar Actions; gestreamde CSV is afzonderlijk getest (fasen 4, 6; ARCHITECTURE.md §22).
+- [x] **Template-invariant leeft in modelhook én Action:** beide verdedigingslagen zijn verantwoord in ARCHITECTURE.md §22. Productiedatabase-concurrentietests blijven vervolgwerk.
+- [x] **SLA-doelen:** `SaveSlaLevel` beheert de multi-record-transactie met rollbacktest (ARCHITECTURE.md §22).
 - [ ] **Legacy datacontracten `customer_name`/`customer_id` en `project_team_member`:** productbesluit, veilige migratie en tests zijn nodig vóór opruimen (fase 2; PRODUCT.md §Geconstateerde inconsistenties I1, I5).
 - [ ] **Geen automatische laag-/serverpropbewaking:** voeg alleen concrete architectuur-/contracttests uit fasen 0, 1, 6 toe die regressies ontdekken (ARCHITECTURE.md §21).
 
@@ -145,3 +145,18 @@ Dit is de roadmap voor het huidige interne storingenproduct. [PRODUCT.md](PRODUC
 - [ ] **Voorstel:** klantaccounts of multi-tenancy, alleen met expliciet toegang-/isolatieontwerp en lektests (PRODUCT.md §Rollen en toegang; ARCHITECTURE.md §13).
 - [ ] **Voorstel:** automatische trenddetectie, actiepuntherinneringen of projectgebonden SLA-kalenders, na productbesluit en aangetoonde behoefte (PRODUCT.md §Open vragen 12, 14).
 - [ ] **Voorstel:** directe Google Sheets-, kennisbank- of Storing Log-integratie in plaats van CSV/handmatige vlaggen, na contract- en eigenaarschapsbesluit (PRODUCT.md §5, §Open vragen 18; ARCHITECTURE.md §14).
+
+## Architectuuronderhoud — uitgevoerd op 30 september 2026
+
+- [x] Historische tijdlijnmomenten opslaan en bestaande mijlpaaltijden bij bewerken behouden.
+- [x] SLA-niveau en doelen atomair opslaan met lock en rollbacktest; loaded targets hergebruiken.
+- [x] Actuele klantnaam gebruiken in detail, meldopties en CSV, met legacy fallback.
+- [x] Tijdlijn- en postmortemworkflows naar Actions verplaatsen; bijlage-opruiming en negatieve parent-/bestandstests toevoegen.
+- [x] Projectfilterrequest en werkurenpolicy toevoegen; props beperken en PHP-/Vue-typen aanscherpen.
+- [x] Klant-, team-, responder- en klantprojectlijsten pagineren; CSV, rapportage en SLA-teller in batches verwerken.
+- [x] Issue-details, tijdlijn, postmortem en SLA-weergave extraheren; gedeelde typen en helpers gebruiken.
+- [x] Browserbevestigingen vervangen en veldfouten toegankelijk koppelen; lokale seed- en CI-documentatie corrigeren.
+- [ ] Lege-checkliststatus definitief gelijk trekken na productbesluit. Berekening is gedeeld; bestaand gedrag blijft expliciet behouden.
+- [ ] Eventuele verdere opsplitsing van dashboard en rapportage, een volledige frontend-E2E-gate en concurrentiebewijs op de productiedatabase blijven vervolgwerk.
+
+De behouden toegang-, SLA-, postmortem- en pivotkeuzes staan in PRODUCT.md onder bevestigde onderhoudsbesluiten. Bovenstaande afgeronde technische stappen vervangen oude open onderhoudspunten waar zij hetzelfde werk beschrijven; productuitbreidingen worden hiermee niet toegezegd.

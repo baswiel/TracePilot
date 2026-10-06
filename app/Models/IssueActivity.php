@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['issue_id', 'user_id', 'action', 'description', 'metadata'])]
+/** @property array<string, mixed>|null $metadata */
+#[Fillable(['issue_id', 'user_id', 'action', 'description', 'metadata', 'created_at'])]
 class IssueActivity extends Model
 {
     /** @use HasFactory<IssueActivityFactory> */

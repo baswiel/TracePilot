@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Settings;
 
+use App\Models\Issue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -77,6 +78,16 @@ class ProfileUpdateTest extends TestCase
 
         $this->assertGuest();
         $this->assertNull($user->fresh());
+    }
+
+    public function test_account_with_created_issues_remains_signed_in_when_deletion_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        Issue::factory()->create(['created_by' => $user->id]);
+        $this->actingAs($user)->delete(route('profile.destroy'), ['password' => 'password'])
+            ->assertSessionHasErrors('password');
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotNull($user->fresh());
     }
 
     public function test_correct_password_must_be_provided_to_delete_account()

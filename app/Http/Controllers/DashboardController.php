@@ -48,7 +48,7 @@ class DashboardController extends Controller
                     ->where('is_required', true)
                     ->where('is_completed', true),
             ])
-            ->orderByRaw("case priority when 'p1' then 1 when 'p2' then 2 else 3 end")
+            ->orderByRaw("case priority when 'p1' then 1 when 'p2' then 2 when 'p3' then 3 else 4 end")
             ->orderBy('reported_at')
             ->paginate(15)
             ->withQueryString()
@@ -74,7 +74,7 @@ class DashboardController extends Controller
         $slaAttentionCount = Issue::query()
             ->whereIn('status', [IssueStatus::Open->value, IssueStatus::Handling->value])
             ->with('project.slaLevel.targets')
-            ->get()
+            ->lazyById(250)
             ->filter(fn (Issue $issue): bool => $calculateIssueSla->handle($issue)['needs_attention'])
             ->count();
 
