@@ -95,7 +95,7 @@
     --tracepilot-background: #f6f8fc;
     --tracepilot-surface: #ffffff;
     --tracepilot-border: #dfe5ee;
-    --tracepilot-text-muted: #6e7b93;
+    --tracepilot-text-muted: #64728b;
     --tracepilot-danger: #ef3340;
     --tracepilot-warning: #f58a07;
     --tracepilot-success: #10945a;
@@ -143,8 +143,8 @@
     --card-foreground: #f6f8fc;
     --popover: #142142;
     --popover-foreground: #f6f8fc;
-    --primary: var(--tracepilot-blue);
-    --primary-foreground: #fff;
+    --primary: #79acff;
+    --primary-foreground: #101d3f;
     --secondary: #1b2b51;
     --secondary-foreground: #f6f8fc;
     --muted: #1b2b51;
@@ -163,8 +163,8 @@
     --chart-5: hsl(340 75% 55%);
     --sidebar-background: #101d3f;
     --sidebar-foreground: #f6f8fc;
-    --sidebar-primary: var(--tracepilot-blue);
-    --sidebar-primary-foreground: #fff;
+    --sidebar-primary: #79acff;
+    --sidebar-primary-foreground: #101d3f;
     --sidebar-accent: #1b3262;
     --sidebar-accent-foreground: #dce9ff;
     --sidebar-border: #2a3b61;
@@ -184,7 +184,7 @@
 
 @layer components {
     [data-slot='card'] {
-        box-shadow: 0 12px 32px rgb(16 29 63 / 6%);
+        box-shadow: var(--tracepilot-shadow);
     }
 
     [data-slot='sidebar'] {
@@ -204,5 +204,105 @@
         border-color: var(--ring);
         box-shadow: 0 0 0 3px rgb(18 103 244 / 16%);
         outline: none;
+    }
+}
+
+/* Shared operational states stay readable in both appearance modes. */
+:root {
+    --tracepilot-danger-ink: #c82333;
+    --tracepilot-danger-soft: #fff1f2;
+    --tracepilot-danger-border: #fecdd3;
+    --tracepilot-warning-ink: #a45505;
+    --tracepilot-warning-soft: #fff8eb;
+    --tracepilot-warning-border: #f4d49a;
+    --tracepilot-success-ink: #087449;
+    --tracepilot-success-soft: #ecfdf5;
+    --tracepilot-success-border: #a7e5cc;
+    --tracepilot-shadow: 0 2px 6px rgb(16 29 63 / 3%);
+}
+
+.dark {
+    color-scheme: dark;
+    --tracepilot-danger-ink: #fda4af;
+    --tracepilot-danger-soft: #362338;
+    --tracepilot-danger-border: #643046;
+    --tracepilot-warning-ink: #f8c477;
+    --tracepilot-warning-soft: #332b28;
+    --tracepilot-warning-border: #66503a;
+    --tracepilot-success-ink: #6ee7b7;
+    --tracepilot-success-soft: #153c37;
+    --tracepilot-success-border: #276450;
+    --tracepilot-shadow: 0 2px 6px rgb(0 0 0 / 8%);
+}
+
+@layer base {
+    ::selection {
+        background: var(--accent);
+        color: var(--accent-foreground);
+    }
+    input,
+    textarea {
+        caret-color: var(--primary);
+    }
+    a {
+        text-underline-offset: 3px;
+    }
+}
+
+@layer components {
+    .tone-danger {
+        color: var(--tracepilot-danger-ink);
+        background: var(--tracepilot-danger-soft);
+        border-color: var(--tracepilot-danger-border);
+    }
+    .tone-warning {
+        color: var(--tracepilot-warning-ink);
+        background: var(--tracepilot-warning-soft);
+        border-color: var(--tracepilot-warning-border);
+    }
+    .tone-success {
+        color: var(--tracepilot-success-ink);
+        background: var(--tracepilot-success-soft);
+        border-color: var(--tracepilot-success-border);
+    }
+    [data-slot='sidebar-menu-button'] {
+        transition-duration: 150ms;
+    }
+    [data-slot='sidebar-menu-button'][data-active='true'] {
+        box-shadow: inset 2px 0 0 var(--primary);
+    }
+    table {
+        font-variant-numeric: tabular-nums;
+    }
+    thead {
+        font-size: 0.75rem;
+    }
+    tbody tr {
+        transition: background-color 150ms ease-out;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    tbody tr,
+    [data-slot='sidebar-menu-button'] {
+        transition: none;
+    }
+}
+
+@media (max-width: 1023px) {
+    .summary-copy {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: 1rem;
+        align-items: center;
+    }
+    .summary-value {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        margin-top: 0;
+        font-size: 1.75rem;
+    }
+    .summary-caption {
+        margin-top: 0.25rem;
     }
 }

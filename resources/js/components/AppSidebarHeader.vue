@@ -47,17 +47,19 @@ const activeIssuesCount = computed(() =>
 
 <template>
     <header
-        class="flex h-24 shrink-0 items-center justify-between gap-3 px-5 transition-[width,height] ease-linear md:px-8"
+        class="bg-card sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-3 border-b px-5 md:px-8"
     >
         <div class="flex items-center gap-2">
-            <SidebarTrigger class="-ml-1" />
+            <SidebarTrigger class="-ml-1 size-10" />
             <template v-if="breadcrumbs && breadcrumbs.length > 0">
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </template>
         </div>
         <div class="flex items-center gap-2">
             <Button
-                class="h-11 rounded-lg px-4 shadow-lg shadow-blue-500/15"
+                variant="outline"
+                class="h-10 rounded-lg px-3"
+                aria-label="Storing melden"
                 @click="isReportDialogOpen = true"
             >
                 <Plus />
@@ -112,7 +114,7 @@ const activeIssuesCount = computed(() =>
                                         "
                                     />
                                     <span
-                                        class="truncate font-medium text-[#101d3f]"
+                                        class="text-foreground truncate font-medium"
                                         >{{ notification.title }}</span
                                     >
                                 </div>

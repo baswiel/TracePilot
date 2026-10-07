@@ -2,22 +2,23 @@
 import type { IssuePriority } from '@/types/issues';
 import { formatDate } from '@/lib/dates';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { CheckCircle2, CircleAlert, Clock3 } from '@lucide/vue';
-import { computed, reactive } from 'vue';
+import {
+    ArrowRight,
+    CheckCircle2,
+    CircleAlert,
+    Clock3,
+    Plus,
+    SlidersHorizontal,
+} from '@lucide/vue';
+import { computed, reactive, ref } from 'vue';
 import IssuePriorityBadge from '@/components/issues/IssuePriorityBadge.vue';
 import IssueSlaBadge from '@/components/issues/IssueSlaBadge.vue';
 import IssueStatusBadge from '@/components/issues/IssueStatusBadge.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
-import { report, show } from '@/routes/issues';
+import { index, report, show } from '@/routes/issues';
 
 type Issue = {
     id: number;
@@ -89,13 +90,21 @@ const totalVisibleIssues = computed(
         priorityDistribution.value.p4,
 );
 
-const priorityGradient = computed(() => {
-    const total = totalVisibleIssues.value || 1;
-    const p1 = (priorityDistribution.value.p1 / total) * 100;
-    const p2 = p1 + (priorityDistribution.value.p2 / total) * 100;
+const hasFilters = computed(() =>
+    Object.values(props.filters).some((value) => value !== ''),
+);
 
-    return `conic-gradient(#ef3340 0 ${p1}%, #f58a07 ${p1}% ${p2}%, #76859d ${p2}% 100%)`;
-});
+const filtersExpanded = ref(hasFilters.value);
+
+const clearFilters = () => {
+    Object.assign(filters, {
+        project: '',
+        priority: '',
+        status: '',
+        assigned_to: '',
+    });
+    applyFilters();
+};
 
 const applyFilters = () => {
     router.get(dashboard.url(), filters, {
@@ -118,9 +127,13 @@ const elapsedSince = (value: string) => {
 };
 
 const progressWidth = (issue: Issue) =>
-    issue.checklist_total === 0
+    issue.required_checklist_total === 0
         ? 0
-        : Math.round((issue.checklist_completed / issue.checklist_total) * 100);
+        : Math.round(
+              (issue.required_checklist_completed /
+                  issue.required_checklist_total) *
+                  100,
+          );
 
 defineOptions({
     inheritAttrs: false,
@@ -134,276 +147,283 @@ defineOptions({
     <Head title="Dashboard" />
 
     <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+        class="workspace-page mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
     >
         <section
-            class="flex flex-col gap-4 pt-1 sm:flex-row sm:items-end sm:justify-between"
+            class="order-1 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
         >
-            <div class="space-y-1">
+            <div class="space-y-2">
                 <h1
-                    class="text-[clamp(1.875rem,3vw,2.5rem)] font-semibold tracking-[-0.035em] text-[#101d3f]"
+                    class="text-[clamp(1.875rem,3vw,2.5rem)] font-semibold tracking-[-0.035em]"
                 >
                     Goedemiddag, {{ firstName }}
                 </h1>
-                <p class="text-muted-foreground">
+                <p class="text-muted-foreground text-sm">
                     Dit speelt er momenteel binnen je projecten.
                 </p>
             </div>
             <Button as-child
-                ><Link :href="report()">Storing melden</Link></Button
+                ><Link :href="report()"><Plus /> Storing melden</Link></Button
             >
         </section>
 
-        <section class="grid gap-5 lg:grid-cols-3">
-            <Card
-                class="relative min-h-36 overflow-hidden border-l-4 border-l-red-500 py-0"
-            >
-                <CardContent class="flex items-center gap-5 p-6">
-                    <span
-                        class="grid size-15 shrink-0 place-items-center rounded-full bg-red-50 text-red-500"
-                    >
-                        <CircleAlert class="size-8" />
-                    </span>
-                    <div>
-                        <p class="text-sm font-medium text-[#101d3f]">
-                            Actieve storingen
-                        </p>
-                        <p
-                            class="mt-1 text-4xl font-semibold tracking-[-0.04em] text-red-500"
-                        >
-                            {{ statistics.open }}
-                        </p>
-                        <CardDescription class="mt-1"
-                            >{{
-                                priorityDistribution.p1
-                            }}
-                            kritiek</CardDescription
-                        >
-                    </div>
-                </CardContent>
-            </Card>
-            <Card
-                class="relative min-h-36 overflow-hidden border-l-4 border-l-orange-500 py-0"
-            >
-                <CardContent class="flex items-center gap-5 p-6">
-                    <span
-                        class="grid size-15 shrink-0 place-items-center rounded-full bg-orange-50 text-orange-500"
-                    >
-                        <Clock3 class="size-8" />
-                    </span>
-                    <div>
-                        <p class="text-sm font-medium text-[#101d3f]">
-                            In afhandeling
-                        </p>
-                        <p
-                            class="mt-1 text-4xl font-semibold tracking-[-0.04em] text-orange-500"
-                        >
-                            {{ statistics.handling }}
-                        </p>
-                        <CardDescription class="mt-1"
-                            >Technisch opgelost</CardDescription
-                        >
-                    </div>
-                </CardContent>
-            </Card>
-            <Card
-                class="relative min-h-36 overflow-hidden border-l-4 border-l-emerald-600 py-0"
-            >
-                <CardContent class="flex items-center gap-5 p-6">
-                    <span
-                        class="grid size-15 shrink-0 place-items-center rounded-full bg-emerald-50 text-emerald-600"
-                    >
-                        <CheckCircle2 class="size-8" />
-                    </span>
-                    <div>
-                        <p class="text-sm font-medium text-[#101d3f]">
-                            Afgerond deze maand
-                        </p>
-                        <p
-                            class="mt-1 text-4xl font-semibold tracking-[-0.04em] text-emerald-600"
-                        >
-                            {{ statistics.completed_this_month }}
-                        </p>
-                        <CardDescription class="mt-1"
-                            >Administratief afgerond</CardDescription
-                        >
-                    </div>
-                </CardContent>
-            </Card>
+        <section
+            v-if="statistics.sla_attention"
+            class="tone-warning order-2 flex items-start gap-3 rounded-xl border p-4 lg:order-3"
+            aria-label="SLA-aandacht"
+        >
+            <Clock3 class="mt-0.5 size-5 shrink-0" />
+            <div>
+                <h2 class="text-sm font-semibold">
+                    {{ statistics.sla_attention }}
+                    {{
+                        statistics.sla_attention === 1
+                            ? 'storing vraagt'
+                            : 'storingen vragen'
+                    }}
+                    SLA-aandacht
+                </h2>
+                <p class="mt-1 text-sm">
+                    De reactie- of oplostijd verloopt binnenkort of is al
+                    overschreden. Controleer de SLA bij de storingen hieronder.
+                </p>
+            </div>
         </section>
 
-        <Card class="gap-0 overflow-hidden py-0">
-            <CardHeader
-                class="flex flex-col gap-5 border-b px-6 py-5 lg:flex-row lg:items-center lg:justify-between"
+        <Card class="order-3 gap-0 overflow-hidden py-0 lg:order-4">
+            <div
+                class="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-5 sm:px-6"
             >
                 <div>
-                    <CardTitle class="text-xl text-[#101d3f]"
-                        >Huidige issues</CardTitle
-                    >
-                    <CardDescription>
-                        Storingen die nog aandacht nodig hebben.
-                    </CardDescription>
+                    <h2 class="text-lg font-semibold tracking-tight">
+                        Werkvoorraad
+                    </h2>
+                    <p class="text-muted-foreground mt-1 text-sm">
+                        Open storingen en nazorg, op volgorde van prioriteit.
+                    </p>
                 </div>
-                <form
-                    class="grid w-full gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-5"
-                    @submit.prevent="applyFilters"
+                <div class="flex flex-wrap items-center gap-3">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        class="lg:hidden"
+                        :aria-expanded="filtersExpanded"
+                        aria-controls="dashboard-filters"
+                        @click="filtersExpanded = !filtersExpanded"
+                        ><SlidersHorizontal /> Filters</Button
+                    >
+                    <Link
+                        :href="index()"
+                        class="text-primary inline-flex min-h-10 items-center gap-2 text-sm font-medium hover:underline"
+                        >Alle storingen <ArrowRight class="size-4"
+                    /></Link>
+                </div>
+            </div>
+            <form
+                id="dashboard-filters"
+                :class="filtersExpanded ? 'grid' : 'hidden lg:grid'"
+                class="bg-muted/30 grid gap-3 border-b p-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1fr_1fr_1fr_1.2fr_auto]"
+                @submit.prevent="applyFilters"
+            >
+                <div class="grid min-w-0 gap-1.5">
+                    <Label for="project" class="text-muted-foreground text-xs"
+                        >Project</Label
+                    >
+                    <select
+                        id="project"
+                        v-model="filters.project"
+                        class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
+                    >
+                        <option value="">Alle projecten</option>
+                        <option
+                            v-for="project in projects"
+                            :key="project.id"
+                            :value="project.id"
+                        >
+                            {{ project.name }}
+                        </option>
+                    </select>
+                </div>
+                <div class="grid min-w-0 gap-1.5">
+                    <Label for="status" class="text-muted-foreground text-xs"
+                        >Status</Label
+                    >
+                    <select
+                        id="status"
+                        v-model="filters.status"
+                        class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
+                    >
+                        <option value="">Alle statussen</option>
+                        <option value="open">Open</option>
+                        <option value="handling">Afhandeling</option>
+                    </select>
+                </div>
+                <div class="grid min-w-0 gap-1.5">
+                    <Label for="priority" class="text-muted-foreground text-xs"
+                        >Prioriteit</Label
+                    >
+                    <select
+                        id="priority"
+                        v-model="filters.priority"
+                        class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
+                    >
+                        <option value="">Alle prioriteiten</option>
+                        <option value="p1">P1 · Kritiek</option>
+                        <option value="p2">P2 · Hoog</option>
+                        <option value="p3">P3 · Normaal</option>
+                        <option value="p4">P4 · Laag</option>
+                    </select>
+                </div>
+                <div class="grid min-w-0 gap-1.5">
+                    <Label
+                        for="assigned_to"
+                        class="text-muted-foreground text-xs"
+                        >Verantwoordelijke</Label
+                    >
+                    <select
+                        id="assigned_to"
+                        v-model="filters.assigned_to"
+                        class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
+                    >
+                        <option value="">Iedereen</option>
+                        <option
+                            v-for="member in teamMembers"
+                            :key="member.id"
+                            :value="member.id"
+                        >
+                            {{ member.name }}
+                        </option>
+                    </select>
+                </div>
+                <Button type="submit" variant="outline" class="self-end"
+                    ><SlidersHorizontal /> Toepassen</Button
                 >
-                    <div class="grid gap-1">
-                        <Label class="sr-only" for="project">Project</Label>
-                        <select
-                            id="project"
-                            v-model="filters.project"
-                            class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
-                        >
-                            <option value="">Alle projecten</option>
-                            <option
-                                v-for="project in projects"
-                                :key="project.id"
-                                :value="project.id"
-                            >
-                                {{ project.name }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="grid gap-1">
-                        <Label class="sr-only" for="status">Status</Label>
-                        <select
-                            id="status"
-                            v-model="filters.status"
-                            class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
-                        >
-                            <option value="">Alle statussen</option>
-                            <option value="open">Open</option>
-                            <option value="handling">
-                                Opgelost / afhandeling
-                            </option>
-                        </select>
-                    </div>
-                    <div class="grid gap-1">
-                        <Label class="sr-only" for="priority">Prioriteit</Label>
-                        <select
-                            id="priority"
-                            v-model="filters.priority"
-                            class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
-                        >
-                            <option value="">Alle prioriteiten</option>
-                            <option value="p1">P1 · Kritiek</option>
-                            <option value="p2">P2 · Hoog</option>
-                            <option value="p3">P3 · Normaal</option>
-                            <option value="p4">P4 · Laag</option>
-                        </select>
-                    </div>
-                    <div class="grid gap-1">
-                        <Label class="sr-only" for="assigned_to"
-                            >Verantwoordelijke</Label
-                        >
-                        <select
-                            id="assigned_to"
-                            v-model="filters.assigned_to"
-                            class="border-input bg-background h-11 min-w-40 rounded-lg border px-3 text-sm shadow-xs"
-                        >
-                            <option value="">Iedere verantwoordelijke</option>
-                            <option
-                                v-for="teamMember in teamMembers"
-                                :key="teamMember.id"
-                                :value="teamMember.id"
-                            >
-                                {{ teamMember.name }}
-                            </option>
-                        </select>
-                    </div>
-                    <Button type="submit" variant="outline">Toepassen</Button>
-                </form>
-            </CardHeader>
-            <CardContent class="space-y-5 p-0">
-                <div v-if="issues.data.length" class="overflow-x-auto">
-                    <table class="w-full min-w-[850px] text-left text-sm">
-                        <thead class="text-muted-foreground bg-[#fcfdff]">
+            </form>
+            <div
+                v-if="hasFilters"
+                class="flex items-center justify-between border-b px-6 py-2 text-sm"
+            >
+                <p class="text-muted-foreground">
+                    Je bekijkt een gefilterde werkvoorraad.
+                </p>
+                <Button variant="ghost" size="sm" @click="clearFilters"
+                    >Filters wissen</Button
+                >
+            </div>
+            <div v-if="issues.data.length">
+                <p class="text-muted-foreground px-5 pt-3 text-xs lg:hidden">
+                    Schuif de tabel horizontaal voor alle gegevens.
+                </p>
+                <div
+                    class="overflow-x-auto"
+                    tabindex="0"
+                    role="region"
+                    aria-label="Werkvoorraad, horizontaal scrollbaar"
+                >
+                    <table class="w-full min-w-[1000px] text-left text-sm">
+                        <thead class="bg-muted/30 text-muted-foreground">
                             <tr>
-                                <th class="px-6 py-4 font-medium">Project</th>
-                                <th class="px-6 py-4 font-medium">Storing</th>
-                                <th class="px-6 py-4 font-medium">
+                                <th class="px-5 py-3 font-medium">
                                     Prioriteit
                                 </th>
-                                <th class="px-6 py-4 font-medium">Status</th>
-                                <th class="px-6 py-4 font-medium">
+                                <th class="px-5 py-3 font-medium">
+                                    Storing / project
+                                </th>
+                                <th class="px-5 py-3 font-medium">Status</th>
+                                <th class="px-5 py-3 font-medium">
                                     Verantwoordelijke
                                 </th>
-                                <th class="px-6 py-4 font-medium">
-                                    Open sinds
-                                </th>
-                                <th class="px-6 py-4 font-medium">SLA</th>
-                                <th class="px-6 py-4 font-medium">Checklist</th>
-                                <th class="px-6 py-4">
+                                <th class="px-5 py-3 font-medium">SLA</th>
+                                <th class="px-5 py-3 font-medium">Checklist</th>
+                                <th class="px-5 py-3">
                                     <span class="sr-only">Actie</span>
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y">
                             <tr
-                                class="transition-colors hover:bg-[#fafcff]"
                                 v-for="issue in issues.data"
                                 :key="issue.id"
+                                class="hover:bg-muted/40 transition-colors"
                             >
-                                <td class="px-6 py-4">{{ issue.project }}</td>
-                                <td class="max-w-xs px-6 py-4 font-medium">
-                                    {{ issue.title }}
-                                </td>
-                                <td class="px-6 py-4">
+                                <td class="px-5 py-4">
                                     <IssuePriorityBadge
                                         :priority="issue.priority"
                                     />
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="min-w-64 px-5 py-4">
+                                    <Link
+                                        :href="show(issue.id)"
+                                        class="hover:text-primary font-semibold underline-offset-4 hover:underline"
+                                        >{{ issue.title }}</Link
+                                    >
+                                    <p
+                                        class="text-muted-foreground mt-1 text-xs"
+                                    >
+                                        {{ issue.project }} ·
+                                        <span
+                                            :title="
+                                                formatDate(issue.reported_at)
+                                            "
+                                            >{{
+                                                elapsedSince(issue.reported_at)
+                                            }}
+                                            sinds melding</span
+                                        >
+                                    </p>
+                                </td>
+                                <td class="px-5 py-4 whitespace-nowrap">
                                     <IssueStatusBadge :status="issue.status" />
                                 </td>
-                                <td class="text-muted-foreground px-6 py-4">
+                                <td class="text-muted-foreground px-5 py-4">
                                     {{ issue.assigned_to ?? 'Niet toegewezen' }}
                                 </td>
-                                <td
-                                    class="text-muted-foreground px-6 py-4 whitespace-nowrap"
-                                >
-                                    <span
-                                        :title="formatDate(issue.reported_at)"
-                                    >
-                                        {{ elapsedSince(issue.reported_at) }}
-                                        open
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-5 py-4 whitespace-nowrap">
                                     <IssueSlaBadge
                                         :response="issue.sla.response"
                                         :resolution="issue.sla.resolution"
                                     />
                                 </td>
-                                <td
-                                    class="text-muted-foreground px-6 py-4 whitespace-nowrap"
-                                >
-                                    <span class="block text-[#101d3f]"
-                                        >{{ issue.checklist_completed }} van
-                                        {{ issue.checklist_total }}</span
+                                <td class="px-5 py-4 whitespace-nowrap">
+                                    <span class="text-xs tabular-nums"
+                                        >{{
+                                            issue.required_checklist_completed
+                                        }}
+                                        van
+                                        {{ issue.required_checklist_total }}
+                                        verplicht</span
                                     >
                                     <span
-                                        class="mt-1.5 block h-1.5 w-32 overflow-hidden rounded-full bg-[#e4e8ef]"
+                                        class="bg-muted mt-2 block h-1.5 w-24 overflow-hidden rounded-full"
+                                        role="progressbar"
+                                        :aria-valuenow="progressWidth(issue)"
+                                        :aria-valuemin="0"
+                                        :aria-valuemax="100"
+                                        :aria-label="`Verplichte checklist voor ${issue.title}`"
                                         ><span
+                                            class="block h-full rounded-full"
                                             :class="
                                                 issue.status === 'open'
-                                                    ? 'bg-red-500'
-                                                    : 'bg-orange-500'
+                                                    ? 'bg-destructive'
+                                                    : 'bg-warning'
                                             "
                                             :style="{
                                                 width: `${progressWidth(issue)}%`,
                                             }"
-                                            class="block h-full rounded-full"
                                     /></span>
+                                    <span
+                                        class="text-muted-foreground mt-1 block text-xs"
+                                        >{{ issue.checklist_completed }}/{{
+                                            issue.checklist_total
+                                        }}
+                                        totaal</span
+                                    >
                                 </td>
-                                <td class="px-6 py-4 text-right">
-                                    <Button
-                                        class="border-blue-500 text-blue-600 hover:bg-blue-50"
-                                        size="sm"
-                                        variant="outline"
-                                        as-child
-                                        ><Link :href="show(issue.id)"
+                                <td class="px-5 py-4 text-right">
+                                    <Button size="sm" variant="outline" as-child
+                                        ><Link
+                                            :href="show(issue.id)"
+                                            :aria-label="`Bekijk ${issue.title}`"
                                             >Bekijken</Link
                                         ></Button
                                     >
@@ -412,127 +432,171 @@ defineOptions({
                         </tbody>
                     </table>
                 </div>
-                <div
-                    v-else
-                    class="flex flex-col items-center gap-2 px-5 py-12 text-center"
-                >
-                    <CheckCircle2 class="text-muted-foreground size-6" />
-                    <p class="text-sm font-medium">Geen huidige issues</p>
-                    <p class="text-muted-foreground text-sm">
-                        Er zijn geen open storingen of openstaande nazorgacties
-                        voor deze filters.
+            </div>
+            <div
+                v-else
+                class="flex flex-col items-center gap-3 px-5 py-14 text-center"
+            >
+                <span
+                    class="grid size-12 place-items-center rounded-full"
+                    :class="
+                        hasFilters
+                            ? 'bg-muted text-muted-foreground'
+                            : 'tone-success'
+                    "
+                    ><CheckCircle2 class="size-6"
+                /></span>
+                <div>
+                    <h3 class="font-semibold">
+                        {{
+                            hasFilters
+                                ? 'Geen storingen voor deze filters'
+                                : 'Je werkvoorraad is bijgewerkt'
+                        }}
+                    </h3>
+                    <p class="text-muted-foreground mt-2 max-w-md text-sm">
+                        {{
+                            hasFilters
+                                ? 'Pas de filters aan om andere storingen en nazorg te bekijken.'
+                                : 'Er zijn geen open storingen of openstaande nazorgacties. Afgeronde meldingen vind je in het storingenoverzicht.'
+                        }}
                     </p>
                 </div>
-
-                <nav
-                    v-if="issues.last_page > 1"
-                    class="flex flex-wrap justify-end gap-1 px-6 pb-6"
-                    aria-label="Paginering"
+                <Button
+                    v-if="hasFilters"
+                    variant="outline"
+                    @click="clearFilters"
+                    >Filters wissen</Button
                 >
-                    <template v-for="link in issues.links" :key="link.label">
-                        <Button
+                <Button v-else variant="outline" as-child
+                    ><Link :href="index()"
+                        >Afgeronde storingen bekijken
+                        <ArrowRight class="size-4" /></Link
+                ></Button>
+            </div>
+            <nav
+                v-if="issues.last_page > 1"
+                class="flex flex-wrap items-center justify-between gap-3 border-t px-6 py-4"
+                aria-label="Paginering"
+            >
+                <span class="text-muted-foreground text-xs"
+                    >Pagina {{ issues.current_page }} van
+                    {{ issues.last_page }}</span
+                >
+                <div class="flex flex-wrap gap-1">
+                    <template v-for="link in issues.links" :key="link.label"
+                        ><Button
                             v-if="link.url"
                             size="sm"
                             :variant="link.active ? 'default' : 'outline'"
                             as-child
-                        >
-                            <Link :href="link.url" v-html="link.label" />
-                        </Button>
-                    </template>
-                </nav>
-            </CardContent>
+                            ><Link
+                                :href="link.url"
+                                :aria-current="link.active ? 'page' : undefined"
+                                v-html="link.label" /></Button
+                    ></template>
+                </div>
+            </nav>
         </Card>
 
-        <section class="grid gap-5 lg:grid-cols-2">
-            <Card class="min-h-52 py-0">
-                <CardContent class="p-6">
-                    <h2
-                        class="text-lg font-semibold tracking-tight text-[#101d3f]"
-                    >
-                        Verdeling op prioriteit
-                    </h2>
-                    <div
-                        class="mt-5 flex flex-col items-center gap-7 sm:flex-row sm:justify-center"
-                    >
-                        <div
-                            class="relative size-30 rounded-full"
-                            :style="{ background: priorityGradient }"
+        <section
+            aria-label="Overzicht van alle storingen"
+            class="order-4 grid gap-5 lg:order-2 lg:grid-cols-3"
+        >
+            <Card class="border-l-destructive min-h-36 border-l-4 py-0">
+                <CardContent
+                    class="summary-content flex items-center justify-between gap-4 p-4 lg:items-start lg:p-6"
+                >
+                    <div class="summary-copy min-w-0 flex-1">
+                        <p class="text-sm font-medium">Open storingen</p>
+                        <p
+                            class="summary-value mt-2 text-4xl font-semibold tracking-tight tabular-nums"
                         >
-                            <div
-                                class="text-muted-foreground absolute inset-7 grid place-items-center rounded-full bg-white text-center text-xs font-medium"
-                            >
-                                {{ totalVisibleIssues }} issues
-                            </div>
-                        </div>
-                        <dl class="w-full max-w-60 space-y-3 text-sm">
-                            <div class="flex items-center justify-between">
-                                <dt>
-                                    <span
-                                        class="mr-2 inline-block size-2.5 rounded-full bg-red-500"
-                                    />P1 Kritiek
-                                </dt>
-                                <dd class="font-semibold">
-                                    {{ priorityDistribution.p1 }}
-                                </dd>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <dt>
-                                    <span
-                                        class="mr-2 inline-block size-2.5 rounded-full bg-orange-500"
-                                    />P2 Hoog
-                                </dt>
-                                <dd class="font-semibold">
-                                    {{ priorityDistribution.p2 }}
-                                </dd>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <dt>
-                                    <span
-                                        class="mr-2 inline-block size-2.5 rounded-full bg-slate-500"
-                                    />P3 Normaal
-                                </dt>
-                                <dd class="font-semibold">
-                                    {{ priorityDistribution.p3 }}
-                                </dd>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <dt>
-                                    <span
-                                        class="mr-2 inline-block size-2.5 rounded-full bg-slate-300"
-                                    />P4 Laag
-                                </dt>
-                                <dd class="font-semibold">
-                                    {{ priorityDistribution.p4 }}
-                                </dd>
-                            </div>
-                        </dl>
+                            {{ statistics.open }}
+                        </p>
+                        <p
+                            class="summary-caption text-muted-foreground mt-2 text-xs"
+                        >
+                            Nog niet technisch opgelost
+                        </p>
                     </div>
+                    <span
+                        class="tone-danger grid size-10 shrink-0 place-items-center rounded-full"
+                        ><CircleAlert class="size-5"
+                    /></span>
                 </CardContent>
             </Card>
-            <Card class="min-h-52 py-0">
-                <CardContent class="p-6">
-                    <h2
-                        class="text-lg font-semibold tracking-tight text-[#101d3f]"
-                    >
-                        Aandacht nodig
-                    </h2>
-                    <div
-                        class="mt-5 flex min-h-30 items-center gap-4 rounded-xl border border-orange-300 bg-orange-50/70 p-5"
-                    >
-                        <CircleAlert class="size-10 shrink-0 text-orange-500" />
-                        <div>
-                            <p class="font-semibold text-[#101d3f]">
-                                {{ statistics.sla_attention }} issues vragen
-                                SLA-aandacht
-                            </p>
-                            <p class="text-muted-foreground mt-1 text-sm">
-                                De reactietijd of oplostijd verloopt binnenkort
-                                of is al overschreden.
-                            </p>
-                        </div>
+            <Card class="border-l-warning min-h-36 border-l-4 py-0">
+                <CardContent
+                    class="summary-content flex items-center justify-between gap-4 p-4 lg:items-start lg:p-6"
+                >
+                    <div class="summary-copy min-w-0 flex-1">
+                        <p class="text-sm font-medium">In afhandeling</p>
+                        <p
+                            class="summary-value mt-2 text-4xl font-semibold tracking-tight tabular-nums"
+                        >
+                            {{ statistics.handling }}
+                        </p>
+                        <p
+                            class="summary-caption text-muted-foreground mt-2 text-xs"
+                        >
+                            Technisch opgelost · nazorg open
+                        </p>
                     </div>
+                    <span
+                        class="tone-warning grid size-10 shrink-0 place-items-center rounded-full"
+                        ><Clock3 class="size-5"
+                    /></span>
                 </CardContent>
             </Card>
+            <Card class="border-l-success min-h-36 border-l-4 py-0">
+                <CardContent
+                    class="summary-content flex items-center justify-between gap-4 p-4 lg:items-start lg:p-6"
+                >
+                    <div class="summary-copy min-w-0 flex-1">
+                        <p class="text-sm font-medium">Afgerond deze maand</p>
+                        <p
+                            class="summary-value mt-2 text-4xl font-semibold tracking-tight tabular-nums"
+                        >
+                            {{ statistics.completed_this_month }}
+                        </p>
+                        <p
+                            class="summary-caption text-muted-foreground mt-2 text-xs"
+                        >
+                            Verplichte checklist afgerond
+                        </p>
+                    </div>
+                    <span
+                        class="tone-success grid size-10 shrink-0 place-items-center rounded-full"
+                        ><CheckCircle2 class="size-5"
+                    /></span>
+                </CardContent>
+            </Card>
+        </section>
+
+        <section
+            class="order-5 flex flex-col gap-4 px-1 sm:flex-row sm:items-center sm:justify-between"
+            aria-label="Prioriteiten op deze pagina"
+        >
+            <div>
+                <h2 class="text-sm font-semibold">
+                    Prioriteiten in deze werkvoorraad
+                </h2>
+                <p class="text-muted-foreground mt-1 text-xs">
+                    {{ totalVisibleIssues }} storingen op deze pagina · na
+                    toepassing van filters
+                </p>
+            </div>
+            <dl class="flex flex-wrap gap-x-6 gap-y-2 text-xs">
+                <div
+                    v-for="(count, priority) in priorityDistribution"
+                    :key="priority"
+                    class="flex items-center gap-2"
+                >
+                    <dt><IssuePriorityBadge :priority="priority" /></dt>
+                    <dd class="font-semibold tabular-nums">{{ count }}</dd>
+                </div>
+            </dl>
         </section>
     </div>
 </template>

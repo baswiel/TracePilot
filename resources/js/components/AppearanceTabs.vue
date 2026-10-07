@@ -5,25 +5,25 @@ import { useAppearance } from '@/composables/useAppearance';
 const { appearance, updateAppearance } = useAppearance();
 
 const tabs = [
-    { value: 'light', Icon: Sun, label: 'Light' },
-    { value: 'dark', Icon: Moon, label: 'Dark' },
-    { value: 'system', Icon: Monitor, label: 'System' },
+    { value: 'light', Icon: Sun, label: 'Licht' },
+    { value: 'dark', Icon: Moon, label: 'Donker' },
+    { value: 'system', Icon: Monitor, label: 'Systeem' },
 ] as const;
 </script>
 
 <template>
-    <div
-        class="border-border inline-flex gap-1 rounded-xl border bg-[#f7f9fc] p-1 dark:bg-neutral-800"
-    >
+    <div class="border-border bg-muted inline-flex gap-1 rounded-xl border p-1">
         <button
             v-for="{ value, Icon, label } in tabs"
             :key="value"
+            type="button"
+            :aria-pressed="appearance === value"
             @click="updateAppearance(value)"
             :class="[
-                'flex items-center rounded-lg px-3.5 py-2 transition-colors',
+                'focus-visible:outline-ring flex min-h-10 items-center rounded-lg px-3.5 py-2 transition-colors focus-visible:outline-2',
                 appearance === value
-                    ? 'text-primary bg-white shadow-sm dark:bg-neutral-700 dark:text-neutral-100'
-                    : 'text-neutral-500 hover:bg-neutral-200/60 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-700/60',
+                    ? 'text-accent-foreground bg-card shadow-xs'
+                    : 'text-muted-foreground hover:bg-card hover:text-foreground',
             ]"
         >
             <component :is="Icon" class="-ml-1 h-4 w-4" />

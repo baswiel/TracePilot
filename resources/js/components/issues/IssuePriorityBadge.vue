@@ -11,19 +11,19 @@ const display = computed(() => {
     const labels = {
         p1: {
             label: 'P1 Kritiek',
-            class: 'border-red-200 bg-red-50 text-[var(--tracepilot-danger)]',
+            class: 'tone-danger',
         },
         p2: {
             label: 'P2 Hoog',
-            class: 'border-orange-200 bg-orange-50 text-[var(--tracepilot-warning)]',
+            class: 'tone-warning',
         },
         p3: {
             label: 'P3 Normaal',
-            class: 'border-slate-300 bg-slate-50 text-slate-600',
+            class: 'border-border bg-muted text-foreground',
         },
         p4: {
             label: 'P4 Laag',
-            class: 'border-slate-200 bg-white text-slate-500',
+            class: 'border-border bg-card text-muted-foreground',
         },
     } as const;
 

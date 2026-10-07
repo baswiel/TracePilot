@@ -18,7 +18,7 @@ kritieke storing, de status en de eerstvolgende actie direct kunnen vinden.
 - Gebruik `Inter` via de bestaande `font-sans`-token.
 - Primaire kop- en inhoudskleur is navy `#101d3f`; gebruik geen zuiver zwart
   voor nieuwe inhoud.
-- Gebruik `text-muted-foreground` (basis `#6e7b93`) voor toelichtingen,
+- Gebruik `text-muted-foreground` (basis `#64728b`) voor toelichtingen,
   metadata en tabelinformatie van secundair belang.
 - Pagina-titels zijn `text-2xl font-semibold tracking-tight`. Het dashboard
   gebruikt voor de persoonlijke begroeting een schaalbare, iets ruimere titel:
@@ -182,6 +182,9 @@ Gebruik bij voorkeur de bestaande CSS-variabelen en semantische Tailwind-kleuren
 - Laat rasterindelingen op kleinere schermen naar één kolom terugvallen.
   Paginakoppen, acties en filtervelden mogen wrappen; behoud daarbij een
   minimale tikgrootte van circa 40 px.
+- Op mobiel staat de werkvoorraad vóór de KPI-kaarten. Dashboardfilters zijn
+  via een zichtbare knop uitklapbaar; actieve filters blijven direct zichtbaar.
+  Op desktop blijven de KPI-kaarten boven de werkvoorraad staan.
 - Het dashboard bevat altijd de directe primaire actie `Storing melden` en
   ondersteunt project-, status-, prioriteits- en verantwoordelijke-filters.
 - Houd tabelgegevens beschikbaar op mobiel via horizontaal scrollen in plaats

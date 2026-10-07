@@ -156,7 +156,7 @@ const nextAction = computed(() => {
         return {
             title: 'Eerste reactie registreren',
             description: 'Leg vast dat het incident door het team is opgepakt.',
-            tone: 'border-red-200 bg-red-50',
+            tone: 'tone-danger',
         };
     }
 
@@ -164,7 +164,7 @@ const nextAction = computed(() => {
         return {
             title: 'Checklist afronden',
             description: `${props.issue.checklist_progress.required_total - props.issue.checklist_progress.required_completed} verplichte stappen staan nog open.`,
-            tone: 'border-orange-200 bg-orange-50',
+            tone: 'tone-warning',
         };
     }
 
@@ -173,14 +173,14 @@ const nextAction = computed(() => {
             title: 'Postmortem vastleggen',
             description:
                 'Leg oorzaak, impact en verbeteracties vast voordat je afsluit.',
-            tone: 'border-orange-200 bg-orange-50',
+            tone: 'tone-warning',
         };
     }
 
     return {
         title: 'Geen directe actie nodig',
         description: 'De verplichte incidentstappen zijn vastgelegd.',
-        tone: 'border-emerald-200 bg-emerald-50',
+        tone: 'tone-success',
     };
 });
 
@@ -195,16 +195,16 @@ defineOptions({
     <Head :title="issue.title" />
 
     <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
     >
         <section
-            class="bg-card flex flex-col gap-4 rounded-xl border p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6"
+            class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
         >
-            <div class="min-w-0 space-y-2">
+            <div class="min-w-0 space-y-3">
+                <h1 class="text-2xl font-semibold tracking-tight">
+                    {{ issue.title }}
+                </h1>
                 <div class="flex flex-wrap items-center gap-2">
-                    <h1 class="text-2xl font-semibold tracking-tight">
-                        {{ issue.title }}
-                    </h1>
                     <IssueStatusBadge :status="issue.status" />
                     <IssuePriorityBadge :priority="issue.priority" />
                     <IssueSlaBadge
@@ -271,7 +271,7 @@ defineOptions({
             aria-live="polite"
         >
             <div>
-                <h2 class="text-sm font-semibold text-[#101d3f]">
+                <h2 class="text-foreground text-sm font-semibold">
                     Volgende stap: {{ nextAction.title }}
                 </h2>
                 <p class="text-muted-foreground mt-1 text-sm">
@@ -288,16 +288,20 @@ defineOptions({
         </section>
 
         <section
-            class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+            class="bg-card grid overflow-hidden rounded-xl border sm:grid-cols-2 xl:grid-cols-4"
             aria-label="Kerngegevens storing"
         >
-            <div class="bg-card rounded-xl border p-4">
+            <div
+                class="border-b p-5 last:border-b-0 sm:border-r sm:border-b-0 sm:last:border-r-0"
+            >
                 <p class="text-muted-foreground text-sm">Gestart</p>
                 <p class="mt-1 font-medium tabular-nums">
                     {{ issue.reported_at_label }}
                 </p>
             </div>
-            <div class="bg-card rounded-xl border p-4">
+            <div
+                class="border-b p-5 last:border-b-0 sm:border-r sm:border-b-0 sm:last:border-r-0"
+            >
                 <p class="text-muted-foreground text-sm">Eerste reactie</p>
                 <p class="mt-1 font-medium tabular-nums">
                     {{
@@ -306,13 +310,17 @@ defineOptions({
                     }}
                 </p>
             </div>
-            <div class="bg-card rounded-xl border p-4">
+            <div
+                class="border-b p-5 last:border-b-0 sm:border-r sm:border-b-0 sm:last:border-r-0"
+            >
                 <p class="text-muted-foreground text-sm">Technisch opgelost</p>
                 <p class="mt-1 font-medium tabular-nums">
                     {{ issue.resolved_at_label ?? 'Nog niet opgelost' }}
                 </p>
             </div>
-            <div class="bg-card rounded-xl border p-4">
+            <div
+                class="border-b p-5 last:border-b-0 sm:border-r sm:border-b-0 sm:last:border-r-0"
+            >
                 <p class="text-muted-foreground text-sm">Totale duur</p>
                 <p class="mt-1 font-medium tabular-nums">
                     {{ issue.elapsed_duration }}
@@ -320,7 +328,7 @@ defineOptions({
             </div>
         </section>
 
-        <section class="grid gap-6 lg:grid-cols-3">
+        <section class="grid items-start gap-6 lg:grid-cols-3">
             <IssueDetails
                 v-model:editing="isEditing"
                 :issue="issue"
@@ -355,8 +363,8 @@ defineOptions({
                         class="font-medium"
                         :class="
                             issue.checklist_progress.all_required_completed
-                                ? 'text-green-700'
-                                : 'text-orange-700'
+                                ? 'text-[var(--tracepilot-success-ink)]'
+                                : 'text-[var(--tracepilot-warning-ink)]'
                         "
                     >
                         {{
@@ -463,7 +471,7 @@ defineOptions({
             </DialogContent>
         </Dialog>
 
-        <section class="grid gap-6 lg:grid-cols-3">
+        <section class="grid items-start gap-6 lg:grid-cols-3">
             <Card class="lg:col-span-2">
                 <CardHeader>
                     <CardTitle>Checklist</CardTitle>

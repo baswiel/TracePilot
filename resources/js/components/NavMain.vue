@@ -6,34 +6,50 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import type { NavItem } from '@/types';
 
 defineProps<{
     items: NavItem[];
+    label?: string;
 }>();
 
-const { isCurrentUrl } = useCurrentUrl();
+const { isCurrentOrParentUrl } = useCurrentUrl();
+const { setOpenMobile } = useSidebar();
 </script>
 
 <template>
     <SidebarGroup class="px-2 py-0">
-        <SidebarGroupLabel class="sr-only">Navigatie</SidebarGroupLabel>
+        <SidebarGroupLabel
+            v-if="label"
+            class="text-muted-foreground mb-2 text-xs font-medium"
+            >{{ label }}</SidebarGroupLabel
+        >
         <SidebarMenu>
-            <template v-for="(item, index) in items" :key="item.title">
+            <template v-for="item in items" :key="item.title">
                 <SidebarMenuItem>
                     <SidebarMenuButton
                         as-child
-                        :is-active="isCurrentUrl(item.href)"
+                        :is-active="isCurrentOrParentUrl(item.href)"
                         :tooltip="item.title"
+                        class="h-11"
                     >
-                        <Link :href="item.href">
+                        <Link
+                            :href="item.href"
+                            @click="setOpenMobile(false)"
+                            :aria-current="
+                                isCurrentOrParentUrl(item.href)
+                                    ? 'page'
+                                    : undefined
+                            "
+                        >
                             <component :is="item.icon" />
                             <span>{{ item.title }}</span>
                             <span
                                 v-if="item.badge"
-                                class="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-semibold text-white tabular-nums"
+                                class="bg-destructive/10 text-destructive ml-auto inline-flex min-w-5 items-center justify-center rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums"
                                 aria-label="Actieve storingen"
                             >
                                 {{ item.badge > 99 ? '99+' : item.badge }}
@@ -41,10 +57,6 @@ const { isCurrentUrl } = useCurrentUrl();
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
-                <li
-                    v-if="index === 2"
-                    class="bg-sidebar-border mx-1 my-5 h-px"
-                />
             </template>
         </SidebarMenu>
     </SidebarGroup>

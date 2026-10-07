@@ -24,7 +24,7 @@ const display = computed(() => {
 </script>
 
 <template>
-    <span class="inline-flex items-center gap-2 text-sm text-[#101d3f]">
+    <span class="inline-flex items-center gap-2 text-sm text-foreground">
         <span class="size-2 rounded-full" :class="display.class" />
         {{ display.label }}
     </span>

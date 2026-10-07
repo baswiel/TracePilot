@@ -76,7 +76,7 @@ defineOptions({
     <Head title="Storing melden" />
 
     <div
-        class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 pt-2 pb-10 sm:px-8"
+        class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 pt-7 pb-10 sm:px-8"
     >
         <Card>
             <CardHeader>
@@ -105,7 +105,7 @@ defineOptions({
                     <div
                         class="rounded-xl border border-blue-100 bg-blue-50/50 p-4"
                     >
-                        <h2 class="text-sm font-semibold text-[#101d3f]">
+                        <h2 class="text-sm font-semibold text-foreground">
                             Snel registreren
                         </h2>
                         <p class="text-muted-foreground mt-1 text-sm">

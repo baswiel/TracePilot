@@ -49,7 +49,7 @@ defineOptions({
     <Head :title="`${project.name} bewerken`" />
 
     <div
-        class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 pt-2 pb-10 sm:px-8"
+        class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 pt-7 pb-10 sm:px-8"
     >
         <Card>
             <CardHeader class="border-b">

@@ -18,12 +18,12 @@ defineProps<{
 
 <template>
     <div
-        class="flex min-h-svh flex-col items-center justify-center gap-6 bg-[#f6f8fc] p-6 md:p-10"
+        class="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10"
     >
         <div class="flex w-full max-w-md flex-col gap-6">
             <Link
                 :href="home()"
-                class="flex items-center gap-3 self-center font-semibold text-[#101d3f]"
+                class="text-foreground flex items-center gap-3 self-center font-semibold"
             >
                 <div
                     class="bg-primary flex h-10 w-10 items-center justify-center rounded-xl p-2"
@@ -33,10 +33,10 @@ defineProps<{
             </Link>
 
             <div class="flex flex-col gap-6">
-                <Card class="rounded-2xl border-[#dfe5ee] py-0">
+                <Card class="border-border rounded-2xl py-0">
                     <CardHeader class="px-10 pt-9 pb-0 text-center">
                         <CardTitle
-                            class="text-2xl tracking-tight text-[#101d3f]"
+                            class="text-foreground text-2xl tracking-tight"
                             >{{ title }}</CardTitle
                         >
                         <CardDescription>

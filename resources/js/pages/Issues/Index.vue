@@ -77,7 +77,17 @@ const showMoreFilters = ref(
     ),
 );
 const activeFilterCount = computed(
-    () => Object.values(filters).filter((value) => value !== '').length,
+    () =>
+        [
+            filters.search,
+            filters.project,
+            filters.customer,
+            filters.priority,
+            filters.status,
+            filters.assigned_to,
+            filters.from,
+            filters.until,
+        ].filter((value) => value !== '').length,
 );
 
 defineOptions({
@@ -136,19 +146,13 @@ const elapsedSince = (value: string) => {
 
     return `${Math.floor(minutes / 1440)} d`;
 };
-
-const truncateTitle = (title: string) => {
-    const words = title.trim().split(/\s+/);
-
-    return words.length > 8 ? `${words.slice(0, 8).join(' ')}...` : title;
-};
 </script>
 
 <template>
     <Head title="Alle storingen" />
 
     <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
     >
         <section
             class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
@@ -175,10 +179,12 @@ const truncateTitle = (title: string) => {
         <Card class="gap-0 overflow-hidden py-0">
             <CardContent class="p-4 sm:p-5">
                 <form
-                    class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(16rem,1fr)_11rem_9rem_10rem_auto]"
+                    class="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto] 2xl:grid-cols-[minmax(16rem,1fr)_11rem_9rem_10rem_auto]"
                     @submit.prevent="applyFilters"
                 >
-                    <div class="relative md:col-span-2 xl:col-span-1">
+                    <div
+                        class="relative md:col-span-2 xl:col-span-4 2xl:col-span-1"
+                    >
                         <Label class="sr-only" for="issue-search">Zoeken</Label>
                         <Search
                             class="text-muted-foreground absolute top-3 left-3 size-4"
@@ -245,6 +251,8 @@ const truncateTitle = (title: string) => {
                         ><Button
                             type="button"
                             variant="outline"
+                            :aria-expanded="showMoreFilters"
+                            aria-controls="additional-issue-filters"
                             @click="showMoreFilters = !showMoreFilters"
                             ><SlidersHorizontal />
                             {{
@@ -255,6 +263,7 @@ const truncateTitle = (title: string) => {
                 </form>
                 <div
                     v-if="showMoreFilters"
+                    id="additional-issue-filters"
                     class="mt-3 grid gap-3 border-t pt-3 md:grid-cols-2 xl:grid-cols-4"
                 >
                     <div class="grid gap-1">
@@ -334,20 +343,35 @@ const truncateTitle = (title: string) => {
         </Card>
 
         <Card class="gap-0 overflow-hidden py-0">
+            <div
+                class="flex flex-wrap items-center justify-between gap-2 border-b px-6 py-4"
+            >
+                <h2 class="text-sm font-semibold">
+                    {{ issues.total }}
+                    {{ issues.total === 1 ? 'storing' : 'storingen' }}
+                </h2>
+                <span class="text-muted-foreground text-xs"
+                    >Pagina {{ issues.current_page }} van
+                    {{ issues.last_page }}</span
+                >
+            </div>
             <CardContent v-if="issues.data.length" class="p-0">
                 <p class="text-muted-foreground px-4 pt-3 text-xs sm:hidden">
                     Veeg horizontaal om alle incidentgegevens te bekijken.
                 </p>
-                <div class="overflow-x-auto">
+                <div
+                    class="overflow-x-auto"
+                    tabindex="0"
+                    role="region"
+                    aria-label="Storingen, horizontaal scrollbaar"
+                >
                     <table
-                        class="w-full min-w-[1150px] text-left text-sm"
+                        class="w-full min-w-[1080px] text-left text-sm"
                         aria-label="Storingenoverzicht"
                     >
-                        <thead class="text-muted-foreground bg-[#fcfdff]">
+                        <thead class="text-muted-foreground bg-muted/30">
                             <tr>
-                                <th class="px-6 py-4 font-medium">Storing</th>
-                                <th class="px-6 py-4 font-medium">Project</th>
-                                <th class="px-6 py-4 font-medium">
+                                <th class="px-4 py-4 font-medium">
                                     <button
                                         class="hover:text-foreground inline-flex items-center gap-1.5"
                                         type="button"
@@ -365,8 +389,11 @@ const truncateTitle = (title: string) => {
                                         />
                                     </button>
                                 </th>
-                                <th class="px-6 py-4 font-medium">Status</th>
-                                <th class="px-6 py-4 font-medium">
+                                <th class="px-4 py-4 font-medium">
+                                    Storing / project
+                                </th>
+                                <th class="px-4 py-4 font-medium">Status</th>
+                                <th class="px-4 py-4 font-medium">
                                     <button
                                         class="hover:text-foreground inline-flex items-center gap-1.5"
                                         type="button"
@@ -384,11 +411,11 @@ const truncateTitle = (title: string) => {
                                         />
                                     </button>
                                 </th>
-                                <th class="px-6 py-4 font-medium">SLA</th>
-                                <th class="px-6 py-4 font-medium">
+                                <th class="px-4 py-4 font-medium">SLA</th>
+                                <th class="px-4 py-4 font-medium">
                                     Toegewezen aan
                                 </th>
-                                <th class="px-6 py-4 font-medium">
+                                <th class="px-4 py-4 font-medium">
                                     <button
                                         class="hover:text-foreground inline-flex items-center gap-1.5"
                                         type="button"
@@ -406,7 +433,7 @@ const truncateTitle = (title: string) => {
                                         />
                                     </button>
                                 </th>
-                                <th class="px-6 py-4">
+                                <th class="px-4 py-4">
                                     <span class="sr-only">Actie</span>
                                 </th>
                             </tr>
@@ -415,42 +442,34 @@ const truncateTitle = (title: string) => {
                             <tr
                                 v-for="issue in issues.data"
                                 :key="issue.id"
-                                class="transition-colors hover:bg-[#fafcff]"
+                                class="hover:bg-muted/40 transition-colors"
                             >
-                                <td
-                                    class="w-[18rem] min-w-[18rem] px-6 py-4 font-medium text-[#101d3f]"
-                                >
-                                    <span
-                                        class="block truncate whitespace-nowrap"
-                                        :aria-label="issue.title"
-                                        :title="issue.title"
-                                    >
-                                        {{ truncateTitle(issue.title) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span
-                                        class="block font-medium text-[#101d3f]"
-                                    >
-                                        {{ issue.project }}
-                                    </span>
-                                    <span
-                                        v-if="issue.customer"
-                                        class="text-muted-foreground mt-0.5 block text-xs"
-                                    >
-                                        {{ issue.customer }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
+                                <td class="px-4 py-4">
                                     <IssuePriorityBadge
                                         :priority="issue.priority"
                                     />
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="max-w-sm min-w-64 px-4 py-4">
+                                    <Link
+                                        :href="show(issue.id)"
+                                        class="hover:text-primary block font-semibold hover:underline"
+                                        :title="issue.title"
+                                        >{{ issue.title }}</Link
+                                    >
+                                    <p
+                                        class="text-muted-foreground mt-1 text-xs"
+                                    >
+                                        {{ issue.project
+                                        }}<span v-if="issue.customer">
+                                            · {{ issue.customer }}</span
+                                        >
+                                    </p>
+                                </td>
+                                <td class="px-4 py-4">
                                     <IssueStatusBadge :status="issue.status" />
                                 </td>
                                 <td
-                                    class="text-muted-foreground px-6 py-4 whitespace-nowrap"
+                                    class="text-muted-foreground px-4 py-4 whitespace-nowrap"
                                 >
                                     <span
                                         :title="formatDate(issue.reported_at)"
@@ -459,17 +478,17 @@ const truncateTitle = (title: string) => {
                                         geleden
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-4 py-4 whitespace-nowrap">
                                     <IssueSlaBadge
                                         :response="issue.sla.response"
                                         :resolution="issue.sla.resolution"
                                     />
                                 </td>
-                                <td class="text-muted-foreground px-6 py-4">
+                                <td class="text-muted-foreground px-4 py-4">
                                     {{ issue.assigned_to ?? 'Niet toegewezen' }}
                                 </td>
                                 <td
-                                    class="text-muted-foreground px-6 py-4 whitespace-nowrap"
+                                    class="text-muted-foreground px-4 py-4 whitespace-nowrap"
                                 >
                                     {{
                                         issue.last_activity_at
@@ -477,12 +496,8 @@ const truncateTitle = (title: string) => {
                                             : '—'
                                     }}
                                 </td>
-                                <td class="px-6 py-4 text-right">
-                                    <Button
-                                        class="border-blue-500 text-blue-600 hover:bg-blue-50"
-                                        size="sm"
-                                        variant="outline"
-                                        as-child
+                                <td class="px-4 py-4 text-right">
+                                    <Button size="sm" variant="outline" as-child
                                         ><Link :href="show(issue.id)"
                                             >Bekijken</Link
                                         ></Button

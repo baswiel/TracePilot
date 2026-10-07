@@ -12,7 +12,7 @@ defineProps<{
 
 <template>
     <div
-        class="grid min-h-svh bg-[#f6f8fc] lg:grid-cols-[minmax(420px,1fr)_minmax(520px,1.15fr)]"
+        class="bg-background grid min-h-svh lg:grid-cols-[minmax(420px,1fr)_minmax(520px,1.15fr)]"
     >
         <div
             class="relative hidden overflow-hidden bg-[#101d3f] p-12 text-white lg:flex lg:flex-col"
@@ -65,14 +65,14 @@ defineProps<{
         </div>
         <div class="flex items-center justify-center p-6 sm:p-10 lg:p-14">
             <div
-                class="w-full max-w-[420px] rounded-2xl border border-[#dfe5ee] bg-white p-7 shadow-[0_12px_32px_rgb(30_51_83_/_6%)] sm:p-10"
+                class="border-border bg-card w-full max-w-[420px] rounded-2xl border p-7 shadow-[0_12px_32px_rgb(30_51_83_/_6%)] sm:p-10"
             >
                 <Link :href="home()" class="mb-10 block w-45 lg:hidden">
                     <TracePilotLogo />
                 </Link>
                 <div class="mb-8 flex flex-col space-y-2">
                     <h1
-                        class="text-3xl font-semibold tracking-[-0.035em] text-[#101d3f]"
+                        class="text-foreground text-3xl font-semibold tracking-[-0.035em]"
                         v-if="title"
                     >
                         {{ title }}

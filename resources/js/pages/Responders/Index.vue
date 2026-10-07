@@ -46,10 +46,10 @@ defineOptions({
     <Head title="Responders" />
 
     <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
     >
         <section>
-            <h1 class="text-2xl font-semibold tracking-tight text-[#101d3f]">
+            <h1 class="text-2xl font-semibold tracking-tight text-foreground">
                 Responders
             </h1>
             <p class="text-muted-foreground mt-1 text-sm">

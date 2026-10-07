@@ -109,7 +109,7 @@ const formatDuration = (minutes: number) => {
     <Head :title="project.name" />
 
     <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
     >
         <section
             class="bg-card flex flex-col gap-4 rounded-xl border p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6"
@@ -117,7 +117,7 @@ const formatDuration = (minutes: number) => {
             <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
                     <h1
-                        class="text-2xl font-semibold tracking-tight text-[#101d3f]"
+                        class="text-2xl font-semibold tracking-tight text-foreground"
                     >
                         {{ project.name }}
                     </h1>

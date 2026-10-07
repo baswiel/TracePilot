@@ -12,7 +12,6 @@ import {
 } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -80,12 +79,23 @@ const mainNavItems = computed<NavItem[]>(() => [
     },
 ]);
 
-const footerNavItems: NavItem[] = [];
+const workNavItems = computed(() => [
+    mainNavItems.value[0],
+    mainNavItems.value[3],
+    mainNavItems.value[4],
+]);
+const managementNavItems = computed(() => [
+    mainNavItems.value[1],
+    mainNavItems.value[2],
+    mainNavItems.value[5],
+    mainNavItems.value[6],
+]);
+const footerNavItems = computed(() => [mainNavItems.value[7]]);
 </script>
 
 <template>
-    <Sidebar collapsible="icon" variant="sidebar" class="border-r bg-white">
-        <SidebarHeader class="px-4 pt-5 pb-6">
+    <Sidebar collapsible="icon" variant="sidebar" class="bg-sidebar border-r">
+        <SidebarHeader class="px-4 pt-5 pb-5">
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
@@ -97,12 +107,14 @@ const footerNavItems: NavItem[] = [];
             </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent class="px-2">
-            <NavMain :items="mainNavItems" />
+        <SidebarContent class="gap-6 px-2">
+            <NavMain :items="workNavItems" label="Werkplek" />
+            <div class="mx-4 border-t" />
+            <NavMain :items="managementNavItems" label="Beheer" />
         </SidebarContent>
 
         <SidebarFooter class="border-t px-3 py-4">
-            <NavFooter :items="footerNavItems" />
+            <NavMain :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

@@ -218,10 +218,10 @@ defineOptions({
     <Head title="Rapportages" />
 
     <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-2 pb-10 sm:px-8"
+        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
     >
         <section class="space-y-1 pt-1">
-            <h1 class="text-2xl font-semibold tracking-tight text-[#101d3f]">
+            <h1 class="text-2xl font-semibold tracking-tight text-foreground">
                 Rapportages
             </h1>
             <p class="text-muted-foreground">
@@ -283,7 +283,7 @@ defineOptions({
                         </Button>
                     </div>
                     <p
-                        class="flex items-center gap-2 text-sm font-medium text-[#101d3f]"
+                        class="flex items-center gap-2 text-sm font-medium text-foreground"
                     >
                         <CalendarRange class="text-primary size-4" />
                         {{ period.label }}
@@ -294,7 +294,7 @@ defineOptions({
                     class="flex flex-wrap items-center gap-2 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-sm"
                 >
                     <CircleAlert class="text-primary size-4 shrink-0" />
-                    <span class="font-medium text-[#101d3f]">{{
+                    <span class="font-medium text-foreground">{{
                         reportInsight
                     }}</span>
                     <Button

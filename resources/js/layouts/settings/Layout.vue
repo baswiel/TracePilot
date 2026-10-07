@@ -44,7 +44,7 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>
 
 <template>
-    <div class="mx-auto w-full max-w-[1440px] px-5 py-3 sm:px-8">
+    <div class="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-8">
         <Heading
             title="Instellingen"
             description="Beheer je profiel en accountinstellingen"
@@ -63,14 +63,20 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                         :class="[
                             'w-full justify-start',
                             {
-                                'text-primary bg-blue-50': isCurrentOrParentUrl(
-                                    item.href,
-                                ),
+                                'text-accent-foreground bg-accent':
+                                    isCurrentOrParentUrl(item.href),
                             },
                         ]"
                         as-child
                     >
-                        <Link :href="item.href">
+                        <Link
+                            :href="item.href"
+                            :aria-current="
+                                isCurrentOrParentUrl(item.href)
+                                    ? 'page'
+                                    : undefined
+                            "
+                        >
                             <component :is="item.icon" class="h-4 w-4" />
                             {{ item.title }}
                         </Link>
