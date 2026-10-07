@@ -261,64 +261,83 @@ const elapsedSince = (value: string) => {
                         >
                     </div>
                 </form>
-                <div
-                    v-if="showMoreFilters"
-                    id="additional-issue-filters"
-                    class="mt-3 grid gap-3 border-t pt-3 md:grid-cols-2 xl:grid-cols-4"
-                >
-                    <div class="grid gap-1">
-                        <Label class="sr-only" for="filter-customer"
-                            >Klant</Label
-                        >
-                        <select
-                            id="filter-customer"
-                            v-model="filters.customer"
-                            class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
-                        >
-                            <option value="">Alle klanten</option>
-                            <option
-                                v-for="customer in customers"
-                                :key="customer.id"
-                                :value="customer.id"
+                <div class="t-acc" :data-open="showMoreFilters">
+                    <div
+                        id="additional-issue-filters"
+                        class="t-acc-panel"
+                        :inert="!showMoreFilters"
+                        :aria-hidden="!showMoreFilters"
+                    >
+                        <div class="t-acc-panel-inner">
+                            <div
+                                class="mt-3 grid gap-3 border-t pt-3 md:grid-cols-2 xl:grid-cols-4"
                             >
-                                {{ customer.name }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="grid gap-1">
-                        <Label class="sr-only" for="filter-assignee"
-                            >Verantwoordelijke</Label
-                        >
-                        <select
-                            id="filter-assignee"
-                            v-model="filters.assigned_to"
-                            class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
-                        >
-                            <option value="">Iedere verantwoordelijke</option>
-                            <option
-                                v-for="teamMember in teamMembers"
-                                :key="teamMember.id"
-                                :value="teamMember.id"
-                            >
-                                {{ teamMember.name }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="grid gap-1">
-                        <label
-                            class="text-muted-foreground text-xs font-medium"
-                            for="from"
-                            >Gemeld vanaf</label
-                        >
-                        <Input id="from" v-model="filters.from" type="date" />
-                    </div>
-                    <div class="grid gap-1">
-                        <label
-                            class="text-muted-foreground text-xs font-medium"
-                            for="until"
-                            >Gemeld tot en met</label
-                        >
-                        <Input id="until" v-model="filters.until" type="date" />
+                                <div class="grid gap-1">
+                                    <Label class="sr-only" for="filter-customer"
+                                        >Klant</Label
+                                    >
+                                    <select
+                                        id="filter-customer"
+                                        v-model="filters.customer"
+                                        class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
+                                    >
+                                        <option value="">Alle klanten</option>
+                                        <option
+                                            v-for="customer in customers"
+                                            :key="customer.id"
+                                            :value="customer.id"
+                                        >
+                                            {{ customer.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="grid gap-1">
+                                    <Label class="sr-only" for="filter-assignee"
+                                        >Verantwoordelijke</Label
+                                    >
+                                    <select
+                                        id="filter-assignee"
+                                        v-model="filters.assigned_to"
+                                        class="border-input bg-background h-10 rounded-md border px-3 text-sm shadow-xs"
+                                    >
+                                        <option value="">
+                                            Iedere verantwoordelijke
+                                        </option>
+                                        <option
+                                            v-for="teamMember in teamMembers"
+                                            :key="teamMember.id"
+                                            :value="teamMember.id"
+                                        >
+                                            {{ teamMember.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="grid gap-1">
+                                    <label
+                                        class="text-muted-foreground text-xs font-medium"
+                                        for="from"
+                                        >Gemeld vanaf</label
+                                    >
+                                    <Input
+                                        id="from"
+                                        v-model="filters.from"
+                                        type="date"
+                                    />
+                                </div>
+                                <div class="grid gap-1">
+                                    <label
+                                        class="text-muted-foreground text-xs font-medium"
+                                        for="until"
+                                        >Gemeld tot en met</label
+                                    >
+                                    <Input
+                                        id="until"
+                                        v-model="filters.until"
+                                        type="date"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div

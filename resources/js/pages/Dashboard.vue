@@ -10,6 +10,7 @@ import {
     Plus,
     SlidersHorizontal,
 } from '@lucide/vue';
+import { useMediaQuery } from '@vueuse/core';
 import { computed, reactive, ref } from 'vue';
 import IssuePriorityBadge from '@/components/issues/IssuePriorityBadge.vue';
 import IssueSlaBadge from '@/components/issues/IssueSlaBadge.vue';
@@ -95,6 +96,8 @@ const hasFilters = computed(() =>
 );
 
 const filtersExpanded = ref(hasFilters.value);
+const isDesktop = useMediaQuery('(min-width: 1024px)');
+const filtersVisible = computed(() => isDesktop.value || filtersExpanded.value);
 
 const clearFilters = () => {
     Object.assign(filters, {
@@ -219,86 +222,106 @@ defineOptions({
                     /></Link>
                 </div>
             </div>
-            <form
-                id="dashboard-filters"
-                :class="filtersExpanded ? 'grid' : 'hidden lg:grid'"
-                class="bg-muted/30 grid gap-3 border-b p-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1fr_1fr_1fr_1.2fr_auto]"
-                @submit.prevent="applyFilters"
-            >
-                <div class="grid min-w-0 gap-1.5">
-                    <Label for="project" class="text-muted-foreground text-xs"
-                        >Project</Label
-                    >
-                    <select
-                        id="project"
-                        v-model="filters.project"
-                        class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
-                    >
-                        <option value="">Alle projecten</option>
-                        <option
-                            v-for="project in projects"
-                            :key="project.id"
-                            :value="project.id"
-                        >
-                            {{ project.name }}
-                        </option>
-                    </select>
-                </div>
-                <div class="grid min-w-0 gap-1.5">
-                    <Label for="status" class="text-muted-foreground text-xs"
-                        >Status</Label
-                    >
-                    <select
-                        id="status"
-                        v-model="filters.status"
-                        class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
-                    >
-                        <option value="">Alle statussen</option>
-                        <option value="open">Open</option>
-                        <option value="handling">Afhandeling</option>
-                    </select>
-                </div>
-                <div class="grid min-w-0 gap-1.5">
-                    <Label for="priority" class="text-muted-foreground text-xs"
-                        >Prioriteit</Label
-                    >
-                    <select
-                        id="priority"
-                        v-model="filters.priority"
-                        class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
-                    >
-                        <option value="">Alle prioriteiten</option>
-                        <option value="p1">P1 · Kritiek</option>
-                        <option value="p2">P2 · Hoog</option>
-                        <option value="p3">P3 · Normaal</option>
-                        <option value="p4">P4 · Laag</option>
-                    </select>
-                </div>
-                <div class="grid min-w-0 gap-1.5">
-                    <Label
-                        for="assigned_to"
-                        class="text-muted-foreground text-xs"
-                        >Verantwoordelijke</Label
-                    >
-                    <select
-                        id="assigned_to"
-                        v-model="filters.assigned_to"
-                        class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
-                    >
-                        <option value="">Iedereen</option>
-                        <option
-                            v-for="member in teamMembers"
-                            :key="member.id"
-                            :value="member.id"
-                        >
-                            {{ member.name }}
-                        </option>
-                    </select>
-                </div>
-                <Button type="submit" variant="outline" class="self-end"
-                    ><SlidersHorizontal /> Toepassen</Button
+            <div class="t-acc dashboard-filters" :data-open="filtersVisible">
+                <div
+                    class="t-acc-panel"
+                    :inert="!filtersVisible"
+                    :aria-hidden="!filtersVisible"
                 >
-            </form>
+                    <div class="t-acc-panel-inner">
+                        <form
+                            id="dashboard-filters"
+                            class="bg-muted/30 grid gap-3 border-b p-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1fr_1fr_1fr_1.2fr_auto]"
+                            @submit.prevent="applyFilters"
+                        >
+                            <div class="grid min-w-0 gap-1.5">
+                                <Label
+                                    for="project"
+                                    class="text-muted-foreground text-xs"
+                                    >Project</Label
+                                >
+                                <select
+                                    id="project"
+                                    v-model="filters.project"
+                                    class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
+                                >
+                                    <option value="">Alle projecten</option>
+                                    <option
+                                        v-for="project in projects"
+                                        :key="project.id"
+                                        :value="project.id"
+                                    >
+                                        {{ project.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="grid min-w-0 gap-1.5">
+                                <Label
+                                    for="status"
+                                    class="text-muted-foreground text-xs"
+                                    >Status</Label
+                                >
+                                <select
+                                    id="status"
+                                    v-model="filters.status"
+                                    class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
+                                >
+                                    <option value="">Alle statussen</option>
+                                    <option value="open">Open</option>
+                                    <option value="handling">
+                                        Afhandeling
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="grid min-w-0 gap-1.5">
+                                <Label
+                                    for="priority"
+                                    class="text-muted-foreground text-xs"
+                                    >Prioriteit</Label
+                                >
+                                <select
+                                    id="priority"
+                                    v-model="filters.priority"
+                                    class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
+                                >
+                                    <option value="">Alle prioriteiten</option>
+                                    <option value="p1">P1 · Kritiek</option>
+                                    <option value="p2">P2 · Hoog</option>
+                                    <option value="p3">P3 · Normaal</option>
+                                    <option value="p4">P4 · Laag</option>
+                                </select>
+                            </div>
+                            <div class="grid min-w-0 gap-1.5">
+                                <Label
+                                    for="assigned_to"
+                                    class="text-muted-foreground text-xs"
+                                    >Verantwoordelijke</Label
+                                >
+                                <select
+                                    id="assigned_to"
+                                    v-model="filters.assigned_to"
+                                    class="bg-card h-10 w-full min-w-0 border px-3 text-sm"
+                                >
+                                    <option value="">Iedereen</option>
+                                    <option
+                                        v-for="member in teamMembers"
+                                        :key="member.id"
+                                        :value="member.id"
+                                    >
+                                        {{ member.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                class="self-end"
+                                ><SlidersHorizontal /> Toepassen</Button
+                            >
+                        </form>
+                    </div>
+                </div>
+            </div>
             <div
                 v-if="hasFilters"
                 class="flex items-center justify-between border-b px-6 py-2 text-sm"
