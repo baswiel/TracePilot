@@ -1,13 +1,9 @@
 <script setup lang="ts">
+import WorkspaceHeader from '@/components/WorkspaceHeader.vue';
+import WorkspacePage from '@/components/WorkspacePage.vue';
 import { Head } from '@inertiajs/vue3';
 import ProjectForm from '@/components/projects/ProjectForm.vue';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import { index } from '@/routes/projects';
 
@@ -30,16 +26,12 @@ defineOptions({
 <template>
     <Head title="Project toevoegen" />
 
-    <div
-        class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 pt-7 pb-10 sm:px-8"
-    >
+    <WorkspacePage compact>
+        <WorkspaceHeader
+            title="Project toevoegen"
+            description="Leg de klant, SLA en vaste responders in één keer vast."
+        />
         <Card>
-            <CardHeader class="border-b">
-                <CardTitle>Project toevoegen</CardTitle>
-                <CardDescription>
-                    Leg de klant, SLA en vaste responders in één keer vast.
-                </CardDescription>
-            </CardHeader>
             <CardContent
                 ><ProjectForm
                     :cancel-href="index().url"
@@ -48,5 +40,5 @@ defineOptions({
                     :customers="customers"
             /></CardContent>
         </Card>
-    </div>
+    </WorkspacePage>
 </template>

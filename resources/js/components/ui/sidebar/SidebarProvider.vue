@@ -19,7 +19,8 @@ const emits = defineEmits<{
   "update:open": [open: boolean]
 }>()
 
-const isMobile = useMediaQuery("(max-width: 768px)")
+// Match Tailwind's md boundary and hydrate the server's desktop branch first.
+const isMobile = useMediaQuery("(max-width: 767px)", { ssrWidth: 1024 })
 const openMobile = ref(false)
 
 const open = useVModel(props, "open", emits, {

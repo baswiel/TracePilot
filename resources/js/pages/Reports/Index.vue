@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import WorkspaceHeader from '@/components/WorkspaceHeader.vue';
+import WorkspacePage from '@/components/WorkspacePage.vue';
 import type { IssuePriority } from '@/types/issues';
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
@@ -151,8 +153,8 @@ const comparison = (
             normalizedPreference === 'neutral' || value === 0
                 ? 'text-muted-foreground'
                 : (normalizedPreference === 'increase') === value > 0
-                  ? 'text-emerald-700'
-                  : 'text-rose-700',
+                  ? 'text-[var(--tracepilot-success-ink)]'
+                  : 'text-[var(--tracepilot-danger-ink)]',
         text: `${value > 0 ? '↑' : value < 0 ? '↓' : '→'} ${Math.abs(value)}% t.o.v. vorige periode`,
     };
 };
@@ -185,9 +187,10 @@ const reportInsight = computed(() => {
 const slaPercentageClass = (value: number | null) => {
     if (value === null) return 'border-slate-200 bg-slate-50 text-slate-700';
     if (value < 80) return 'border-red-200 bg-red-50 text-red-700';
-    if (value < 95) return 'border-orange-200 bg-orange-50 text-orange-700';
+    if (value < 95)
+        return 'border-[var(--tracepilot-warning-border)] bg-[var(--tracepilot-warning-soft)] text-[var(--tracepilot-warning-ink)]';
 
-    return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+    return 'border-[var(--tracepilot-success-border)] bg-[var(--tracepilot-success-soft)] text-[var(--tracepilot-success-ink)]';
 };
 
 const clearProjectFilter = () => {
@@ -217,27 +220,25 @@ defineOptions({
 <template>
     <Head title="Rapportages" />
 
-    <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
-    >
-        <section class="space-y-1 pt-1">
-            <h1 class="text-2xl font-semibold tracking-tight text-foreground">
-                Rapportages
-            </h1>
-            <p class="text-muted-foreground">
-                Inzicht in incidentvolume, doorlooptijden en SLA-prestaties.
-            </p>
-        </section>
+    <WorkspacePage>
+        <WorkspaceHeader
+            title="Rapportages"
+            description="Inzicht in incidentvolume, doorlooptijden en SLA-prestaties."
+        ></WorkspaceHeader>
 
         <Card class="gap-0 overflow-hidden py-0">
-            <CardHeader class="border-b py-5 max-sm:grid-cols-1">
+            <CardHeader
+                class="flex flex-col gap-4 border-b py-5 sm:flex-row sm:items-start sm:justify-between"
+            >
                 <div>
-                    <CardTitle class="text-lg">Rapportageperiode</CardTitle>
+                    <CardTitle as="h2" class="text-lg"
+                        >Rapportageperiode</CardTitle
+                    >
                     <CardDescription class="mt-1">
                         Kies de periode waarop alle inzichten zijn gebaseerd.
                     </CardDescription>
                 </div>
-                <div data-slot="card-action" class="grid gap-1 sm:min-w-52">
+                <div class="grid w-full gap-1 sm:w-52">
                     <Label for="project">Project</Label>
                     <select
                         id="project"
@@ -262,7 +263,7 @@ defineOptions({
                 >
                     <div
                         class="bg-muted/30 inline-flex w-fit max-w-full flex-wrap gap-1 rounded-lg border p-1"
-                        role="tablist"
+                        role="group"
                         aria-label="Kies rapportageperiode"
                     >
                         <Button
@@ -275,15 +276,14 @@ defineOptions({
                                     ? 'default'
                                     : 'ghost'
                             "
-                            role="tab"
-                            :aria-selected="filters.period === option.key"
+                            :aria-pressed="filters.period === option.key"
                             @click="selectPeriod(option.key)"
                         >
                             {{ option.label }}
                         </Button>
                     </div>
                     <p
-                        class="flex items-center gap-2 text-sm font-medium text-foreground"
+                        class="text-foreground flex items-center gap-2 text-sm font-medium"
                     >
                         <CalendarRange class="text-primary size-4" />
                         {{ period.label }}
@@ -291,10 +291,10 @@ defineOptions({
                 </div>
 
                 <div
-                    class="flex flex-wrap items-center gap-2 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-sm"
+                    class="border-border bg-accent/50 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm"
                 >
                     <CircleAlert class="text-primary size-4 shrink-0" />
-                    <span class="font-medium text-foreground">{{
+                    <span class="text-foreground font-medium">{{
                         reportInsight
                     }}</span>
                     <Button
@@ -350,191 +350,181 @@ defineOptions({
         </Card>
 
         <section
-            class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5"
+            aria-label="Samenvatting rapportage"
+            class="bg-card grid grid-cols-2 overflow-hidden rounded-xl border xl:grid-cols-5"
         >
-            <Card
-                ><CardContent class="flex items-center gap-4 p-5"
-                    ><BarChart3 class="size-8 text-blue-600" />
-                    <div>
-                        <p class="text-muted-foreground text-sm">Gemeld</p>
-                        <p
-                            class="text-3xl font-semibold whitespace-nowrap tabular-nums"
-                        >
-                            {{ report.summary.reported }}
-                        </p>
-                        <p
-                            v-if="comparison(report.comparison.reported)"
-                            :class="[
-                                'mt-1 flex items-center gap-1 text-xs',
-                                comparison(report.comparison.reported)?.class,
-                            ]"
-                        >
-                            <component
-                                :is="
-                                    comparison(report.comparison.reported)?.icon
-                                "
-                                class="size-3"
-                            />
-                            {{ comparison(report.comparison.reported)?.text }}
-                        </p>
-                        <p v-else class="text-muted-foreground mt-1 text-xs">
-                            Geen vergelijkbare vorige periode
-                        </p>
-                    </div></CardContent
-                ></Card
+            <div
+                class="border-border flex min-w-0 items-start gap-3 border-b p-5 xl:border-r xl:border-b-0 xl:last:border-r-0"
             >
-            <Card
-                ><CardContent class="flex items-center gap-4 p-5"
-                    ><CheckCircle2 class="size-8 text-emerald-600" />
-                    <div>
-                        <p class="text-muted-foreground text-sm">Afgerond</p>
-                        <p
-                            class="text-3xl font-semibold whitespace-nowrap tabular-nums"
-                        >
-                            {{ report.summary.completed }}
-                        </p>
-                        <p
-                            v-if="
-                                comparison(
-                                    report.comparison.completed,
-                                    'increase',
-                                )
-                            "
-                            :class="[
-                                'mt-1 text-xs',
-                                comparison(
-                                    report.comparison.completed,
-                                    'increase',
-                                )?.class,
-                            ]"
-                        >
-                            {{
-                                comparison(
-                                    report.comparison.completed,
-                                    'increase',
-                                )?.text
-                            }}
-                        </p>
-                        <p v-else class="text-muted-foreground mt-1 text-xs">
-                            Geen vergelijkbare vorige periode
-                        </p>
-                    </div></CardContent
-                ></Card
+                <BarChart3 class="text-primary mt-1 size-5 shrink-0" />
+                <div>
+                    <p class="text-muted-foreground text-sm">Gemeld</p>
+                    <p
+                        class="text-xl font-semibold break-words tabular-nums sm:text-2xl"
+                    >
+                        {{ report.summary.reported }}
+                    </p>
+                    <p
+                        v-if="comparison(report.comparison.reported)"
+                        :class="[
+                            'mt-1 flex items-center gap-1 text-xs',
+                            comparison(report.comparison.reported)?.class,
+                        ]"
+                    >
+                        <component
+                            :is="comparison(report.comparison.reported)?.icon"
+                            class="size-3"
+                        />
+                        {{ comparison(report.comparison.reported)?.text }}
+                    </p>
+                    <p v-else class="text-muted-foreground mt-1 text-xs">
+                        Geen vergelijkbare vorige periode
+                    </p>
+                </div>
+            </div>
+            <div
+                class="border-border flex min-w-0 items-start gap-3 border-b p-5 xl:border-r xl:border-b-0 xl:last:border-r-0"
             >
-            <Card
-                ><CardContent class="flex items-center gap-4 p-5"
-                    ><Clock3 class="size-8 text-orange-500" />
-                    <div>
-                        <p class="text-muted-foreground text-sm">
-                            Gem. eerste reactie
-                        </p>
-                        <p
-                            class="text-3xl font-semibold whitespace-nowrap tabular-nums"
-                        >
-                            {{
-                                duration(
-                                    report.summary
-                                        .average_first_response_minutes,
-                                )
-                            }}
-                        </p>
-                        <p
-                            v-if="
-                                comparison(
-                                    report.comparison
-                                        .average_first_response_minutes,
-                                    true,
-                                )
-                            "
-                            :class="[
-                                'mt-1 text-xs',
-                                comparison(
-                                    report.comparison
-                                        .average_first_response_minutes,
-                                    true,
-                                )?.class,
-                            ]"
-                        >
-                            {{
-                                comparison(
-                                    report.comparison
-                                        .average_first_response_minutes,
-                                    true,
-                                )?.text
-                            }}
-                        </p>
-                        <p v-else class="text-muted-foreground mt-1 text-xs">
-                            Geen vergelijkbare vorige periode
-                        </p>
-                    </div></CardContent
-                ></Card
+                <CheckCircle2
+                    class="mt-1 size-5 shrink-0 text-[var(--tracepilot-success-ink)]"
+                />
+                <div>
+                    <p class="text-muted-foreground text-sm">Afgerond</p>
+                    <p
+                        class="text-xl font-semibold break-words tabular-nums sm:text-2xl"
+                    >
+                        {{ report.summary.completed }}
+                    </p>
+                    <p
+                        v-if="
+                            comparison(report.comparison.completed, 'increase')
+                        "
+                        :class="[
+                            'mt-1 text-xs',
+                            comparison(report.comparison.completed, 'increase')
+                                ?.class,
+                        ]"
+                    >
+                        {{
+                            comparison(report.comparison.completed, 'increase')
+                                ?.text
+                        }}
+                    </p>
+                    <p v-else class="text-muted-foreground mt-1 text-xs">
+                        Geen vergelijkbare vorige periode
+                    </p>
+                </div>
+            </div>
+            <div
+                class="border-border flex min-w-0 items-start gap-3 border-b p-5 xl:border-r xl:border-b-0 xl:last:border-r-0"
             >
-            <Card
-                ><CardContent class="flex items-center gap-4 p-5"
-                    ><Timer class="size-8 text-violet-600" />
-                    <div>
-                        <p class="text-muted-foreground text-sm">
-                            Gem. oplossing
-                        </p>
-                        <p
-                            class="text-3xl font-semibold whitespace-nowrap tabular-nums"
-                        >
-                            {{
-                                duration(
-                                    report.summary.average_resolution_minutes,
-                                )
-                            }}
-                        </p>
-                        <p
-                            v-if="
-                                comparison(
-                                    report.comparison
-                                        .average_resolution_minutes,
-                                    true,
-                                )
-                            "
-                            :class="[
-                                'mt-1 text-xs',
-                                comparison(
-                                    report.comparison
-                                        .average_resolution_minutes,
-                                    true,
-                                )?.class,
-                            ]"
-                        >
-                            {{
-                                comparison(
-                                    report.comparison
-                                        .average_resolution_minutes,
-                                    true,
-                                )?.text
-                            }}
-                        </p>
-                        <p v-else class="text-muted-foreground mt-1 text-xs">
-                            Geen vergelijkbare vorige periode
-                        </p>
-                    </div></CardContent
-                ></Card
+                <Clock3
+                    class="mt-1 size-5 shrink-0 text-[var(--tracepilot-warning-ink)]"
+                />
+                <div>
+                    <p class="text-muted-foreground text-sm">
+                        Gem. eerste reactie
+                    </p>
+                    <p
+                        class="text-xl font-semibold break-words tabular-nums sm:text-2xl"
+                    >
+                        {{
+                            duration(
+                                report.summary.average_first_response_minutes,
+                            )
+                        }}
+                    </p>
+                    <p
+                        v-if="
+                            comparison(
+                                report.comparison
+                                    .average_first_response_minutes,
+                                true,
+                            )
+                        "
+                        :class="[
+                            'mt-1 text-xs',
+                            comparison(
+                                report.comparison
+                                    .average_first_response_minutes,
+                                true,
+                            )?.class,
+                        ]"
+                    >
+                        {{
+                            comparison(
+                                report.comparison
+                                    .average_first_response_minutes,
+                                true,
+                            )?.text
+                        }}
+                    </p>
+                    <p v-else class="text-muted-foreground mt-1 text-xs">
+                        Geen vergelijkbare vorige periode
+                    </p>
+                </div>
+            </div>
+            <div
+                class="border-border flex min-w-0 items-start gap-3 border-b p-5 xl:border-r xl:border-b-0 xl:last:border-r-0"
             >
-            <Card>
-                <CardContent class="flex items-center gap-4 p-5">
-                    <CircleAlert class="size-8 text-orange-500" />
-                    <div>
-                        <p class="text-muted-foreground text-sm">Nog open</p>
-                        <p class="text-3xl font-semibold tabular-nums">
-                            {{ report.summary.active }}
-                        </p>
-                        <p class="text-muted-foreground mt-1 text-xs">
-                            Vraagt opvolging
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
+                <Timer class="text-muted-foreground mt-1 size-5 shrink-0" />
+                <div>
+                    <p class="text-muted-foreground text-sm">Gem. oplossing</p>
+                    <p
+                        class="text-xl font-semibold break-words tabular-nums sm:text-2xl"
+                    >
+                        {{
+                            duration(report.summary.average_resolution_minutes)
+                        }}
+                    </p>
+                    <p
+                        v-if="
+                            comparison(
+                                report.comparison.average_resolution_minutes,
+                                true,
+                            )
+                        "
+                        :class="[
+                            'mt-1 text-xs',
+                            comparison(
+                                report.comparison.average_resolution_minutes,
+                                true,
+                            )?.class,
+                        ]"
+                    >
+                        {{
+                            comparison(
+                                report.comparison.average_resolution_minutes,
+                                true,
+                            )?.text
+                        }}
+                    </p>
+                    <p v-else class="text-muted-foreground mt-1 text-xs">
+                        Geen vergelijkbare vorige periode
+                    </p>
+                </div>
+            </div>
+            <div
+                class="border-border order-first col-span-2 flex min-w-0 items-start gap-3 border-b p-5 xl:order-last xl:col-span-1 xl:border-r xl:border-b-0 xl:last:border-r-0"
+            >
+                <CircleAlert
+                    class="mt-1 size-5 shrink-0 text-[var(--tracepilot-warning-ink)]"
+                />
+                <div>
+                    <p class="text-muted-foreground text-sm">Nog open</p>
+                    <p class="text-2xl font-semibold tabular-nums">
+                        {{ report.summary.active }}
+                    </p>
+                    <p class="text-muted-foreground mt-1 text-xs">
+                        Vraagt opvolging
+                    </p>
+                </div>
+            </div>
         </section>
 
         <Card>
             <CardHeader>
-                <CardTitle>Incidentontwikkeling</CardTitle>
+                <CardTitle as="h2">Incidentontwikkeling</CardTitle>
                 <CardDescription>
                     Gemelde storingen per
                     {{
@@ -549,36 +539,52 @@ defineOptions({
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div
+                <p
                     v-if="report.summary.reported"
-                    class="flex h-48 items-end gap-1"
-                    role="img"
-                    aria-label="Grafiek met gemelde storingen per periode"
+                    class="text-muted-foreground mb-3 text-xs sm:hidden"
+                >
+                    Veeg horizontaal om alle periodes te bekijken.
+                </p>
+                <div
+                    class="overflow-x-auto"
+                    tabindex="0"
+                    role="region"
+                    aria-label="Incidentontwikkeling, horizontaal scrollbaar"
                 >
                     <div
-                        v-for="point in report.trend.points"
-                        :key="point.label"
-                        class="group flex h-full min-w-0 flex-1 flex-col justify-end text-center"
-                        :aria-label="`${point.label}: ${point.reported} gemeld`"
+                        v-if="report.summary.reported"
+                        class="flex h-48 items-end gap-1 pt-5"
+                        :style="{
+                            minWidth: `${report.trend.points.length * (report.trend.granularity === 'day' ? 24 : 64)}px`,
+                        }"
+                        role="img"
+                        aria-label="Grafiek met gemelde storingen per periode"
                     >
-                        <div class="relative flex flex-1 items-end">
-                            <span
-                                v-if="point.reported"
-                                class="text-muted-foreground absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] tabular-nums"
-                                >{{ point.reported }}</span
-                            >
-                            <div
-                                class="bg-primary/80 group-hover:bg-primary w-full rounded-t transition-colors"
-                                :style="{
-                                    height: `${Math.max((point.reported / trendMaximum) * 100, point.reported ? 4 : 0)}%`,
-                                }"
-                            />
-                        </div>
-                        <span
-                            class="text-muted-foreground mt-2 h-3 text-center text-[10px] tabular-nums"
-                            :aria-label="point.label"
-                            >{{ chartAxisLabel(point) }}</span
+                        <div
+                            v-for="point in report.trend.points"
+                            :key="point.label"
+                            class="group flex h-full min-w-0 flex-1 flex-col justify-end text-center"
+                            :aria-label="`${point.label}: ${point.reported} gemeld`"
                         >
+                            <div class="relative flex flex-1 items-end">
+                                <span
+                                    v-if="point.reported"
+                                    class="text-muted-foreground absolute -top-5 left-1/2 -translate-x-1/2 text-xs tabular-nums"
+                                    >{{ point.reported }}</span
+                                >
+                                <div
+                                    class="bg-primary/80 group-hover:bg-primary w-full rounded-t transition-colors"
+                                    :style="{
+                                        height: `${Math.max((point.reported / trendMaximum) * 100, point.reported ? 4 : 0)}%`,
+                                    }"
+                                />
+                            </div>
+                            <span
+                                class="text-muted-foreground mt-2 h-4 text-center text-xs tabular-nums"
+                                :aria-label="point.label"
+                                >{{ chartAxisLabel(point) }}</span
+                            >
+                        </div>
                     </div>
                 </div>
                 <div
@@ -614,7 +620,7 @@ defineOptions({
         <section class="grid gap-5 lg:grid-cols-2">
             <Card>
                 <CardHeader
-                    ><CardTitle>SLA-prestaties</CardTitle
+                    ><CardTitle as="h2">SLA-prestaties</CardTitle
                     ><CardDescription
                         >Alleen vastgelegde reacties en technische oplossingen
                         met een SLA-target.</CardDescription
@@ -645,7 +651,7 @@ defineOptions({
             </Card>
             <Card>
                 <CardHeader
-                    ><CardTitle>Verdeling per prioriteit</CardTitle
+                    ><CardTitle as="h2">Verdeling per prioriteit</CardTitle
                     ><CardDescription
                         >Gemelde en afgeronde storingen in de gekozen
                         periode.</CardDescription
@@ -675,7 +681,7 @@ defineOptions({
 
         <Card>
             <CardHeader
-                ><CardTitle>Trends naar type storing</CardTitle
+                ><CardTitle as="h2">Trends naar type storing</CardTitle
                 ><CardDescription
                     >Alleen storingen die bij de afhandeling zijn
                     geclassificeerd.</CardDescription
@@ -710,13 +716,22 @@ defineOptions({
 
         <Card>
             <CardHeader
-                ><CardTitle>Projectprestaties</CardTitle
+                ><CardTitle as="h2">Projectprestaties</CardTitle
                 ><CardDescription
                     >Oplostijd en SLA-score per project.</CardDescription
                 ></CardHeader
             >
-            <CardContent class="p-0">
-                <div v-if="report.projects.length" class="overflow-x-auto">
+            <CardContent class="p-0"
+                ><p class="text-muted-foreground px-6 pb-3 text-xs sm:hidden">
+                    Veeg horizontaal om alle projectgegevens te bekijken.
+                </p>
+                <div
+                    v-if="report.projects.length"
+                    class="overflow-x-auto"
+                    tabindex="0"
+                    role="region"
+                    aria-label="Projectprestaties, horizontaal scrollbaar"
+                >
                     <table class="w-full min-w-[680px] text-left text-sm">
                         <thead class="text-muted-foreground bg-muted/40">
                             <tr>
@@ -781,5 +796,5 @@ defineOptions({
                 </p>
             </CardContent>
         </Card>
-    </div>
+    </WorkspacePage>
 </template>

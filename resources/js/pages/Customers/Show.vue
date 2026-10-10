@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import WorkspaceHeader from '@/components/WorkspaceHeader.vue';
+import WorkspacePage from '@/components/WorkspacePage.vue';
 import PagePagination from '@/components/PagePagination.vue';
 import type { Paginated } from '@/types/pagination';
 import { Head, Link } from '@inertiajs/vue3';
@@ -44,35 +46,22 @@ const formatDate = (value: string) =>
 <template>
     <Head :title="customer.name" />
 
-    <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
-    >
-        <section
-            class="bg-card flex flex-col gap-4 rounded-xl border p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6"
+    <WorkspacePage>
+        <WorkspaceHeader
+            :title="customer.name"
+            :description="`Klant sinds ${formatDate(customer.created_at)}`"
         >
-            <div class="space-y-2">
-                <h1
-                    class="text-2xl font-semibold tracking-tight text-foreground"
-                >
-                    {{ customer.name }}
-                </h1>
-                <p class="text-muted-foreground text-sm">
-                    Klant sinds {{ formatDate(customer.created_at) }}
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <Button variant="outline" as-child>
-                    <Link :href="edit(customer.id)"><Pencil /> Bewerken</Link>
-                </Button>
-                <Button as-child>
-                    <Link :href="create()"><Plus /> Project toevoegen</Link>
-                </Button>
-            </div>
-        </section>
+            <Button variant="outline" as-child>
+                <Link :href="edit(customer.id)"><Pencil /> Bewerken</Link>
+            </Button>
+            <Button as-child>
+                <Link :href="create()"><Plus /> Project toevoegen</Link>
+            </Button>
+        </WorkspaceHeader>
 
         <Card class="overflow-hidden">
             <CardHeader class="border-b">
-                <CardTitle>Projecten</CardTitle>
+                <CardTitle as="h2">Projecten</CardTitle>
                 <CardDescription>
                     Projecten die aan deze klant gekoppeld zijn.
                 </CardDescription>
@@ -98,7 +87,7 @@ const formatDate = (value: string) =>
                         </div>
                         <Badge
                             :variant="
-                                project.is_active ? 'default' : 'secondary'
+                                project.is_active ? 'outline' : 'secondary'
                             "
                         >
                             {{ project.is_active ? 'Actief' : 'Inactief' }}
@@ -125,5 +114,5 @@ const formatDate = (value: string) =>
             </CardContent>
         </Card>
         <PagePagination :page="projects" />
-    </div>
+    </WorkspacePage>
 </template>

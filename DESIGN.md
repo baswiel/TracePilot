@@ -67,6 +67,17 @@ typography:
     fontSize: "0.875rem"
     fontWeight: 500
     lineHeight: "1.25rem"
+  button-label:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 600
+    lineHeight: "1.25rem"
+  settings-heading:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.25rem"
+    fontWeight: 600
+    lineHeight: "1.75rem"
+    letterSpacing: "-0.025em"
   caption:
     fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.75rem"
@@ -96,7 +107,7 @@ components:
   button-primary:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.surface}"
-    typography: "{typography.label}"
+    typography: "{typography.button-label}"
     rounded: "{rounded.control}"
     padding: "8px 16px"
     height: "40px"
@@ -143,6 +154,12 @@ components:
     textColor: "{colors.warning-ink}"
     rounded: "{rounded.control}"
     padding: "4px 10px"
+  appearance-selection:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.primary}"
+    rounded: "{rounded.native-input}"
+    padding: "8px 14px"
+    height: "40px"
 ---
 
 # Design System: TracePilot
@@ -153,9 +170,9 @@ components:
 
 A familiar operational workspace: Inter, navy text, blue selection and cool surfaces support fast reading under time pressure. Restrained red, amber and green treatments make urgency visible alongside explicit labels.
 
-The shared shell and controls carry the visual identity across the application. Existing SVG brand assets remain in use; this pass introduced no shipping raster assets. Product terminology remains governed by docs/PRODUCT.md.
+The shared shell and controls carry the visual identity across the application. Existing SVG brand assets remain in use. Product terminology remains governed by docs/PRODUCT.md.
 
-This records the implementation in [resources/css/app.css](resources/css/app.css) and the shared Vue controls. [style.md](style.md) remains the operational rulebook; [docs/PRODUCT.md](docs/PRODUCT.md) remains the product source of truth. The dashboard composition contract lives in [.impeccable/surfaces/dashboard.md](.impeccable/surfaces/dashboard.md).
+This records the current working-copy implementation in [resources/css/app.css](resources/css/app.css), [resources/css/transitions.css](resources/css/transitions.css) and the shared Vue controls. [style.md](style.md) remains the operational rulebook; [docs/PRODUCT.md](docs/PRODUCT.md) remains the product source of truth. Surface-specific composition contracts live in [.impeccable/surfaces/dashboard.md](.impeccable/surfaces/dashboard.md) and [.impeccable/surfaces/workspace.md](.impeccable/surfaces/workspace.md). The machine-readable frontmatter uses the [DESIGN.md format](https://raw.githubusercontent.com/google-labs-code/design.md/main/docs/spec.md); `.impeccable/design.json` holds motion, depth and component-preview extensions.
 
 **Key Characteristics:**
 - Calm blue and navy identity with semantic urgency.
@@ -193,13 +210,16 @@ The type hierarchy is compact and direct. Semibold incident names and headings l
 - **Headline:** fluid dashboard greeting; the only large introductory heading.
 - **Page title:** incident and ordinary page headings.
 - **Section title:** queue and card headings; some existing cards use the adjacent 20px size.
-- **Body / label:** table content and controls; labels use medium weight, buttons semibold.
+- **Body / label:** table content and fields; labels use medium weight. **Button label** separately records the semibold action style.
+- **Settings heading:** default `Heading` uses 20px; its small variant uses the 18px section title. `WorkspaceHeader` provides the page-level `h1`; `Heading` uses `h2`, and `CardTitle` defaults to `h3` with an explicit `h2` option.
 - **Caption:** project/customer context, table headings and compact SLA detail.
 - **Counter:** desktop KPI totals; mobile totals shrink to 28px.
 
 ## Layout
 
-A grouped sidebar separates Werkplek from Beheer; settings and user controls sit in the footer. A sticky toolbar is 64px high. Dashboard and incident detail content use a centered 1440px maximum width, 20px side padding increasing to 32px from the small breakpoint. Dense management views also use the established 1152px container.
+A grouped sidebar separates Werkplek from Beheer; settings and user controls sit in the footer. A sticky toolbar is 64px high. Dashboard and incident detail content use a centered 1440px maximum width, 20px side padding increasing to 32px from the small breakpoint. Shared management views use `WorkspacePage` with the same 1440px width; compact forms use its 768px variant. Some older views retain the 1152px container.
+
+Settings use a 224px navigation column beside flexible content from 1024px, with a 32px column gap and sticky navigation. On smaller screens a visible current-setting button expands the grouped navigation.
 
 Main blocks use 24px gaps; summary grids use 20px gaps. Card content normally has 24px padding, with compact filters using 16–20px. Header actions wrap on narrow screens. Default buttons are 40px high and text inputs 44px.
 
@@ -213,7 +233,7 @@ Borders and tonal layers do most of the structural work. Shared cards use the so
 
 **The State Before Spectacle Rule.** Use restrained state transitions; respect reduced motion for table rows, navigation and buttons.
 
-Table backgrounds transition over 150ms with ease-out; buttons use 150ms color transitions. The shell retains its existing sidebar and dialog motion. This documentation does not claim that every legacy transition has received a reduced-motion audit.
+Table backgrounds transition over 150ms with ease-out; buttons use 150ms color transitions. The shell retains its existing sidebar and dialog motion. The shared transition stylesheet adds 250ms disclosure, icon and appearance-selection transitions; their reduced-motion guards disable the tween while preserving state. This documentation does not claim that every legacy transition has received a reduced-motion audit.
 
 ## Shapes
 
@@ -247,7 +267,23 @@ Cards have a fine border, soft shadow and separated header/content when controls
 
 A semantic panel directly below the incident header names the next required action. Required checklist progress remains near status, priority and SLA; a separate timestamp strip provides the exact lifecycle context. Use explicit action copy and meaningful tones rather than adding a decorative headline.
 
-Visual verification for this redesign covered dashboard, incident list and incident detail viewports, plus a dark dashboard. Management, reports, settings and authentication inherited token/control changes without a complete visual matrix. Production build, typecheck, targeted lint and 57 backend tests passed. The final correction batch passed build, typecheck and lint; the reviewer confirmed the mobile hierarchy and muted contrast fixes. This is not a claim of a complete accessibility or dark-mode audit.
+### Workspace pages and headers
+
+Reuse `WorkspacePage` for the centered content width, 24px block gaps, 20px/32px horizontal padding and bottom breathing room. `WorkspaceHeader` supplies one 24px semibold `h1`, a muted description with 24px line height, optional context chips and wrapping action controls. Its layout stacks below 640px and aligns actions to the heading on larger screens. Reuse the settings layout's grouped Account and Incidentbeheer navigation rather than creating a separate navigation pattern.
+
+### Motion and state continuity
+
+[resources/css/transitions.css](resources/css/transitions.css) owns the semantic variables and `t-*` hooks. Animate an existing interaction, rather than revealing static content on page load.
+
+| Interaction | Hooks | Timing and easing | Behavior |
+| --- | --- | --- | --- |
+| Dashboard and extra incident filters | `.t-acc`, `data-open`, `.t-acc-panel`, `.t-acc-panel-inner` | `--acc-expand`, `--acc-collapse`: 250ms; `--acc-ease`: `cubic-bezier(0.22, 1, 0.36, 1)` | Grid track grows from `0fr` to `1fr`; inner content fades and resolves a 2px blur. Closed panels are `inert` and `aria-hidden`. Dashboard filters stay visible on desktop, including before hydration. |
+| Password visibility | `.t-icon-swap`, `data-state`, `.t-icon`, `data-icon` | `--icon-swap-dur`: 250ms; `--icon-swap-ease`: `ease-in-out` | Both Lucide icons share one grid cell; opacity, 2px blur and scale cross-fade. The button retains its label, pressed state and keyboard focus. |
+| Appearance selection | `.t-tabs`, `.t-tab`, `.t-tabs-pill`, `.appearance-tabs` | `--tabs-dur`: 250ms; `--tabs-ease`: `cubic-bezier(0.22, 1, 0.36, 1)` | The selection moves and resizes to the active button. First placement and resize snap without a tween. Controls remain a labeled button group with `aria-pressed`, not content tabs. |
+
+The appearance group uses the existing muted/card/accent color variables in both themes, 12px group corners, 8px button/selection corners and 40px controls. The unmodified transition snippet's 48px radius is overridden by `.appearance-tabs`; it is not the TracePilot shape rule. A `ResizeObserver` keeps the selection aligned without measuring on every animation frame.
+
+All three patterns retain `prefers-reduced-motion: reduce` guards. Keep the two-layer disclosure structure so closed panels have no residual padding, and preserve input values while filters close. Keep motion variables in the stylesheet rather than introducing component-specific timeouts. Documentation records implemented behavior; it does not certify a complete accessibility or dark-mode audit.
 
 ## Do's and Don'ts
 
@@ -257,9 +293,11 @@ Visual verification for this redesign covered dashboard, incident list and incid
 - **Do** expose incident priority, project context, SLA and required checklist progress together.
 - **Do** preserve horizontal scrolling and a visible scrolling hint for wide mobile tables.
 - **Do** retain visible focus states and accessible labels for icon controls.
+- **Do** reuse semantic motion variables and keep reduced-motion guards and closed-panel `inert` behavior.
 
 ### Don't:
 - **Don't** use color as the only status or urgency cue.
 - **Don't** replace the existing SVG logos with decorative raster imagery.
 - **Don't** add heavier card shadows or gradients.
 - **Don't** conceal important incident columns to fit a narrow screen.
+- **Don't** add page-load choreography or animate the appearance selection from zero on first paint.

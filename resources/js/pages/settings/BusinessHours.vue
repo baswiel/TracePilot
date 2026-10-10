@@ -43,7 +43,10 @@ const toggleDay = (day: number, checked: boolean) => {
             </p>
         </div>
 
-        <form class="space-y-6" @submit.prevent="form.patch(update.url())">
+        <form
+            class="bg-card max-w-3xl space-y-6 rounded-xl border p-5 sm:p-6"
+            @submit.prevent="form.patch(update.url())"
+        >
             <fieldset class="space-y-3">
                 <legend class="text-sm font-medium">Werkdagen</legend>
                 <div class="grid gap-3 sm:grid-cols-2">
@@ -60,15 +63,20 @@ const toggleDay = (day: number, checked: boolean) => {
                     >
                         <Checkbox
                             :id="`working-day-${day.value}`"
-                            :checked="form.working_days.includes(day.value)"
-                            @update:checked="
+                            :model-value="form.working_days.includes(day.value)"
+                            :aria-invalid="Boolean(form.errors.working_days)"
+                            aria-describedby="hours-working_days-error"
+                            @update:model-value="
                                 toggleDay(day.value, $event === true)
                             "
                         />
                         {{ day.label }}
                     </Label>
                 </div>
-                <InputError :message="form.errors.working_days" />
+                <InputError
+                    id="hours-working_days-error"
+                    :message="form.errors.working_days"
+                />
             </fieldset>
 
             <div class="grid gap-5 sm:grid-cols-2">

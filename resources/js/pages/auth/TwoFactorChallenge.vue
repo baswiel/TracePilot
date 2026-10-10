@@ -18,18 +18,17 @@ const code = ref<string>('');
 const authConfigContent = computed<TwoFactorConfigContent>(() => {
     if (showRecoveryInput.value) {
         return {
-            title: 'Recovery code',
+            title: 'Herstelcode',
             description:
-                'Please confirm access to your account by entering one of your emergency recovery codes.',
-            buttonText: 'login using an authentication code',
+                'Vul een van je herstelcodes in om toegang tot je account te bevestigen.',
+            buttonText: 'Inloggen met een authenticatiecode',
         };
     }
 
     return {
-        title: 'Authentication code',
-        description:
-            'Enter the authentication code provided by your authenticator application.',
-        buttonText: 'login using a recovery code',
+        title: 'Authenticatiecode',
+        description: 'Vul de code uit je authenticator-app in.',
+        buttonText: 'Inloggen met een herstelcode',
     };
 });
 
@@ -48,7 +47,7 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
 </script>
 
 <template>
-    <Head title="Two-factor authentication" />
+    <Head title="Tweestapsverificatie" />
 
     <div class="space-y-6">
         <template v-if="!showRecoveryInput">
@@ -66,6 +65,7 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                     <div class="flex w-full items-center justify-center">
                         <InputOTP
                             id="otp"
+                            aria-label="Authenticatiecode"
                             v-model="code"
                             :maxlength="6"
                             :disabled="processing"
@@ -83,10 +83,9 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                     <InputError :message="errors.code" />
                 </div>
                 <Button type="submit" class="w-full" :disabled="processing"
-                    >Continue</Button
+                    >Doorgaan</Button
                 >
                 <div class="text-muted-foreground text-center text-sm">
-                    <span>or you can </span>
                     <button
                         type="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
@@ -107,18 +106,18 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
             >
                 <Input
                     name="recovery_code"
+                    aria-label="Herstelcode"
                     type="text"
-                    placeholder="Enter recovery code"
+                    placeholder="Vul je herstelcode in"
                     :autofocus="showRecoveryInput"
                     required
                 />
                 <InputError :message="errors.recovery_code" />
                 <Button type="submit" class="w-full" :disabled="processing"
-                    >Continue</Button
+                    >Doorgaan</Button
                 >
 
                 <div class="text-muted-foreground text-center text-sm">
-                    <span>or you can </span>
                     <button
                         type="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"

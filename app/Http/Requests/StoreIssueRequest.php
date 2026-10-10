@@ -52,6 +52,24 @@ class StoreIssueRequest extends FormRequest
         ];
     }
 
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        return [
+            'project_id.required' => 'Kies een project.',
+            'project_id.integer' => 'Kies een geldig project.',
+            'project_id.exists' => 'Dit project is niet actief of bestaat niet meer. Kies een ander project.',
+            'title.required' => 'Vul een titel voor de storing in.',
+            'title.string' => 'Vul een geldige titel in.',
+            'title.max' => 'Gebruik maximaal 255 tekens voor de titel.',
+            'description.string' => 'Vul een geldige omschrijving in.',
+            'priority.required' => 'Kies een prioriteit.',
+            'priority.Illuminate\\Validation\\Rules\\Enum' => 'Kies een geldige prioriteit.',
+            'reported_at.required' => 'Vul de startdatum en tijd van de storing in.',
+            'reported_at.date' => 'Vul een geldige startdatum en tijd in.',
+        ];
+    }
+
     /** @return array<int, \Closure(Validator): void> */
     public function after(): array
     {

@@ -11,8 +11,8 @@ import { update } from '@/routes/password';
 
 defineOptions({
     layout: {
-        title: 'Reset password',
-        description: 'Please enter your new password below',
+        title: 'Wachtwoord herstellen',
+        description: 'Kies een nieuw wachtwoord voor je account.',
     },
 });
 
@@ -26,7 +26,7 @@ const inputEmail = ref(props.email);
 </script>
 
 <template>
-    <Head title="Reset password" />
+    <Head title="Wachtwoord herstellen" />
 
     <Form
         v-bind="update.form()"
@@ -36,9 +36,11 @@ const inputEmail = ref(props.email);
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email">Email</Label>
+                <Label for="email">E-mailadres</Label>
                 <Input
                     id="email"
+                    :aria-invalid="Boolean(errors.email)"
+                    aria-describedby="account-email-error"
                     type="email"
                     name="email"
                     autocomplete="email"
@@ -46,34 +48,50 @@ const inputEmail = ref(props.email);
                     class="mt-1 block w-full"
                     readonly
                 />
-                <InputError :message="errors.email" class="mt-2" />
+                <InputError
+                    id="account-email-error"
+                    :message="errors.email"
+                    class="mt-2"
+                />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">Password</Label>
+                <Label for="password">Wachtwoord</Label>
                 <PasswordInput
                     id="password"
+                    :aria-invalid="Boolean(errors.password)"
+                    aria-describedby="account-password-error"
                     name="password"
                     autocomplete="new-password"
                     class="mt-1 block w-full"
                     autofocus
-                    placeholder="Password"
+                    placeholder="Wachtwoord"
                     :passwordrules="passwordRules"
                 />
-                <InputError :message="errors.password" />
+                <InputError
+                    id="account-password-error"
+                    :message="errors.password"
+                />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation"> Confirm password </Label>
+                <Label for="password_confirmation">
+                    Wachtwoord bevestigen
+                </Label>
                 <PasswordInput
                     id="password_confirmation"
+                    :aria-invalid="Boolean(errors.password_confirmation)"
+                    aria-describedby="account-password_confirmation-error"
                     name="password_confirmation"
                     autocomplete="new-password"
                     class="mt-1 block w-full"
-                    placeholder="Confirm password"
+                    placeholder="Wachtwoord bevestigen"
                     :passwordrules="passwordRules"
                 />
-                <InputError :message="errors.password_confirmation" />
+                <InputError
+                    id="account-password_confirmation-error"
+                    :message="errors.password_confirmation"
+                />
             </div>
 
             <Button
@@ -83,7 +101,7 @@ const inputEmail = ref(props.email);
                 data-test="reset-password-button"
             >
                 <Spinner v-if="processing" />
-                Reset password
+                Wachtwoord herstellen
             </Button>
         </div>
     </Form>

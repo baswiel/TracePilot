@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import WorkspaceHeader from '@/components/WorkspaceHeader.vue';
+import WorkspacePage from '@/components/WorkspacePage.vue';
 import PagePagination from '@/components/PagePagination.vue';
 import type { Paginated } from '@/types/pagination';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -21,6 +23,14 @@ import { destroy, edit, index, show, store } from '@/routes/customers';
 
 type Customer = { id: number; name: string; projects_count: number };
 const props = defineProps<{ customers: Paginated<Customer> }>();
+const formOpen = ref(false);
+const toggleForm = async () => {
+    formOpen.value = !formOpen.value;
+    if (formOpen.value) {
+        await nextTick();
+        document.getElementById('name')?.focus();
+    }
+};
 const form = useForm({ name: '' });
 const customerToDelete = ref<Customer | null>(null);
 defineOptions({
@@ -34,6 +44,7 @@ defineOptions({
 const reset = () => {
     form.reset();
     form.clearErrors();
+    formOpen.value = false;
 };
 const submit = () => form.post(store.url(), { onSuccess: reset });
 const remove = () => {
@@ -47,39 +58,37 @@ const remove = () => {
 <template>
     <Head title="Klanten" />
 
-    <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
-    >
-        <section
-            class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+    <WorkspacePage>
+        <WorkspaceHeader
+            title="Klanten"
+            description="Beheer klanten en koppel ze aan projecten."
+            ><Button
+                :aria-expanded="formOpen"
+                aria-controls="customer-editor"
+                @click="toggleForm"
+                ><Plus /> Klant toevoegen</Button
+            ></WorkspaceHeader
         >
-            <div>
-                <h1
-                    class="text-2xl font-semibold tracking-tight text-foreground"
-                >
-                    Klanten
-                </h1>
-                <p class="text-muted-foreground mt-1 text-sm">
-                    Beheer klanten en koppel ze aan projecten.
-                </p>
-            </div>
-        </section>
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Klant toevoegen</CardTitle>
+        <Card
+            v-if="formOpen"
+            id="customer-editor"
+            class="gap-0 overflow-hidden py-0"
+        >
+            <CardHeader class="border-b py-5">
+                <CardTitle as="h2">Klant toevoegen</CardTitle>
                 <CardDescription
                     >Een klant kan aan meerdere projecten gekoppeld
                     worden.</CardDescription
                 >
             </CardHeader>
-            <CardContent>
+            <CardContent class="p-5 sm:p-6">
                 <form
                     class="flex flex-col gap-4 sm:flex-row sm:items-end"
                     @submit.prevent="submit"
                 >
                     <div class="grid flex-1 gap-2">
-                        <Label for="name">Naam</Label>
+                        <Label for="name">Naam (verplicht)</Label>
                         <Input
                             id="name"
                             v-model="form.name"
@@ -93,7 +102,10 @@ const remove = () => {
                             :message="form.errors.name"
                         />
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex flex-wrap gap-2">
+                        <Button type="button" variant="outline" @click="reset"
+                            >Annuleren</Button
+                        >
                         <Button :disabled="form.processing" type="submit"
                             ><Plus /> Toevoegen</Button
                         >
@@ -104,17 +116,27 @@ const remove = () => {
 
         <Card class="overflow-hidden">
             <CardHeader class="border-b"
-                ><CardTitle>Klantenlijst</CardTitle></CardHeader
+                ><CardTitle as="h2"
+                    >Klantenlijst
+                    <span
+                        class="text-muted-foreground ml-2 text-sm font-normal tabular-nums"
+                        >{{ customers.total }}</span
+                    ></CardTitle
+                ></CardHeader
             >
             <CardContent class="p-0">
                 <div v-if="customers.data.length" class="divide-y">
                     <div
                         v-for="customer in customers.data"
                         :key="customer.id"
-                        class="hover:bg-muted/50 flex items-center justify-between gap-3 p-4 transition-colors sm:p-5"
+                        class="hover:bg-muted/50 flex flex-col gap-4 p-4 transition-colors sm:flex-row sm:items-center sm:justify-between sm:p-5"
                     >
                         <div>
-                            <p class="font-medium">{{ customer.name }}</p>
+                            <Link
+                                :href="show(customer.id)"
+                                class="hover:text-primary font-semibold break-words hover:underline"
+                                >{{ customer.name }}</Link
+                            >
                             <p class="text-muted-foreground text-sm">
                                 {{ customer.projects_count }}
                                 {{
@@ -124,19 +146,19 @@ const remove = () => {
                                 }}
                             </p>
                         </div>
-                        <div class="flex gap-2">
-                            <Button size="sm" variant="outline" as-child
+                        <div class="flex flex-wrap gap-2">
+                            <Button size="default" variant="outline" as-child
                                 ><Link :href="show(customer.id)">
                                     <Eye /> Bekijken
                                 </Link></Button
                             >
-                            <Button size="sm" variant="outline" as-child
+                            <Button size="default" variant="outline" as-child
                                 ><Link :href="edit(customer.id)">
                                     <Pencil /> Bewerken
                                 </Link></Button
                             >
                             <Button
-                                size="sm"
+                                size="default"
                                 variant="outline"
                                 :disabled="customer.projects_count > 0"
                                 @click="customerToDelete = customer"
@@ -173,5 +195,5 @@ const remove = () => {
             @confirm="remove"
         />
         <PagePagination :page="customers" />
-    </div>
+    </WorkspacePage>
 </template>

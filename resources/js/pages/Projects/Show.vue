@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import WorkspaceHeader from '@/components/WorkspaceHeader.vue';
+import WorkspacePage from '@/components/WorkspacePage.vue';
 import type { IssuePriority, IssueStatus } from '@/types/issues';
 import { formatDate } from '@/lib/dates';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -108,53 +110,145 @@ const formatDuration = (minutes: number) => {
 <template>
     <Head :title="project.name" />
 
-    <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
-    >
-        <section
-            class="bg-card flex flex-col gap-4 rounded-xl border p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6"
+    <WorkspacePage>
+        <WorkspaceHeader
+            :title="project.name"
+            :description="project.customer_name || 'Geen klantnaam opgegeven'"
         >
-            <div class="space-y-2">
-                <div class="flex flex-wrap items-center gap-2">
-                    <h1
-                        class="text-2xl font-semibold tracking-tight text-foreground"
+            <template #context
+                ><Badge variant="outline">{{
+                    project.is_active ? 'Actief' : 'Inactief'
+                }}</Badge></template
+            >
+            <Button variant="outline" as-child>
+                <Link :href="edit(project.id)"><Pencil /> Bewerken</Link>
+            </Button>
+            <Button
+                :disabled="isUpdatingActive"
+                variant="outline"
+                @click="setActive"
+            >
+                {{
+                    project.is_active ? 'Archiveer project' : 'Activeer project'
+                }}
+            </Button>
+            <Button as-child>
+                <Link :href="report()"><Plus /> Nieuwe storing</Link>
+            </Button>
+        </WorkspaceHeader>
+        <section class="grid gap-6 lg:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle as="h2">Huidige storingen</CardTitle>
+                    <CardDescription
+                        >Nog niet volledig afgeronde storingen.</CardDescription
                     >
-                        {{ project.name }}
-                    </h1>
-                    <Badge
-                        :variant="project.is_active ? 'default' : 'secondary'"
+                </CardHeader>
+                <CardContent>
+                    <div v-if="currentIssues.length" class="divide-y">
+                        <div
+                            v-for="issue in currentIssues"
+                            :key="issue.id"
+                            class="space-y-2 py-4 first:pt-0 last:pb-0"
+                        >
+                            <div class="flex items-start justify-between gap-3">
+                                <Link
+                                    class="font-medium hover:underline"
+                                    :href="showIssue(issue.id)"
+                                >
+                                    {{ issue.title }}
+                                </Link>
+                                <IssuePriorityBadge
+                                    :priority="issue.priority"
+                                />
+                            </div>
+                            <div
+                                class="text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-sm"
+                            >
+                                <IssueStatusBadge :status="issue.status" />
+                                <span
+                                    >Gemeld
+                                    {{ formatDate(issue.reported_at) }}</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        v-else
+                        class="flex flex-col items-center gap-2 px-5 py-8 text-center"
                     >
-                        {{ project.is_active ? 'Actief' : 'Inactief' }}
-                    </Badge>
-                </div>
-                <p class="text-muted-foreground text-sm">
-                    {{ project.customer_name || 'Geen klantnaam opgegeven' }}
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <Button variant="outline" as-child>
-                    <Link :href="edit(project.id)"><Pencil /> Bewerken</Link>
-                </Button>
-                <Button
-                    :disabled="isUpdatingActive"
-                    variant="outline"
-                    @click="setActive"
-                >
-                    {{
-                        project.is_active
-                            ? 'Archiveer project'
-                            : 'Activeer project'
-                    }}
-                </Button>
-                <Button as-child>
-                    <Link :href="report()"><Plus /> Nieuwe storing</Link>
-                </Button>
-            </div>
+                        <AlertCircle class="text-muted-foreground size-5" />
+                        <p class="text-sm font-medium">
+                            Geen huidige storingen
+                        </p>
+                        <p class="text-muted-foreground text-sm">
+                            Nieuwe storingen verschijnen hier.
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle as="h2">Recent afgerond</CardTitle>
+                    <CardDescription
+                        >De vijf meest recent afgeronde
+                        storingen.</CardDescription
+                    >
+                </CardHeader>
+                <CardContent>
+                    <div v-if="completedIssues.length" class="divide-y">
+                        <div
+                            v-for="issue in completedIssues"
+                            :key="issue.id"
+                            class="space-y-2 py-4 first:pt-0 last:pb-0"
+                        >
+                            <div class="flex items-start justify-between gap-3">
+                                <Link
+                                    class="font-medium hover:underline"
+                                    :href="showIssue(issue.id)"
+                                >
+                                    {{ issue.title }}
+                                </Link>
+                                <IssuePriorityBadge
+                                    :priority="issue.priority"
+                                />
+                            </div>
+                            <p class="text-muted-foreground text-sm">
+                                Afgerond
+                                {{
+                                    formatDate(
+                                        issue.completed_at ?? issue.reported_at,
+                                    )
+                                }}
+                            </p>
+                            <p class="text-muted-foreground text-sm">
+                                Duur
+                                {{
+                                    formatDuration(issue.duration_minutes ?? 0)
+                                }}
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        v-else
+                        class="flex flex-col items-center gap-2 px-5 py-8 text-center"
+                    >
+                        <FileText class="text-muted-foreground size-5" />
+                        <p class="text-sm font-medium">
+                            Nog geen afgeronde storingen
+                        </p>
+                        <p class="text-muted-foreground text-sm">
+                            Afgeronde storingen verschijnen hier.
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
         </section>
 
         <Card>
             <CardHeader>
-                <CardTitle>Projectinformatie</CardTitle>
+                <CardTitle as="h2">Projectinformatie</CardTitle>
             </CardHeader>
             <CardContent class="grid gap-5 sm:grid-cols-2">
                 <div class="sm:col-span-2">
@@ -184,7 +278,7 @@ const formatDuration = (minutes: number) => {
         <section class="grid gap-6 lg:grid-cols-2">
             <Card>
                 <CardHeader>
-                    <CardTitle>SLA</CardTitle>
+                    <CardTitle as="h2">SLA</CardTitle>
                     <CardDescription>
                         Afspraken voor de afhandeling van storingen.
                     </CardDescription>
@@ -289,7 +383,7 @@ const formatDuration = (minutes: number) => {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Contactpersoon</CardTitle>
+                    <CardTitle as="h2">Contactpersoon</CardTitle>
                     <CardDescription>
                         Aanspreekpunt voor dit project.
                     </CardDescription>
@@ -331,121 +425,6 @@ const formatDuration = (minutes: number) => {
             </Card>
         </section>
 
-        <section class="grid gap-6 lg:grid-cols-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Huidige storingen</CardTitle>
-                    <CardDescription
-                        >Nog niet volledig afgeronde storingen.</CardDescription
-                    >
-                </CardHeader>
-                <CardContent>
-                    <div
-                        v-if="currentIssues.length"
-                        class="divide-y rounded-lg border"
-                    >
-                        <div
-                            v-for="issue in currentIssues"
-                            :key="issue.id"
-                            class="space-y-2 p-4"
-                        >
-                            <div class="flex items-start justify-between gap-3">
-                                <Link
-                                    class="font-medium hover:underline"
-                                    :href="showIssue(issue.id)"
-                                >
-                                    {{ issue.title }}
-                                </Link>
-                                <IssuePriorityBadge
-                                    :priority="issue.priority"
-                                />
-                            </div>
-                            <div
-                                class="text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-sm"
-                            >
-                                <IssueStatusBadge :status="issue.status" />
-                                <span
-                                    >Gemeld
-                                    {{ formatDate(issue.reported_at) }}</span
-                                >
-                            </div>
-                        </div>
-                    </div>
-                    <div
-                        v-else
-                        class="flex flex-col items-center gap-2 rounded-lg border border-dashed px-5 py-10 text-center"
-                    >
-                        <AlertCircle class="text-muted-foreground size-5" />
-                        <p class="text-sm font-medium">
-                            Geen huidige storingen
-                        </p>
-                        <p class="text-muted-foreground text-sm">
-                            Nieuwe storingen verschijnen hier.
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Recent afgerond</CardTitle>
-                    <CardDescription
-                        >De vijf meest recent afgeronde
-                        storingen.</CardDescription
-                    >
-                </CardHeader>
-                <CardContent>
-                    <div
-                        v-if="completedIssues.length"
-                        class="divide-y rounded-lg border"
-                    >
-                        <div
-                            v-for="issue in completedIssues"
-                            :key="issue.id"
-                            class="space-y-2 p-4"
-                        >
-                            <div class="flex items-start justify-between gap-3">
-                                <Link
-                                    class="font-medium hover:underline"
-                                    :href="showIssue(issue.id)"
-                                >
-                                    {{ issue.title }}
-                                </Link>
-                                <IssuePriorityBadge
-                                    :priority="issue.priority"
-                                />
-                            </div>
-                            <p class="text-muted-foreground text-sm">
-                                Afgerond
-                                {{
-                                    formatDate(
-                                        issue.completed_at ?? issue.reported_at,
-                                    )
-                                }}
-                            </p>
-                            <p class="text-muted-foreground text-sm">
-                                Duur
-                                {{
-                                    formatDuration(issue.duration_minutes ?? 0)
-                                }}
-                            </p>
-                        </div>
-                    </div>
-                    <div
-                        v-else
-                        class="flex flex-col items-center gap-2 rounded-lg border border-dashed px-5 py-10 text-center"
-                    >
-                        <FileText class="text-muted-foreground size-5" />
-                        <p class="text-sm font-medium">
-                            Nog geen afgeronde storingen
-                        </p>
-                        <p class="text-muted-foreground text-sm">
-                            Afgeronde storingen verschijnen hier.
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
-        </section>
         <ConfirmDeleteDialog
             v-model:open="confirmArchive"
             title="Project archiveren"
@@ -454,5 +433,5 @@ const formatDuration = (minutes: number) => {
             :processing="isUpdatingActive"
             @confirm="applyActive"
         />
-    </div>
+    </WorkspacePage>
 </template>

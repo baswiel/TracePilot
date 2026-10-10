@@ -22,6 +22,27 @@ class IssueReportingTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_invalid_quick_reports_show_dutch_errors_without_creating_an_issue(): void
+    {
+        $project = Project::factory()->create(['is_active' => false]);
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('issues.store'), [
+                'project_id' => $project->id,
+                'title' => '   ',
+                'priority' => 'invalid',
+                'reported_at' => 'invalid',
+            ])
+            ->assertSessionHasErrors([
+                'project_id' => 'Dit project is niet actief of bestaat niet meer. Kies een ander project.',
+                'title' => 'Vul een titel voor de storing in.',
+                'priority' => 'Kies een geldige prioriteit.',
+                'reported_at' => 'Vul een geldige startdatum en tijd in.',
+            ]);
+
+        $this->assertDatabaseCount('issues', 0);
+    }
+
     public function test_an_authenticated_user_can_report_an_issue(): void
     {
         $reporter = User::factory()->create();

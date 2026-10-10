@@ -19,9 +19,16 @@ const submit = () => form.patch(update(props.customer.id).url);
 <template>
     <form class="space-y-6" @submit.prevent="submit">
         <div class="grid gap-2">
-            <Label for="name">Naam</Label>
-            <Input id="name" v-model="form.name" required autofocus />
-            <InputError :message="form.errors.name" />
+            <Label for="name">Naam (verplicht)</Label>
+            <Input
+                id="name"
+                :aria-invalid="Boolean(form.errors.name)"
+                aria-describedby="customer-name-error"
+                v-model="form.name"
+                required
+                autofocus
+            />
+            <InputError id="customer-name-error" :message="form.errors.name" />
         </div>
 
         <div class="flex flex-wrap gap-2">

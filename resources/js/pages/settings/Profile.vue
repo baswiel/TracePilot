@@ -20,7 +20,7 @@ defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: 'Profile settings',
+                title: 'Profiel',
                 href: edit(),
             },
         ],
@@ -32,15 +32,15 @@ const user = computed(() => page.props.auth.user);
 </script>
 
 <template>
-    <Head title="Profile settings" />
+    <Head title="Profiel" />
 
-    <h1 class="sr-only">Profile settings</h1>
-
-    <div class="flex flex-col space-y-6">
+    <div
+        class="bg-card flex max-w-3xl flex-col space-y-6 rounded-xl border p-5 sm:p-6"
+    >
         <Heading
             variant="small"
-            title="Profile"
-            description="Update your name and email address"
+            title="Profiel"
+            description="Werk je naam en e-mailadres bij."
         />
 
         <Form
@@ -49,59 +49,72 @@ const user = computed(() => page.props.auth.user);
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
-                <Label for="name">Name</Label>
+                <Label for="name">Naam</Label>
                 <Input
                     id="name"
+                    :aria-invalid="Boolean(errors.name)"
+                    aria-describedby="account-name-error"
                     class="mt-1 block w-full"
                     name="name"
                     :default-value="user.name"
                     required
                     autocomplete="name"
-                    placeholder="Full name"
+                    placeholder="Volledige naam"
                 />
-                <InputError class="mt-2" :message="errors.name" />
+                <InputError
+                    class="mt-2"
+                    id="account-name-error"
+                    :message="errors.name"
+                />
             </div>
 
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">E-mailadres</Label>
                 <Input
                     id="email"
+                    :aria-invalid="Boolean(errors.email)"
+                    aria-describedby="account-email-error"
                     type="email"
                     class="mt-1 block w-full"
                     name="email"
                     :default-value="user.email"
                     required
                     autocomplete="username"
-                    placeholder="Email address"
+                    placeholder="E-mailadres"
                 />
-                <InputError class="mt-2" :message="errors.email" />
+                <InputError
+                    class="mt-2"
+                    id="account-email-error"
+                    :message="errors.email"
+                />
             </div>
 
             <!-- @chisel-email-verification -->
             <div v-if="page.props.mustVerifyEmail && !user.email_verified_at">
                 <p class="text-muted-foreground -mt-4 text-sm">
-                    Your email address is unverified.
+                    Je e-mailadres is nog niet bevestigd.
                     <Link
                         :href="send()"
                         as="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                     >
-                        Click here to re-send the verification email.
+                        Verstuur de verificatiemail opnieuw.
                     </Link>
                 </p>
 
                 <div
                     v-if="page.props.status === 'verification-link-sent'"
-                    class="mt-2 text-sm font-medium text-green-600"
+                    class="mt-2 text-sm font-medium text-[var(--tracepilot-success-ink)]"
                 >
-                    A new verification link has been sent to your email address.
+                    Er is een nieuwe verificatielink naar je e-mailadres
+                    verzonden.
                 </div>
             </div>
             <!-- @end-chisel-email-verification -->
 
             <div class="flex items-center gap-4">
                 <Button :disabled="processing" data-test="update-profile-button"
-                    >Save</Button
+                    >Opslaan</Button
                 >
             </div>
         </Form>

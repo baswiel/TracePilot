@@ -4,14 +4,15 @@ import { cn } from "@/lib/utils"
 
 const props = defineProps<{
   class?: HTMLAttributes["class"]
+  as?: "h2" | "h3"
 }>()
 </script>
 
 <template>
-  <h3
+  <component :is="props.as ?? 'h3'"
     data-slot="card-title"
     :class="cn('leading-none font-semibold', props.class)"
   >
     <slot />
-  </h3>
+  </component>
 </template>

@@ -68,17 +68,26 @@ const submit = () => {
 </script>
 
 <template>
-    <form class="space-y-6" @submit.prevent="submit">
+    <form class="space-y-8" @submit.prevent="submit">
         <div class="grid gap-2">
-            <Label for="name">Projectnaam</Label>
-            <Input id="name" v-model="form.name" required autofocus />
-            <InputError :message="form.errors.name" />
+            <Label for="name">Projectnaam (verplicht)</Label>
+            <Input
+                id="name"
+                :aria-invalid="Boolean(form.errors.name)"
+                aria-describedby="project-name-error"
+                v-model="form.name"
+                required
+                autofocus
+            />
+            <InputError id="project-name-error" :message="form.errors.name" />
         </div>
 
         <div class="grid gap-2">
             <Label for="customer_id">Klant</Label>
             <select
                 id="customer_id"
+                :aria-invalid="Boolean(form.errors.customer_id)"
+                aria-describedby="project-customer_id-error"
                 v-model="form.customer_id"
                 class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             >
@@ -91,32 +100,41 @@ const submit = () => {
                     {{ customer.name }}
                 </option>
             </select>
-            <InputError :message="form.errors.customer_id" />
+            <InputError
+                id="project-customer_id-error"
+                :message="form.errors.customer_id"
+            />
         </div>
 
         <div class="grid gap-2">
             <Label for="description">Omschrijving</Label>
             <textarea
                 id="description"
+                :aria-invalid="Boolean(form.errors.description)"
+                aria-describedby="project-description-error"
                 v-model="form.description"
-                rows="5"
+                rows="3"
                 class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             />
-            <InputError :message="form.errors.description" />
+            <InputError
+                id="project-description-error"
+                :message="form.errors.description"
+            />
         </div>
 
-        <fieldset class="space-y-4 rounded-lg border p-4">
-            <div>
-                <legend class="text-sm font-medium">SLA</legend>
-                <p class="text-muted-foreground mt-1 text-sm">
-                    Kies het SLA-niveau met de afgesproken reactie- en
-                    oplostijden.
-                </p>
-            </div>
+        <fieldset class="space-y-4">
+            <legend class="mb-4 w-full border-t pt-6 text-lg font-semibold">
+                SLA
+            </legend>
+            <p class="text-muted-foreground mt-1 text-sm">
+                Kies het SLA-niveau met de afgesproken reactie- en oplostijden.
+            </p>
             <div v-if="slaLevels.length" class="grid gap-2">
                 <Label for="sla_level_id">SLA-niveau</Label>
                 <select
                     id="sla_level_id"
+                    :aria-invalid="Boolean(form.errors.sla_level_id)"
+                    aria-describedby="project-sla_level_id-error"
                     v-model="form.sla_level_id"
                     class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 >
@@ -129,58 +147,86 @@ const submit = () => {
                         {{ slaLevel.name }}
                     </option>
                 </select>
-                <InputError :message="form.errors.sla_level_id" />
+                <InputError
+                    id="project-sla_level_id-error"
+                    :message="form.errors.sla_level_id"
+                />
             </div>
             <p v-else class="text-muted-foreground text-sm">
                 Maak eerst een SLA-niveau aan in Instellingen.
             </p>
         </fieldset>
 
-        <fieldset class="space-y-4 rounded-lg border p-4">
-            <div>
-                <legend class="text-sm font-medium">Contactpersoon</legend>
-                <p class="text-muted-foreground mt-1 text-sm">
-                    Dit is het aanspreekpunt bij dit project.
-                </p>
-            </div>
+        <fieldset class="space-y-4">
+            <legend class="mb-4 w-full border-t pt-6 text-lg font-semibold">
+                Contactpersoon
+            </legend>
+            <p class="text-muted-foreground mt-1 text-sm">
+                Dit is het aanspreekpunt bij dit project.
+            </p>
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="grid gap-2">
                     <Label for="contact_name">Naam</Label>
-                    <Input id="contact_name" v-model="form.contact_name" />
-                    <InputError :message="form.errors.contact_name" />
+                    <Input
+                        id="contact_name"
+                        :aria-invalid="Boolean(form.errors.contact_name)"
+                        aria-describedby="project-contact_name-error"
+                        v-model="form.contact_name"
+                    />
+                    <InputError
+                        id="project-contact_name-error"
+                        :message="form.errors.contact_name"
+                    />
                 </div>
                 <div class="grid gap-2">
                     <Label for="contact_email">E-mailadres</Label>
                     <Input
                         id="contact_email"
+                        :aria-invalid="Boolean(form.errors.contact_email)"
+                        aria-describedby="project-contact_email-error"
                         v-model="form.contact_email"
                         type="email"
                     />
-                    <InputError :message="form.errors.contact_email" />
+                    <InputError
+                        id="project-contact_email-error"
+                        :message="form.errors.contact_email"
+                    />
                 </div>
                 <div class="grid gap-2 sm:col-span-2">
                     <Label for="contact_phone">Telefoonnummer</Label>
-                    <Input id="contact_phone" v-model="form.contact_phone" />
-                    <InputError :message="form.errors.contact_phone" />
+                    <Input
+                        id="contact_phone"
+                        :aria-invalid="Boolean(form.errors.contact_phone)"
+                        aria-describedby="project-contact_phone-error"
+                        v-model="form.contact_phone"
+                    />
+                    <InputError
+                        id="project-contact_phone-error"
+                        :message="form.errors.contact_phone"
+                    />
                 </div>
             </div>
         </fieldset>
 
-        <fieldset class="space-y-4 rounded-lg border p-4">
-            <div>
-                <legend class="text-sm font-medium">Responders</legend>
-                <p class="text-muted-foreground mt-1 text-sm">
-                    Wijs de drie vaste responders voor dit project toe.
-                </p>
-            </div>
+        <fieldset class="space-y-4">
+            <legend class="mb-4 w-full border-t pt-6 text-lg font-semibold">
+                Responders
+            </legend>
+            <p class="text-muted-foreground mt-1 text-sm">
+                Wijs de drie vaste responders voor dit project toe.
+            </p>
             <div
                 v-if="teamMembers.length >= 3"
-                class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                class="grid gap-4 sm:grid-cols-2"
             >
                 <div class="grid gap-2">
-                    <Label for="first_responder_id">Eerste responder</Label>
+                    <Label for="first_responder_id"
+                        >Eerste responder (verplicht)</Label
+                    >
                     <select
                         id="first_responder_id"
+                        :aria-invalid="Boolean(form.errors.first_responder_id)"
+                        aria-describedby="project-first_responder_id-error"
                         v-model="form.first_responder_id"
                         required
                         class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
@@ -194,12 +240,19 @@ const submit = () => {
                             {{ teamMember.name }}
                         </option>
                     </select>
-                    <InputError :message="form.errors.first_responder_id" />
+                    <InputError
+                        id="project-first_responder_id-error"
+                        :message="form.errors.first_responder_id"
+                    />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="second_responder_id">Tweede responder</Label>
+                    <Label for="second_responder_id"
+                        >Tweede responder (verplicht)</Label
+                    >
                     <select
                         id="second_responder_id"
+                        :aria-invalid="Boolean(form.errors.second_responder_id)"
+                        aria-describedby="project-second_responder_id-error"
                         v-model="form.second_responder_id"
                         required
                         class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
@@ -216,12 +269,19 @@ const submit = () => {
                             {{ teamMember.name }}
                         </option>
                     </select>
-                    <InputError :message="form.errors.second_responder_id" />
+                    <InputError
+                        id="project-second_responder_id-error"
+                        :message="form.errors.second_responder_id"
+                    />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="third_responder_id">Derde responder</Label>
+                    <Label for="third_responder_id"
+                        >Derde responder (verplicht)</Label
+                    >
                     <select
                         id="third_responder_id"
+                        :aria-invalid="Boolean(form.errors.third_responder_id)"
+                        aria-describedby="project-third_responder_id-error"
                         v-model="form.third_responder_id"
                         required
                         class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
@@ -239,7 +299,10 @@ const submit = () => {
                             {{ teamMember.name }}
                         </option>
                     </select>
-                    <InputError :message="form.errors.third_responder_id" />
+                    <InputError
+                        id="project-third_responder_id-error"
+                        :message="form.errors.third_responder_id"
+                    />
                 </div>
             </div>
             <p v-else class="text-muted-foreground text-sm">
@@ -263,7 +326,7 @@ const submit = () => {
         </label>
         <InputError :message="form.errors.is_active" />
 
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-3 border-t pt-6">
             <Button :disabled="form.processing" type="submit">
                 {{ project ? 'Wijzigingen opslaan' : 'Project toevoegen' }}
             </Button>

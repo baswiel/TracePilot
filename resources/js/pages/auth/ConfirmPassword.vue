@@ -16,15 +16,14 @@ import PasskeyVerify from '@/components/PasskeyVerify.vue';
 
 defineOptions({
     layout: {
-        title: 'Confirm password',
-        description:
-            'This is a secure area of the application. Please confirm your password before continuing.',
+        title: 'Wachtwoord bevestigen',
+        description: 'Bevestig je wachtwoord voordat je verdergaat.',
     },
 });
 </script>
 
 <template>
-    <Head title="Confirm password" />
+    <Head title="Wachtwoord bevestigen" />
 
     <!-- @chisel-passkeys -->
     <PasskeyVerify
@@ -32,9 +31,9 @@ defineOptions({
             options: confirmOptions(),
             submit: confirmStore(),
         }"
-        label="Confirm with passkey"
-        loading-label="Confirming..."
-        separator="Or confirm with password"
+        label="Bevestigen met passkey"
+        loading-label="Bevestigen…"
+        separator="Of bevestig met je wachtwoord"
     />
     <!-- @end-chisel-passkeys -->
 
@@ -45,9 +44,11 @@ defineOptions({
     >
         <div class="space-y-6">
             <div class="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label for="password">Wachtwoord</Label>
                 <PasswordInput
                     id="password"
+                    :aria-invalid="Boolean(errors.password)"
+                    aria-describedby="account-password-error"
                     name="password"
                     class="mt-1 block w-full"
                     required
@@ -55,7 +56,10 @@ defineOptions({
                     autofocus
                 />
 
-                <InputError :message="errors.password" />
+                <InputError
+                    id="account-password-error"
+                    :message="errors.password"
+                />
             </div>
 
             <div class="flex items-center">
@@ -65,7 +69,7 @@ defineOptions({
                     data-test="confirm-password-button"
                 >
                     <Spinner v-if="processing" />
-                    Confirm password
+                    Wachtwoord bevestigen
                 </Button>
             </div>
         </div>

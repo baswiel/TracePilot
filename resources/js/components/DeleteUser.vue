@@ -22,25 +22,27 @@ const passwordInput = useTemplateRef('passwordInput');
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="bg-card max-w-3xl space-y-6 rounded-xl border p-5 sm:p-6">
         <Heading
             variant="small"
-            title="Delete account"
-            description="Delete your account and all of its resources"
+            title="Account verwijderen"
+            description="Verwijder je account en de bijbehorende gegevens."
         />
         <div
-            class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10"
+            class="space-y-4 rounded-lg border border-[var(--tracepilot-danger-border)] bg-[var(--tracepilot-danger-soft)] p-4"
         >
-            <div class="relative space-y-0.5 text-red-600 dark:text-red-100">
-                <p class="font-medium">Warning</p>
+            <div
+                class="relative space-y-0.5 text-[var(--tracepilot-danger-ink)]"
+            >
+                <p class="font-medium">Let op</p>
                 <p class="text-sm">
-                    Please proceed with caution, this cannot be undone.
+                    Deze actie kan niet ongedaan worden gemaakt.
                 </p>
             </div>
             <Dialog>
                 <DialogTrigger as-child>
                     <Button variant="destructive" data-test="delete-user-button"
-                        >Delete account</Button
+                        >Account verwijderen</Button
                     >
                 </DialogTrigger>
                 <DialogContent>
@@ -56,27 +58,24 @@ const passwordInput = useTemplateRef('passwordInput');
                     >
                         <DialogHeader class="space-y-3">
                             <DialogTitle
-                                >Are you sure you want to delete your
-                                account?</DialogTitle
+                                >Wil je je account verwijderen?</DialogTitle
                             >
                             <DialogDescription>
-                                Once your account is deleted, all of its
-                                resources and data will also be permanently
-                                deleted. Please enter your password to confirm
-                                you would like to permanently delete your
-                                account.
+                                Je account en de bijbehorende gegevens worden
+                                permanent verwijderd. Vul je wachtwoord in om
+                                dit te bevestigen.
                             </DialogDescription>
                         </DialogHeader>
 
                         <div class="grid gap-2">
                             <Label for="password" class="sr-only"
-                                >Password</Label
+                                >Wachtwoord</Label
                             >
                             <PasswordInput
                                 id="password"
                                 name="password"
                                 ref="passwordInput"
-                                placeholder="Password"
+                                placeholder="Wachtwoord"
                             />
                             <InputError :message="errors.password" />
                         </div>
@@ -92,7 +91,7 @@ const passwordInput = useTemplateRef('passwordInput');
                                         }
                                     "
                                 >
-                                    Cancel
+                                    Annuleren
                                 </Button>
                             </DialogClose>
 
@@ -102,7 +101,7 @@ const passwordInput = useTemplateRef('passwordInput');
                                 :disabled="processing"
                                 data-test="confirm-delete-user-button"
                             >
-                                Delete account
+                                Account verwijderen
                             </Button>
                         </DialogFooter>
                     </Form>

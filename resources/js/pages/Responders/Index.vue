@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import WorkspaceHeader from '@/components/WorkspaceHeader.vue';
+import WorkspacePage from '@/components/WorkspacePage.vue';
 import PagePagination from '@/components/PagePagination.vue';
 import type { Paginated } from '@/types/pagination';
 import { Head, Link } from '@inertiajs/vue3';
@@ -45,17 +47,11 @@ defineOptions({
 <template>
     <Head title="Responders" />
 
-    <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
-    >
-        <section>
-            <h1 class="text-2xl font-semibold tracking-tight text-foreground">
-                Responders
-            </h1>
-            <p class="text-muted-foreground mt-1 text-sm">
-                Bekijk per responder voor welke projecten die is ingepland.
-            </p>
-        </section>
+    <WorkspacePage>
+        <WorkspaceHeader
+            title="Responders"
+            description="Bekijk per responder voor welke projecten die is ingepland."
+        ></WorkspaceHeader>
 
         <div v-if="responders.data.length" class="grid gap-5 lg:grid-cols-2">
             <Card v-for="responder in responders.data" :key="responder.id">
@@ -69,10 +65,10 @@ defineOptions({
                             />
                         </div>
                         <div class="min-w-0">
-                            <CardTitle>{{ responder.name }}</CardTitle>
+                            <CardTitle as="h2">{{ responder.name }}</CardTitle>
                             <CardDescription
                                 v-if="responder.email"
-                                class="mt-1"
+                                class="mt-1 break-all"
                             >
                                 {{ responder.email }}
                             </CardDescription>
@@ -88,7 +84,9 @@ defineOptions({
                             class="hover:bg-muted/50 flex items-start justify-between gap-4 p-4 transition-colors"
                         >
                             <div class="min-w-0">
-                                <p class="font-medium">{{ project.name }}</p>
+                                <p class="font-semibold break-words">
+                                    {{ project.name }}
+                                </p>
                                 <p
                                     v-if="project.customer_name"
                                     class="text-muted-foreground mt-1 text-sm"
@@ -97,9 +95,12 @@ defineOptions({
                                 </p>
                             </div>
                             <div
-                                class="flex shrink-0 flex-col items-end gap-1.5"
+                                class="flex max-w-[45%] flex-col items-end gap-1.5"
                             >
-                                <Badge variant="outline">
+                                <Badge
+                                    variant="outline"
+                                    class="text-right whitespace-normal"
+                                >
                                     {{ project.roles.join(', ') }}
                                 </Badge>
                                 <span
@@ -135,5 +136,5 @@ defineOptions({
             </CardContent>
         </Card>
         <PagePagination :page="responders" />
-    </div>
+    </WorkspacePage>
 </template>

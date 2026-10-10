@@ -21,13 +21,17 @@ defineProps<Props>();
     <Breadcrumb>
         <BreadcrumbList>
             <template v-for="(item, index) in breadcrumbs" :key="index">
-                <BreadcrumbItem>
+                <BreadcrumbItem class="min-w-0">
                     <template v-if="index === breadcrumbs.length - 1">
-                        <BreadcrumbPage>{{ item.title }}</BreadcrumbPage>
+                        <BreadcrumbPage class="wrap-anywhere">{{
+                            item.title
+                        }}</BreadcrumbPage>
                     </template>
                     <template v-else>
                         <BreadcrumbLink as-child>
-                            <Link :href="item.href">{{ item.title }}</Link>
+                            <Link class="wrap-anywhere" :href="item.href">{{
+                                item.title
+                            }}</Link>
                         </BreadcrumbLink>
                     </template>
                 </BreadcrumbItem>

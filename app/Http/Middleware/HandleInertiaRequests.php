@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use App\Enums\IssueStatus;
 use App\Models\Issue;
 use App\Models\Project;
-use App\Models\TeamMember;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -62,11 +61,8 @@ class HandleInertiaRequests extends Middleware
                             'name' => $project->name,
                             'customer_name' => $project->customerDisplayName(),
                         ])->all(),
-                    'teamMembers' => TeamMember::query()
-                        ->orderBy('name')
-                        ->get(['id', 'name', 'email']),
                 ]
-                : ['projects' => [], 'teamMembers' => []],
+                : ['projects' => []],
             'notifications' => fn (): array => $request->user()
                 ? Issue::query()
                     ->whereIn('status', [IssueStatus::Open->value, IssueStatus::Handling->value])

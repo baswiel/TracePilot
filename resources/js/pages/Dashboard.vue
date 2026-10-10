@@ -96,7 +96,7 @@ const hasFilters = computed(() =>
 );
 
 const filtersExpanded = ref(hasFilters.value);
-const isDesktop = useMediaQuery('(min-width: 1024px)');
+const isDesktop = useMediaQuery('(min-width: 1024px)', { ssrWidth: 1024 });
 const filtersVisible = computed(() => isDesktop.value || filtersExpanded.value);
 
 const clearFilters = () => {

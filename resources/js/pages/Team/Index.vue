@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import WorkspaceHeader from '@/components/WorkspaceHeader.vue';
+import WorkspacePage from '@/components/WorkspacePage.vue';
 import PagePagination from '@/components/PagePagination.vue';
 import type { Paginated } from '@/types/pagination';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2, Users } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,16 @@ type TeamMember = {
 };
 
 const props = defineProps<{ teamMembers: Paginated<TeamMember> }>();
+const formOpen = ref(false);
+const focusEditor = async () => {
+    await nextTick();
+    document.getElementById('name')?.focus();
+};
+const openCreate = () => {
+    resetForm();
+    formOpen.value = true;
+    void focusEditor();
+};
 const editingId = ref<number | null>(null);
 const editingMember = computed(
     () =>
@@ -48,12 +60,15 @@ defineOptions({
 });
 
 const resetForm = () => {
+    formOpen.value = false;
     editingId.value = null;
     form.reset();
     form.clearErrors();
 };
 
 const editMember = (member: TeamMember) => {
+    formOpen.value = true;
+    void focusEditor();
     editingId.value = member.id;
     form.name = member.name;
     form.email = member.email ?? '';
@@ -84,27 +99,25 @@ const deleteMember = () => {
 <template>
     <Head title="Team" />
 
-    <div
-        class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
-    >
-        <section
-            class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+    <WorkspacePage>
+        <WorkspaceHeader
+            title="Team"
+            description="Beheer de medewerkers die je aan storingen kunt toewijzen."
+            ><Button
+                :aria-expanded="formOpen"
+                aria-controls="team-editor"
+                @click="openCreate"
+                ><Plus /> Teamlid toevoegen</Button
+            ></WorkspaceHeader
         >
-            <div>
-                <h1
-                    class="text-2xl font-semibold tracking-tight text-foreground"
-                >
-                    Team
-                </h1>
-                <p class="text-muted-foreground mt-1 text-sm">
-                    Beheer de medewerkers die je aan storingen kunt toewijzen.
-                </p>
-            </div>
-        </section>
 
-        <Card class="overflow-hidden">
-            <CardHeader class="border-b">
-                <CardTitle>{{
+        <Card
+            v-if="formOpen"
+            id="team-editor"
+            class="gap-0 overflow-hidden py-0"
+        >
+            <CardHeader class="border-b py-5">
+                <CardTitle as="h2">{{
                     editingMember ? 'Teamlid bewerken' : 'Teamlid toevoegen'
                 }}</CardTitle>
                 <CardDescription>
@@ -112,13 +125,13 @@ const deleteMember = () => {
                     storing te herkennen.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent class="p-5 sm:p-6">
                 <form
                     class="grid gap-5 sm:grid-cols-2"
                     @submit.prevent="submit"
                 >
                     <div class="grid gap-2">
-                        <Label for="name">Naam</Label>
+                        <Label for="name">Naam (verplicht)</Label>
                         <Input
                             id="name"
                             v-model="form.name"
@@ -162,7 +175,6 @@ const deleteMember = () => {
                             }}
                         </Button>
                         <Button
-                            v-if="editingMember"
                             type="button"
                             variant="outline"
                             @click="resetForm"
@@ -175,7 +187,13 @@ const deleteMember = () => {
 
         <Card class="overflow-hidden">
             <CardHeader class="border-b">
-                <CardTitle>Teamleden</CardTitle>
+                <CardTitle as="h2"
+                    >Teamleden
+                    <span
+                        class="text-muted-foreground ml-2 text-sm font-normal tabular-nums"
+                        >{{ teamMembers.total }}</span
+                    ></CardTitle
+                >
                 <CardDescription
                     >Deze personen zijn beschikbaar als verantwoordelijke op een
                     storing.</CardDescription
@@ -189,14 +207,18 @@ const deleteMember = () => {
                         class="hover:bg-muted/50 flex flex-col gap-4 p-4 transition-colors sm:flex-row sm:items-center sm:justify-between sm:p-5"
                     >
                         <div class="min-w-0">
-                            <p class="font-medium">{{ member.name }}</p>
+                            <p class="font-semibold break-words">
+                                {{ member.name }}
+                            </p>
                             <p
                                 v-if="member.email"
-                                class="text-muted-foreground mt-1 text-sm"
+                                class="text-muted-foreground mt-1 text-sm break-words"
                             >
                                 {{ member.email }}
                             </p>
-                            <p class="text-muted-foreground mt-1 text-sm">
+                            <p
+                                class="text-muted-foreground mt-1 text-sm break-words"
+                            >
                                 {{ member.assigned_issues_count }}
                                 {{
                                     member.assigned_issues_count === 1
@@ -207,13 +229,13 @@ const deleteMember = () => {
                         </div>
                         <div class="flex shrink-0 gap-2">
                             <Button
-                                size="sm"
+                                size="default"
                                 variant="outline"
                                 @click="editMember(member)"
                                 ><Pencil /> Bewerken</Button
                             >
                             <Button
-                                size="sm"
+                                size="default"
                                 variant="outline"
                                 @click="memberToDelete = member"
                                 ><Trash2 /> Verwijderen</Button
@@ -227,7 +249,7 @@ const deleteMember = () => {
                 >
                     <Users class="text-muted-foreground size-8" />
                     <p class="mt-3 font-medium">Nog geen teamleden</p>
-                    <p class="text-muted-foreground mt-1 text-sm">
+                    <p class="text-muted-foreground mt-1 text-sm break-words">
                         Voeg je eerste teamlid toe om storingen toe te wijzen.
                     </p>
                 </div>
@@ -249,5 +271,5 @@ const deleteMember = () => {
             @confirm="deleteMember"
         />
         <PagePagination :page="teamMembers" />
-    </div>
+    </WorkspacePage>
 </template>

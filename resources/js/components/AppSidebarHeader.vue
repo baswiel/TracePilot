@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Bell, Plus } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { Bell, LoaderCircle, Plus } from '@lucide/vue';
+import { computed, ref, shallowRef } from 'vue';
+import { toast } from 'vue-sonner';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
-import IssueReportDialog from '@/components/issues/IssueReportDialog.vue';
+import type IssueReportDialog from '@/components/issues/IssueReportDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -29,11 +30,43 @@ type Notification = {
 };
 type ReportIssueOptions = {
     projects: Array<{ id: number; name: string; customer_name: string | null }>;
-    teamMembers: Array<{ id: number; name: string; email: string }>;
 };
 
 const page = usePage();
+const headerElement = ref<HTMLElement>();
+
+const restoreReportFocus = () => {
+    headerElement.value
+        ?.querySelector<HTMLButtonElement>(
+            'button[aria-label="Storing melden"]',
+        )
+        ?.focus();
+};
 const isReportDialogOpen = ref(false);
+const isReportDialogLoading = ref(false);
+const reportDialog = shallowRef<typeof IssueReportDialog>();
+
+async function openReportDialog() {
+    if (isReportDialogLoading.value) return;
+
+    if (!reportDialog.value) {
+        isReportDialogLoading.value = true;
+        try {
+            reportDialog.value = (
+                await import('@/components/issues/IssueReportDialog.vue')
+            ).default;
+        } catch {
+            toast.error(
+                'Het storingformulier kon niet laden. Probeer opnieuw.',
+            );
+            return;
+        } finally {
+            isReportDialogLoading.value = false;
+        }
+    }
+
+    isReportDialogOpen.value = true;
+}
 const reportIssueOptions = computed(
     () => page.props.reportIssueOptions as ReportIssueOptions,
 );
@@ -47,22 +80,30 @@ const activeIssuesCount = computed(() =>
 
 <template>
     <header
+        ref="headerElement"
         class="bg-card sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-3 border-b px-5 md:px-8"
     >
-        <div class="flex items-center gap-2">
+        <div class="flex min-w-0 flex-1 items-center gap-2">
             <SidebarTrigger class="-ml-1 size-10" />
             <template v-if="breadcrumbs && breadcrumbs.length > 0">
-                <Breadcrumbs :breadcrumbs="breadcrumbs" />
+                <Breadcrumbs class="min-w-0" :breadcrumbs="breadcrumbs" />
             </template>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex shrink-0 items-center gap-2">
             <Button
                 variant="outline"
                 class="h-10 rounded-lg px-3"
                 aria-label="Storing melden"
-                @click="isReportDialogOpen = true"
+                :aria-busy="isReportDialogLoading"
+                :disabled="isReportDialogLoading"
+                @click="openReportDialog"
             >
-                <Plus />
+                <LoaderCircle
+                    v-if="isReportDialogLoading"
+                    class="animate-spin motion-reduce:animate-none"
+                    aria-hidden="true"
+                />
+                <Plus v-else />
                 <span class="hidden sm:inline">Storing melden</span>
             </Button>
             <DropdownMenu>
@@ -83,7 +124,10 @@ const activeIssuesCount = computed(() =>
                         >
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" class="w-80 p-2">
+                <DropdownMenuContent
+                    align="end"
+                    class="w-80 max-w-[calc(100vw-2rem)] p-2"
+                >
                     <DropdownMenuLabel
                         class="flex items-center justify-between px-2 py-2"
                     >
@@ -104,9 +148,9 @@ const activeIssuesCount = computed(() =>
                                 :href="show(notification.id)"
                                 class="block w-full"
                             >
-                                <div class="flex items-center gap-2">
+                                <div class="flex min-w-0 items-center gap-2">
                                     <span
-                                        class="size-2 rounded-full"
+                                        class="size-2 shrink-0 rounded-full"
                                         :class="
                                             notification.status === 'open'
                                                 ? 'bg-red-500'
@@ -114,12 +158,13 @@ const activeIssuesCount = computed(() =>
                                         "
                                     />
                                     <span
-                                        class="text-foreground truncate font-medium"
+                                        class="text-foreground min-w-0 truncate font-medium"
+                                        :title="notification.title"
                                         >{{ notification.title }}</span
                                     >
                                 </div>
                                 <span
-                                    class="text-muted-foreground mt-1 block pl-4 text-xs"
+                                    class="text-muted-foreground mt-1 block pl-4 text-xs wrap-anywhere"
                                     >{{ notification.project }} ·
                                     {{
                                         notification.status === 'open'
@@ -147,9 +192,11 @@ const activeIssuesCount = computed(() =>
             </DropdownMenu>
         </div>
     </header>
-    <IssueReportDialog
+    <component
+        :is="reportDialog"
+        v-if="reportDialog"
         v-model:open="isReportDialogOpen"
         :projects="reportIssueOptions.projects"
-        :team-members="reportIssueOptions.teamMembers"
+        @closed="restoreReportFocus"
     />
 </template>

@@ -1,8 +1,18 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import Heading from '@/components/Heading.vue';
+import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { Link } from '@inertiajs/vue3';
+import {
+    UserRound,
+    ShieldCheck,
+    Palette,
+    ListChecks,
+    Timer,
+    CalendarClock,
+    ChevronDown,
+} from '@lucide/vue';
+import WorkspacePage from '@/components/WorkspacePage.vue';
+import WorkspaceHeader from '@/components/WorkspaceHeader.vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
@@ -11,88 +21,110 @@ import { edit as editSecurity } from '@/routes/security';
 import { index as editIssueChecklist } from '@/routes/issue-checklist';
 import { index as editSlaLevels } from '@/routes/sla-levels';
 import { edit as editBusinessHours } from '@/routes/business-hours';
-import type { NavItem } from '@/types';
-
-const sidebarNavItems: NavItem[] = [
+const groups = [
     {
-        title: 'Profiel',
-        href: editProfile(),
+        title: 'Account',
+        items: [
+            { title: 'Profiel', href: editProfile(), icon: UserRound },
+            { title: 'Beveiliging', href: editSecurity(), icon: ShieldCheck },
+            { title: 'Weergave', href: editAppearance(), icon: Palette },
+        ],
     },
     {
-        title: 'Beveiliging',
-        href: editSecurity(),
-    },
-    {
-        title: 'Weergave',
-        href: editAppearance(),
-    },
-    {
-        title: 'Issue-checklist',
-        href: editIssueChecklist(),
-    },
-    {
-        title: 'SLA-niveaus',
-        href: editSlaLevels(),
-    },
-    {
-        title: 'Werkuren',
-        href: editBusinessHours(),
+        title: 'Incidentbeheer',
+        items: [
+            {
+                title: 'Issue-checklist',
+                href: editIssueChecklist(),
+                icon: ListChecks,
+            },
+            { title: 'SLA-niveaus', href: editSlaLevels(), icon: Timer },
+            {
+                title: 'Werkuren',
+                href: editBusinessHours(),
+                icon: CalendarClock,
+            },
+        ],
     },
 ];
-
 const { isCurrentOrParentUrl } = useCurrentUrl();
+const navigationOpen = ref(false);
+const currentItem = computed(
+    () =>
+        groups
+            .flatMap((group) => group.items)
+            .find((item) => isCurrentOrParentUrl(item.href)) ??
+        groups[0].items[0],
+);
 </script>
-
 <template>
-    <div class="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-8">
-        <Heading
+    <WorkspacePage>
+        <WorkspaceHeader
             title="Instellingen"
-            description="Beheer je profiel en accountinstellingen"
+            description="Beheer je account en de afspraken voor incidentafhandeling."
         />
-
-        <div class="flex flex-col gap-6 lg:flex-row lg:gap-10">
-            <aside class="w-full max-w-xl lg:w-56">
+        <div
+            class="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8"
+        >
+            <aside class="min-w-0 lg:sticky lg:top-24">
+                <Button
+                    variant="outline"
+                    class="w-full justify-between lg:hidden"
+                    :aria-expanded="navigationOpen"
+                    aria-controls="settings-navigation"
+                    @click="navigationOpen = !navigationOpen"
+                    ><span class="flex items-center gap-2"
+                        ><component :is="currentItem.icon" class="size-4" />{{
+                            currentItem.title
+                        }}</span
+                    ><span
+                        class="text-muted-foreground flex items-center gap-2 text-xs"
+                        >Andere instelling<ChevronDown class="size-4" /></span
+                ></Button>
                 <nav
-                    class="bg-card flex flex-col space-y-1 rounded-xl border p-2 shadow-sm"
+                    id="settings-navigation"
                     aria-label="Instellingen"
+                    :class="[
+                        'space-y-4 lg:block lg:space-y-6',
+                        navigationOpen ? 'mt-4' : 'hidden',
+                    ]"
                 >
-                    <Button
-                        v-for="item in sidebarNavItems"
-                        :key="toUrl(item.href)"
-                        variant="ghost"
-                        :class="[
-                            'w-full justify-start',
-                            {
-                                'text-accent-foreground bg-accent':
-                                    isCurrentOrParentUrl(item.href),
-                            },
-                        ]"
-                        as-child
-                    >
-                        <Link
-                            :href="item.href"
-                            :aria-current="
-                                isCurrentOrParentUrl(item.href)
-                                    ? 'page'
-                                    : undefined
-                            "
+                    <div v-for="group in groups" :key="group.title">
+                        <p
+                            class="text-muted-foreground mb-2 px-3 text-xs font-medium"
                         >
-                            <component :is="item.icon" class="h-4 w-4" />
-                            {{ item.title }}
-                        </Link>
-                    </Button>
+                            {{ group.title }}
+                        </p>
+                        <div
+                            class="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1"
+                        >
+                            <Link
+                                v-for="item in group.items"
+                                :key="toUrl(item.href)"
+                                :href="item.href"
+                                @click="navigationOpen = false"
+                                :aria-current="
+                                    isCurrentOrParentUrl(item.href)
+                                        ? 'page'
+                                        : undefined
+                                "
+                                :class="[
+                                    'focus-visible:outline-ring flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 motion-reduce:transition-none',
+                                    isCurrentOrParentUrl(item.href)
+                                        ? 'bg-accent text-primary'
+                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                ]"
+                            >
+                                <component
+                                    :is="item.icon"
+                                    class="size-4 shrink-0"
+                                />{{ item.title }}
+                            </Link>
+                        </div>
+                    </div>
                 </nav>
             </aside>
-
-            <Separator class="my-6 lg:hidden" />
-
-            <div class="flex-1 md:max-w-2xl">
-                <section
-                    class="bg-card max-w-xl space-y-10 rounded-xl border p-6 shadow-sm"
-                >
-                    <slot />
-                </section>
-            </div>
+            <div class="settings-content min-w-0 space-y-6"><slot /></div>
         </div>
-    </div>
+    </WorkspacePage>
 </template>

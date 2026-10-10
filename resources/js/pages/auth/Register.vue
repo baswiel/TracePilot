@@ -23,7 +23,7 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="Register" />
+    <Head title="Account aanmaken" />
 
     <Form
         v-bind="store.form()"
@@ -36,63 +36,72 @@ defineOptions({
                 <Label for="name">Naam</Label>
                 <Input
                     id="name"
+                    :aria-invalid="Boolean(errors.name)"
+                    aria-describedby="account-name-error"
                     type="text"
                     required
                     autofocus
-                    :tabindex="1"
                     autocomplete="name"
                     name="name"
                     placeholder="Je volledige naam"
                 />
-                <InputError :message="errors.name" />
+                <InputError id="account-name-error" :message="errors.name" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="email">E-mailadres</Label>
                 <Input
                     id="email"
+                    :aria-invalid="Boolean(errors.email)"
+                    aria-describedby="account-email-error"
                     type="email"
                     required
-                    :tabindex="2"
                     autocomplete="email"
                     name="email"
                     placeholder="naam@bedrijf.nl"
                 />
-                <InputError :message="errors.email" />
+                <InputError id="account-email-error" :message="errors.email" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="password">Wachtwoord</Label>
                 <PasswordInput
                     id="password"
+                    :aria-invalid="Boolean(errors.password)"
+                    aria-describedby="account-password-error"
                     required
-                    :tabindex="3"
                     autocomplete="new-password"
                     name="password"
                     placeholder="Kies een sterk wachtwoord"
                     :passwordrules="passwordRules"
                 />
-                <InputError :message="errors.password" />
+                <InputError
+                    id="account-password-error"
+                    :message="errors.password"
+                />
             </div>
 
             <div class="grid gap-2">
                 <Label for="password_confirmation">Bevestig wachtwoord</Label>
                 <PasswordInput
                     id="password_confirmation"
+                    :aria-invalid="Boolean(errors.password_confirmation)"
+                    aria-describedby="account-password_confirmation-error"
                     required
-                    :tabindex="4"
                     autocomplete="new-password"
                     name="password_confirmation"
                     placeholder="Herhaal je wachtwoord"
                     :passwordrules="passwordRules"
                 />
-                <InputError :message="errors.password_confirmation" />
+                <InputError
+                    id="account-password_confirmation-error"
+                    :message="errors.password_confirmation"
+                />
             </div>
 
             <Button
                 type="submit"
                 class="mt-2 w-full"
-                tabindex="5"
                 :disabled="processing"
                 data-test="register-user-button"
             >
@@ -103,10 +112,7 @@ defineOptions({
 
         <div class="text-muted-foreground text-center text-sm">
             Al een account?
-            <TextLink
-                :href="login()"
-                class="underline underline-offset-4"
-                :tabindex="6"
+            <TextLink :href="login()" class="underline underline-offset-4"
                 >Inloggen</TextLink
             >
         </div>

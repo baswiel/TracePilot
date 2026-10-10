@@ -28,7 +28,7 @@ defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: 'Security settings',
+                title: 'Beveiliging',
                 href: edit(),
             },
         ],
@@ -37,15 +37,13 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="Security settings" />
+    <Head title="Beveiliging" />
 
-    <h1 class="sr-only">Security settings</h1>
-
-    <div class="space-y-6">
+    <div class="bg-card max-w-3xl space-y-6 rounded-xl border p-5 sm:p-6">
         <Heading
             variant="small"
-            title="Update password"
-            description="Ensure your account is using a long, random password to stay secure"
+            title="Wachtwoord wijzigen"
+            description="Gebruik een lang, uniek wachtwoord om je account te beveiligen."
         />
 
         <Form
@@ -63,50 +61,64 @@ defineOptions({
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
-                <Label for="current_password">Current password</Label>
+                <Label for="current_password">Huidig wachtwoord</Label>
                 <PasswordInput
                     id="current_password"
+                    :aria-invalid="Boolean(errors.current_password)"
+                    aria-describedby="account-current_password-error"
                     name="current_password"
                     class="mt-1 block w-full"
                     autocomplete="current-password"
-                    placeholder="Current password"
+                    placeholder="Huidig wachtwoord"
                 />
-                <InputError :message="errors.current_password" />
+                <InputError
+                    id="account-current_password-error"
+                    :message="errors.current_password"
+                />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">New password</Label>
+                <Label for="password">Nieuw wachtwoord</Label>
                 <PasswordInput
                     id="password"
+                    :aria-invalid="Boolean(errors.password)"
+                    aria-describedby="account-password-error"
                     name="password"
                     class="mt-1 block w-full"
                     autocomplete="new-password"
-                    placeholder="New password"
+                    placeholder="Nieuw wachtwoord"
                     :passwordrules="props.passwordRules"
                 />
-                <InputError :message="errors.password" />
+                <InputError
+                    id="account-password-error"
+                    :message="errors.password"
+                />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">Confirm password</Label>
+                <Label for="password_confirmation">Wachtwoord bevestigen</Label>
                 <PasswordInput
                     id="password_confirmation"
+                    :aria-invalid="Boolean(errors.password_confirmation)"
+                    aria-describedby="account-password_confirmation-error"
                     name="password_confirmation"
                     class="mt-1 block w-full"
                     autocomplete="new-password"
-                    placeholder="Confirm password"
+                    placeholder="Wachtwoord bevestigen"
                     :passwordrules="props.passwordRules"
                 />
-                <InputError :message="errors.password_confirmation" />
+                <InputError
+                    id="account-password_confirmation-error"
+                    :message="errors.password_confirmation"
+                />
             </div>
 
             <div class="flex items-center gap-4">
                 <Button
                     :disabled="processing"
                     data-test="update-password-button"
+                    >Opslaan</Button
                 >
-                    Save
-                </Button>
             </div>
         </Form>
     </div>

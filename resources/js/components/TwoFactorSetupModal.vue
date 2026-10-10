@@ -46,26 +46,27 @@ const pinInputContainerRef = useTemplateRef('pinInputContainerRef');
 const modalConfig = computed<TwoFactorConfigContent>(() => {
     if (props.twoFactorEnabled) {
         return {
-            title: 'Two-factor authentication enabled',
+            title: 'Tweestapsverificatie ingeschakeld',
             description:
-                'Two-factor authentication is now enabled. Scan the QR code or enter the setup key in your authenticator app.',
-            buttonText: 'Close',
+                'Tweestapsverificatie is ingeschakeld. Scan de QR-code of vul de instelsleutel in je authenticator-app in.',
+            buttonText: 'Sluiten',
         };
     }
 
     if (showVerificationStep.value) {
         return {
-            title: 'Verify authentication code',
-            description: 'Enter the 6-digit code from your authenticator app',
-            buttonText: 'Continue',
+            title: 'Code bevestigen',
+            description:
+                'Vul de zescijferige code uit je authenticator-app in.',
+            buttonText: 'Doorgaan',
         };
     }
 
     return {
-        title: 'Enable two-factor authentication',
+        title: 'Tweestapsverificatie inschakelen',
         description:
-            'To finish enabling two-factor authentication, scan the QR code or enter the setup key in your authenticator app',
-        buttonText: 'Continue',
+            'Scan de QR-code of vul de instelsleutel in je authenticator-app in.',
+        buttonText: 'Doorgaan',
     };
 });
 
@@ -113,35 +114,7 @@ watch(
     <Dialog :open="isOpen" @update:open="isOpen = $event">
         <DialogContent class="sm:max-w-md">
             <DialogHeader class="flex items-center justify-center">
-                <div
-                    class="border-border bg-card mb-3 w-auto rounded-full border p-0.5 shadow-sm"
-                >
-                    <div
-                        class="border-border bg-muted relative overflow-hidden rounded-full border p-2.5"
-                    >
-                        <div
-                            class="absolute inset-0 grid grid-cols-5 opacity-50"
-                        >
-                            <div
-                                v-for="i in 5"
-                                :key="`col-${i}`"
-                                class="border-border border-r last:border-r-0"
-                            />
-                        </div>
-                        <div
-                            class="absolute inset-0 grid grid-rows-5 opacity-50"
-                        >
-                            <div
-                                v-for="i in 5"
-                                :key="`row-${i}`"
-                                class="border-border border-b last:border-b-0"
-                            />
-                        </div>
-                        <ScanLine
-                            class="text-foreground relative z-20 size-6"
-                        />
-                    </div>
-                </div>
+                <ScanLine class="text-primary mb-2 size-6" aria-hidden="true" />
                 <DialogTitle>{{ modalConfig.title }}</DialogTitle>
                 <DialogDescription class="text-center">
                     {{ modalConfig.description }}
@@ -197,7 +170,7 @@ watch(
                                 class="bg-border absolute inset-0 top-1/2 h-px w-full"
                             />
                             <span class="bg-card relative px-2 py-1"
-                                >or, enter the code manually</span
+                                >Of vul de instelsleutel handmatig in</span
                             >
                         </div>
 
@@ -216,17 +189,23 @@ watch(
                                 <template v-else>
                                     <input
                                         type="text"
+                                        aria-label="Instelsleutel"
                                         readonly
                                         :value="manualSetupKey"
                                         class="bg-background text-foreground h-full w-full p-3"
                                     />
                                     <button
+                                        :aria-label="
+                                            copied
+                                                ? 'Instelsleutel gekopieerd'
+                                                : 'Instelsleutel kopiëren'
+                                        "
                                         @click="copy(manualSetupKey || '')"
                                         class="border-border hover:bg-muted relative block h-auto border-l px-3"
                                     >
                                         <Check
                                             v-if="copied"
-                                            class="w-4 text-green-500"
+                                            class="w-4 text-[var(--tracepilot-success-ink)]"
                                         />
                                         <Copy v-else class="w-4" />
                                     </button>
@@ -255,6 +234,7 @@ watch(
                             >
                                 <InputOTP
                                     id="otp"
+                                    aria-label="Authenticatiecode"
                                     v-model="code"
                                     :maxlength="6"
                                     :disabled="processing"
@@ -278,16 +258,14 @@ watch(
                                     class="w-auto flex-1"
                                     @click="showVerificationStep = false"
                                     :disabled="processing"
+                                    >Terug</Button
                                 >
-                                    Back
-                                </Button>
                                 <Button
                                     type="submit"
                                     class="w-auto flex-1"
                                     :disabled="processing || code.length < 6"
+                                    >Bevestigen</Button
                                 >
-                                    Confirm
-                                </Button>
                             </div>
                         </div>
                     </Form>

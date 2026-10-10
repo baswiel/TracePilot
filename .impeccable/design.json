@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-07T11:34:36.505004+00:00",
+  "generatedAt": "2026-10-07T22:10:59.829525+00:00",
   "title": "Design System: TracePilot",
   "extensions": {
     "colorMeta": {
       "primary": {
         "role": "primary",
-        "displayName": "Primary",
+        "displayName": "TracePilot Blue",
         "tonalRamp": [
           "oklch(15% 0.22474 260.85)",
           "oklch(26% 0.22474 260.85)",
@@ -20,7 +20,7 @@
       },
       "primary-dark": {
         "role": "primary",
-        "displayName": "Primary Dark",
+        "displayName": "Night Action Blue",
         "tonalRamp": [
           "oklch(15% 0.13256 259.78)",
           "oklch(26% 0.13256 259.78)",
@@ -34,7 +34,7 @@
       },
       "foreground": {
         "role": "neutral",
-        "displayName": "Foreground",
+        "displayName": "Navy Ink",
         "tonalRamp": [
           "oklch(15% 0.06729 265.82)",
           "oklch(26% 0.06729 265.82)",
@@ -48,7 +48,7 @@
       },
       "background": {
         "role": "neutral",
-        "displayName": "Background",
+        "displayName": "Cool Canvas",
         "tonalRamp": [
           "oklch(15% 0.00574 264.53)",
           "oklch(26% 0.00574 264.53)",
@@ -62,7 +62,7 @@
       },
       "surface": {
         "role": "neutral",
-        "displayName": "Surface",
+        "displayName": "White Surface",
         "tonalRamp": [
           "oklch(15% 0.00000 89.88)",
           "oklch(26% 0.00000 89.88)",
@@ -76,7 +76,7 @@
       },
       "border": {
         "role": "neutral",
-        "displayName": "Border",
+        "displayName": "Quiet Divider",
         "tonalRamp": [
           "oklch(15% 0.01383 258.35)",
           "oklch(26% 0.01383 258.35)",
@@ -90,7 +90,7 @@
       },
       "muted-foreground": {
         "role": "neutral",
-        "displayName": "Muted Foreground",
+        "displayName": "Slate Metadata",
         "tonalRamp": [
           "oklch(15% 0.04261 261.98)",
           "oklch(26% 0.04261 261.98)",
@@ -104,7 +104,7 @@
       },
       "secondary": {
         "role": "neutral",
-        "displayName": "Secondary",
+        "displayName": "Soft Control Wash",
         "tonalRamp": [
           "oklch(15% 0.01733 264.49)",
           "oklch(26% 0.01733 264.49)",
@@ -132,7 +132,7 @@
       },
       "accent": {
         "role": "neutral",
-        "displayName": "Accent",
+        "displayName": "Blue Wash",
         "tonalRamp": [
           "oklch(15% 0.01946 260.17)",
           "oklch(26% 0.01946 260.17)",
@@ -565,6 +565,14 @@
       "counter": {
         "displayName": "Counter",
         "purpose": "Desktop KPI total."
+      },
+      "button-label": {
+        "displayName": "Button Label",
+        "purpose": "Semibold action controls."
+      },
+      "settings-heading": {
+        "displayName": "Settings Heading",
+        "purpose": "Default Heading component; page headings remain separate."
       }
     },
     "shadows": [
@@ -589,6 +597,56 @@
         "name": "control-color",
         "value": "150ms",
         "purpose": "Button and navigation state transitions."
+      },
+      {
+        "name": "acc-expand",
+        "value": "250ms",
+        "purpose": "Filter panel open; reduced motion disables transition."
+      },
+      {
+        "name": "acc-collapse",
+        "value": "250ms",
+        "purpose": "Filter panel close; closed panel is inert."
+      },
+      {
+        "name": "acc-chevron",
+        "value": "250ms",
+        "purpose": "Disclosure chevron flip when the optional hook is used."
+      },
+      {
+        "name": "acc-ease",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Disclosure height, opacity and blur easing."
+      },
+      {
+        "name": "icon-swap-dur",
+        "value": "250ms",
+        "purpose": "Password visibility icon cross-fade duration."
+      },
+      {
+        "name": "icon-swap-blur",
+        "value": "2px",
+        "purpose": "Inactive password icon blur."
+      },
+      {
+        "name": "icon-swap-start-scale",
+        "value": "0.25",
+        "purpose": "Inactive password icon scale."
+      },
+      {
+        "name": "icon-swap-ease",
+        "value": "ease-in-out",
+        "purpose": "Password visibility icon easing."
+      },
+      {
+        "name": "tabs-dur",
+        "value": "250ms",
+        "purpose": "Appearance selection position and width transition."
+      },
+      {
+        "name": "tabs-ease",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Appearance selection and text easing."
       }
     ],
     "breakpoints": [
@@ -649,7 +707,7 @@
       "refersTo": "input",
       "description": "Shared 44px input with visible focus.",
       "html": "<label class=\"ds-field\">Titel<input class=\"ds-input\" placeholder=\"Omschrijf de storing\"></label>",
-      "css": ".ds-field{font-family:var(--tracepilot-font);font-size:14px;display:grid;gap:8px;color:var(--foreground)}.ds-input{font-family:var(--tracepilot-font);font-size:14px;height:44px;padding:4px 12px;border:1px solid var(--input);border-radius:var(--radius);background:var(--card);color:var(--foreground)}.ds-input::placeholder{color:var(--muted-foreground)}.ds-input:focus-visible{outline:none;border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring) 30%,transparent)}:host-context(.dark) .ds-input{background:color-mix(in srgb,var(--input) 30%,transparent)}@media(max-width:767px){.ds-input{font-size:16px}}"
+      "css": ".ds-field{font-family:var(--tracepilot-font);font-size:14px;display:grid;gap:8px;color:var(--foreground)}.ds-input{font-family:var(--tracepilot-font);font-size:14px;height:44px;padding:4px 12px;border:1px solid var(--input);border-radius:var(--radius);background:var(--card);color:var(--foreground)}.ds-input::placeholder{color:var(--muted-foreground)}.ds-input:focus-visible{outline:none;border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring) 30%,transparent)}:host-context(.dark) .ds-input{background:color-mix(in srgb,var(--input) 30%,transparent)}@media(max-width:767px){.ds-input{font-size:16px}} .ds-input:disabled{opacity:.5;cursor:not-allowed}.ds-input[aria-invalid=\"true\"]{border-color:var(--destructive)}"
     },
     {
       "name": "Active Navigation",
@@ -657,7 +715,7 @@
       "refersTo": "nav-active",
       "description": "Selected navigation row with leading blue marker.",
       "html": "<a class=\"ds-nav\" href=\"#dashboard\" aria-current=\"page\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>Dashboard</a>",
-      "css": ".ds-nav{font-family:var(--tracepilot-font);font-size:14px;display:flex;align-items:center;gap:8px;height:44px;padding:8px;border-radius:calc(var(--radius) - 2px);background:var(--sidebar-accent);color:var(--sidebar-accent-foreground);box-shadow:inset 2px 0 0 var(--primary);text-decoration:none;transition:background-color 150ms}.ds-nav:hover{background:var(--accent)}.ds-nav:focus-visible{outline:none;border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring) 30%,transparent)}@media(prefers-reduced-motion:reduce){.ds-nav{transition:none}}"
+      "css": ".ds-nav{font-family:var(--tracepilot-font);font-size:14px;display:flex;align-items:center;gap:12px;height:44px;padding:10px 12px;border-radius:var(--radius);background:var(--sidebar-accent);color:var(--sidebar-accent-foreground);box-shadow:inset 2px 0 0 var(--primary);text-decoration:none;font-weight:600;transition:background-color 150ms}.ds-nav:hover{background:var(--accent)}.ds-nav:focus-visible{outline:none;border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring) 30%,transparent)}@media(prefers-reduced-motion:reduce){.ds-nav{transition:none}}"
     },
     {
       "name": "Critical Priority",
@@ -682,11 +740,19 @@
       "description": "Two-line milestone and remaining-time indicator.",
       "html": "<span class=\"ds-sla\"><span>Reactie binnen SLA</span><span class=\"ds-sla-time\">20 min resterend</span></span>",
       "css": ".ds-sla{font-family:var(--tracepilot-font);font-size:14px;display:inline-flex;flex-direction:column;border-radius:var(--radius);border:1px solid var(--tracepilot-warning-border);background:var(--tracepilot-warning-soft);color:var(--tracepilot-warning-ink);padding:4px 10px;font-size:12px;font-weight:500}.ds-sla-time{margin-top:2px;font-weight:400;opacity:.8}"
+    },
+    {
+      "name": "Appearance Selection",
+      "kind": "custom",
+      "refersTo": "appearance-selection",
+      "description": "Selection snapshot of the 40px appearance buttons; the Vue component animates measured position and width.",
+      "html": "<div class=\"ds-appearance\" role=\"group\" aria-label=\"Weergave\"><button class=\"ds-appearance-option\" aria-pressed=\"true\">Licht</button><button class=\"ds-appearance-option\" aria-pressed=\"false\">Donker</button><button class=\"ds-appearance-option\" aria-pressed=\"false\">Systeem</button></div>",
+      "css": ".ds-appearance{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--border);border-radius:12px;background:var(--muted);font-family:var(--tracepilot-font)}.ds-appearance-option{height:40px;padding:8px 14px;border:0;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;cursor:pointer;transition:color var(--tabs-dur,250ms) var(--tabs-ease,cubic-bezier(.22,1,.36,1))}.ds-appearance-option[aria-pressed=\"true\"]{background:var(--card);color:var(--accent-foreground);box-shadow:0 1px 2px rgb(0 0 0 / 5%)}.ds-appearance-option:hover{background:var(--card)}.ds-appearance-option:focus-visible{outline:2px solid var(--ring);outline-offset:2px}@media(prefers-reduced-motion:reduce){.ds-appearance-option{transition:none}}"
     }
   ],
   "narrative": {
     "northStar": "TracePilot operational workspace",
-    "overview": "A familiar operational workspace: Inter, navy text, blue selection and cool surfaces support fast reading under time pressure. Restrained red, amber and green treatments make urgency visible alongside explicit labels.\n\nThe shared shell and controls carry the visual identity across the application. Existing SVG brand assets remain in use; this pass introduced no shipping raster assets. Product terminology remains governed by docs/PRODUCT.md.",
+    "overview": "A familiar operational workspace: Inter, navy text, blue selection and cool surfaces support fast reading under time pressure. Restrained red, amber and green treatments make urgency visible alongside explicit labels.\n\nThe shared shell and controls carry the visual identity across the application. Existing SVG brand assets remain in use. Product terminology remains governed by docs/PRODUCT.md.\n\nThis records the current working-copy implementation in [resources/css/app.css](resources/css/app.css), [resources/css/transitions.css](resources/css/transitions.css) and the shared Vue controls. [style.md](style.md) remains the operational rulebook; [docs/PRODUCT.md](docs/PRODUCT.md) remains the product source of truth. Surface-specific composition contracts live in [.impeccable/surfaces/dashboard.md](.impeccable/surfaces/dashboard.md) and [.impeccable/surfaces/workspace.md](.impeccable/surfaces/workspace.md). The machine-readable frontmatter uses the [DESIGN.md format](https://raw.githubusercontent.com/google-labs-code/design.md/main/docs/spec.md); `.impeccable/design.json` holds motion, depth and component-preview extensions.",
     "keyCharacteristics": [
       "Calm blue and navy identity with semantic urgency.",
       "Compact controls within generously separated content blocks.",
@@ -695,28 +761,30 @@
     ],
     "rules": [
       {
-        "name": "Meaning Before Decoration",
+        "name": "The Meaning Before Decoration Rule",
         "body": "Pair every operational color with a label, icon or numeric context.",
         "section": "colors"
       },
       {
-        "name": "State Before Spectacle",
+        "name": "The State Before Spectacle Rule",
         "body": "Use restrained state transitions; respect reduced motion for table rows, navigation and buttons.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "Do read style.md before every UI change and reuse the shared controls.",
-      "Do keep visible interface copy short, active and Dutch.",
-      "Do expose incident priority, project context, SLA and required checklist progress together.",
-      "Do preserve horizontal scrolling and a visible scrolling hint for wide mobile tables.",
-      "Do retain visible focus states and accessible labels for icon controls."
+      "**Do** read style.md before every UI change and reuse the shared controls.",
+      "**Do** keep visible interface copy short, active and Dutch.",
+      "**Do** expose incident priority, project context, SLA and required checklist progress together.",
+      "**Do** preserve horizontal scrolling and a visible scrolling hint for wide mobile tables.",
+      "**Do** retain visible focus states and accessible labels for icon controls.",
+      "**Do** reuse semantic motion variables and keep reduced-motion guards and closed-panel `inert` behavior."
     ],
     "donts": [
-      "Don't use color as the only status or urgency cue.",
-      "Don't replace the existing SVG logos with decorative raster imagery.",
-      "Don't add heavier card shadows or gradients.",
-      "Don't conceal important incident columns to fit a narrow screen."
+      "**Don't** use color as the only status or urgency cue.",
+      "**Don't** replace the existing SVG logos with decorative raster imagery.",
+      "**Don't** add heavier card shadows or gradients.",
+      "**Don't** conceal important incident columns to fit a narrow screen.",
+      "**Don't** add page-load choreography or animate the appearance selection from zero on first paint."
     ]
   }
 }

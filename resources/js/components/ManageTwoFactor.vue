@@ -28,11 +28,14 @@ onUnmounted(() => clearTwoFactorAuthData());
 </script>
 
 <template>
-    <div v-if="canManageTwoFactor" class="space-y-6">
+    <div
+        v-if="canManageTwoFactor"
+        class="bg-card max-w-3xl space-y-6 rounded-xl border p-5 sm:p-6"
+    >
         <Heading
             variant="small"
-            title="Two-factor authentication"
-            description="Manage your two-factor authentication settings"
+            title="Tweestapsverificatie"
+            description="Beheer tweestapsverificatie voor je account."
         />
 
         <div
@@ -40,14 +43,13 @@ onUnmounted(() => clearTwoFactorAuthData());
             class="flex flex-col items-start justify-start space-y-4"
         >
             <p class="text-muted-foreground text-sm">
-                When you enable two-factor authentication, you will be prompted
-                for a secure pin during login. This pin can be retrieved from a
-                TOTP-supported application on your phone.
+                Na inschakelen vul je bij het inloggen ook een code uit je
+                authenticator-app in.
             </p>
 
             <div>
                 <Button v-if="hasSetupData" @click="showSetupModal = true">
-                    <ShieldCheck />Continue setup
+                    <ShieldCheck />Instellen hervatten
                 </Button>
                 <Form
                     v-else
@@ -56,7 +58,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                     #default="{ processing }"
                 >
                     <Button type="submit" :disabled="processing">
-                        Enable 2FA
+                        Tweestapsverificatie inschakelen
                     </Button>
                 </Form>
             </div>
@@ -64,9 +66,8 @@ onUnmounted(() => clearTwoFactorAuthData());
 
         <div v-else class="flex flex-col items-start justify-start space-y-4">
             <p class="text-muted-foreground text-sm">
-                You will be prompted for a secure, random pin during login,
-                which you can retrieve from the TOTP-supported application on
-                your phone.
+                Bij het inloggen vul je ook een code uit je authenticator-app
+                in.
             </p>
 
             <div class="relative inline">
@@ -76,7 +77,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                         type="submit"
                         :disabled="processing"
                     >
-                        Disable 2FA
+                        Tweestapsverificatie uitschakelen
                     </Button>
                 </Form>
             </div>

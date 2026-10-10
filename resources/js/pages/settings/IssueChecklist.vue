@@ -9,7 +9,7 @@ import {
     Power,
     Trash2,
 } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import InputError from '@/components/InputError.vue';
 import Heading from '@/components/Heading.vue';
@@ -37,6 +37,16 @@ type Template = {
 };
 
 const props = defineProps<{ templates: Template[] }>();
+const formOpen = ref(false);
+const focusEditor = async () => {
+    await nextTick();
+    document.getElementById('name')?.focus();
+};
+const openCreate = () => {
+    resetForm();
+    formOpen.value = true;
+    void focusEditor();
+};
 const editingId = ref<number | null>(null);
 const editingTemplate = computed(
     () =>
@@ -62,6 +72,7 @@ defineOptions({
 });
 
 const resetForm = () => {
+    formOpen.value = false;
     editingId.value = null;
     form.reset();
     form.clearErrors();
@@ -69,6 +80,8 @@ const resetForm = () => {
 };
 
 const editTemplate = (template: Template) => {
+    formOpen.value = true;
+    void focusEditor();
     editingId.value = template.id;
     form.name = template.name;
     form.is_required = template.is_required;
@@ -141,13 +154,26 @@ const confirmToggle = () => {
     <Head title="Issue-checklist" />
 
     <div class="flex flex-col gap-6">
-        <Heading
-            title="Issue-checklist"
-            description="Bepaal welke stappen standaard bij iedere nieuwe storing horen."
-        />
+        <header
+            class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+        >
+            <Heading
+                title="Issue-checklist"
+                description="Bepaal welke stappen standaard bij iedere nieuwe storing horen."
+            /><Button
+                :aria-expanded="formOpen"
+                aria-controls="checklist-editor"
+                @click="openCreate"
+                ><Plus /> Item toevoegen</Button
+            >
+        </header>
 
-        <Card>
-            <CardHeader>
+        <Card
+            v-if="formOpen"
+            id="checklist-editor"
+            class="gap-0 overflow-hidden py-0"
+        >
+            <CardHeader class="border-b py-5">
                 <CardTitle>{{
                     editingTemplate
                         ? 'Checklist-item bewerken'
@@ -158,7 +184,7 @@ const confirmToggle = () => {
                     Bestaande storingen behouden hun eigen snapshot.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent class="p-5 sm:p-6">
                 <form class="space-y-5" @submit.prevent="submit">
                     <div class="grid gap-2">
                         <Label for="name">Naam</Label>
@@ -244,7 +270,6 @@ const confirmToggle = () => {
                             }}
                         </Button>
                         <Button
-                            v-if="editingTemplate"
                             type="button"
                             variant="outline"
                             @click="resetForm"
@@ -256,24 +281,30 @@ const confirmToggle = () => {
         </Card>
 
         <Card>
-            <CardHeader>
-                <CardTitle>Checklisttemplates</CardTitle>
+            <CardHeader class="border-b">
+                <CardTitle
+                    >Checklisttemplates
+                    <span
+                        class="text-muted-foreground ml-2 text-sm font-normal"
+                        >{{ templates.length }}</span
+                    ></CardTitle
+                >
                 <CardDescription
                     >Gebruik Omhoog en Omlaag om de volgorde veilig te
                     wijzigen.</CardDescription
                 >
             </CardHeader>
             <CardContent>
-                <div v-if="templates.length" class="divide-y rounded-lg border">
+                <div v-if="templates.length" class="divide-y">
                     <article
                         v-for="(template, position) in templates"
                         :key="template.id"
                         class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center"
                     >
-                        <div class="flex shrink-0 gap-1">
+                        <div class="flex shrink-0 gap-2">
                             <Button
                                 :disabled="position === 0"
-                                size="icon-sm"
+                                size="icon"
                                 variant="outline"
                                 @click="moveTemplate(template, 'up')"
                             >
@@ -281,7 +312,7 @@ const confirmToggle = () => {
                             </Button>
                             <Button
                                 :disabled="position === templates.length - 1"
-                                size="icon-sm"
+                                size="icon"
                                 variant="outline"
                                 @click="moveTemplate(template, 'down')"
                             >

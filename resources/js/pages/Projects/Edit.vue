@@ -1,13 +1,9 @@
 <script setup lang="ts">
+import WorkspaceHeader from '@/components/WorkspaceHeader.vue';
+import WorkspacePage from '@/components/WorkspacePage.vue';
 import { Head } from '@inertiajs/vue3';
 import ProjectForm from '@/components/projects/ProjectForm.vue';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import { index, show } from '@/routes/projects';
 
@@ -48,16 +44,12 @@ defineOptions({
 <template>
     <Head :title="`${project.name} bewerken`" />
 
-    <div
-        class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 pt-7 pb-10 sm:px-8"
-    >
+    <WorkspacePage compact>
+        <WorkspaceHeader
+            title="Project bewerken"
+            description="Werk klantgegevens, SLA en responders bij."
+        />
         <Card>
-            <CardHeader class="border-b">
-                <CardTitle>Project bewerken</CardTitle>
-                <CardDescription>
-                    Werk klantgegevens, SLA en responders bij.
-                </CardDescription>
-            </CardHeader>
             <CardContent>
                 <ProjectForm
                     :project="project"
@@ -68,5 +60,5 @@ defineOptions({
                 />
             </CardContent>
         </Card>
-    </div>
+    </WorkspacePage>
 </template>

@@ -19,9 +19,7 @@ defineOptions({
 <template>
     <Head title="Weergave" />
 
-    <h1 class="sr-only">Weergave</h1>
-
-    <div class="space-y-6">
+    <div class="bg-card max-w-3xl space-y-6 rounded-xl border p-5 sm:p-6">
         <Heading
             variant="small"
             title="Weergave"

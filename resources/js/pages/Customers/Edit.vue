@@ -1,17 +1,13 @@
 <script setup lang="ts">
+import WorkspaceHeader from '@/components/WorkspaceHeader.vue';
+import WorkspacePage from '@/components/WorkspacePage.vue';
 import { Head } from '@inertiajs/vue3';
 import CustomerForm from '@/components/customers/CustomerForm.vue';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import { index, show } from '@/routes/customers';
 
-const props = defineProps<{ customer: { id: number; name: string } }>();
+defineProps<{ customer: { id: number; name: string } }>();
 
 defineOptions({
     layout: {
@@ -27,17 +23,12 @@ defineOptions({
 <template>
     <Head :title="`${customer.name} bewerken`" />
 
-    <div
-        class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 pt-7 pb-10 sm:px-8"
-    >
+    <WorkspacePage compact>
+        <WorkspaceHeader
+            title="Klant bewerken"
+            description="Wijzig de naam waaronder projecten en storingen worden gegroepeerd."
+        />
         <Card>
-            <CardHeader class="border-b">
-                <CardTitle>Klant bewerken</CardTitle>
-                <CardDescription>
-                    Wijzig de naam waaronder projecten en storingen worden
-                    gegroepeerd.
-                </CardDescription>
-            </CardHeader>
             <CardContent>
                 <CustomerForm
                     :customer="customer"
@@ -45,5 +36,5 @@ defineOptions({
                 />
             </CardContent>
         </Card>
-    </div>
+    </WorkspacePage>
 </template>

@@ -36,7 +36,7 @@ defineProps<{
 
     <div
         v-if="status"
-        class="mb-4 text-center text-sm font-medium text-green-600"
+        class="mb-4 text-center text-sm font-medium text-[var(--tracepilot-success-ink)]"
     >
         {{ status }}
     </div>
@@ -56,15 +56,16 @@ defineProps<{
                 <Label for="email">E-mailadres</Label>
                 <Input
                     id="email"
+                    :aria-invalid="Boolean(errors.email)"
+                    aria-describedby="account-email-error"
                     type="email"
                     name="email"
                     required
                     autofocus
-                    :tabindex="1"
                     autocomplete="email"
                     placeholder="naam@bedrijf.nl"
                 />
-                <InputError :message="errors.email" />
+                <InputError id="account-email-error" :message="errors.email" />
             </div>
 
             <div class="grid gap-2">
@@ -74,25 +75,28 @@ defineProps<{
                         v-if="canResetPassword"
                         :href="request()"
                         class="text-sm"
-                        :tabindex="5"
                     >
                         Wachtwoord vergeten?
                     </TextLink>
                 </div>
                 <PasswordInput
                     id="password"
+                    :aria-invalid="Boolean(errors.password)"
+                    aria-describedby="account-password-error"
                     name="password"
                     required
-                    :tabindex="2"
                     autocomplete="current-password"
                     placeholder="Je wachtwoord"
                 />
-                <InputError :message="errors.password" />
+                <InputError
+                    id="account-password-error"
+                    :message="errors.password"
+                />
             </div>
 
             <div class="flex items-center justify-between">
                 <Label for="remember" class="flex items-center space-x-3">
-                    <Checkbox id="remember" name="remember" :tabindex="3" />
+                    <Checkbox id="remember" name="remember" />
                     <span>Ingelogd blijven</span>
                 </Label>
             </div>
@@ -100,7 +104,6 @@ defineProps<{
             <Button
                 type="submit"
                 class="mt-4 w-full"
-                :tabindex="4"
                 :disabled="processing"
                 data-test="login-button"
             >
@@ -112,9 +115,7 @@ defineProps<{
         <!-- @chisel-registration -->
         <div class="text-muted-foreground text-center text-sm">
             Nog geen account?
-            <TextLink :href="register()" :tabindex="5"
-                >Account aanmaken</TextLink
-            >
+            <TextLink :href="register()">Account aanmaken</TextLink>
         </div>
         <!-- @end-chisel-registration -->
     </Form>
