@@ -12,7 +12,7 @@ defineProps<{ page: Omit<Paginated<unknown>, 'data'> }>();
         aria-label="Paginering"
         class="flex flex-wrap items-center justify-between gap-3 p-4"
     >
-        <p class="text-muted-foreground text-sm">
+        <p class="text-muted-foreground text-sm tabular-nums">
             Pagina {{ page.current_page }} van {{ page.last_page }} ·
             {{ page.total }} resultaten
         </p>

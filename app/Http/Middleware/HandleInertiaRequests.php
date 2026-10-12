@@ -69,7 +69,7 @@ class HandleInertiaRequests extends Middleware
                     ->with('project:id,name')
                     ->latest('reported_at')
                     ->limit(5)
-                    ->get()
+                    ->get(['id', 'project_id', 'title', 'status'])
                     ->map(fn (Issue $issue): array => [
                         'id' => $issue->id,
                         'title' => $issue->title,

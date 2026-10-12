@@ -63,9 +63,9 @@
 
 :root {
     --icon-swap-dur: 250ms;
-    --icon-swap-blur: 2px;
+    --icon-swap-blur: 4px;
     --icon-swap-start-scale: 0.25;
-    --icon-swap-ease: ease-in-out;
+    --icon-swap-ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
 .t-icon-swap {

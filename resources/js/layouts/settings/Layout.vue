@@ -69,16 +69,17 @@ const currentItem = computed(
             <aside class="min-w-0 lg:sticky lg:top-24">
                 <Button
                     variant="outline"
-                    class="w-full justify-between lg:hidden"
+                    class="h-auto min-h-11 w-full flex-wrap justify-between gap-3 py-2 whitespace-normal lg:hidden"
                     :aria-expanded="navigationOpen"
                     aria-controls="settings-navigation"
                     @click="navigationOpen = !navigationOpen"
-                    ><span class="flex items-center gap-2"
-                        ><component :is="currentItem.icon" class="size-4" />{{
-                            currentItem.title
-                        }}</span
+                    ><span class="flex min-w-0 items-center gap-2 text-left"
+                        ><component
+                            :is="currentItem.icon"
+                            class="size-4 shrink-0"
+                        />{{ currentItem.title }}</span
                     ><span
-                        class="text-muted-foreground flex items-center gap-2 text-xs"
+                        class="text-muted-foreground flex shrink-0 items-center gap-2 text-xs"
                         >Andere instelling<ChevronDown class="size-4" /></span
                 ></Button>
                 <nav

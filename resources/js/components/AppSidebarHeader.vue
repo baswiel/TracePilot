@@ -84,7 +84,7 @@ const activeIssuesCount = computed(() =>
         class="bg-card sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-3 border-b px-5 md:px-8"
     >
         <div class="flex min-w-0 flex-1 items-center gap-2">
-            <SidebarTrigger class="-ml-1 size-10" />
+            <SidebarTrigger class="-ml-1 size-11 sm:size-10" />
             <template v-if="breadcrumbs && breadcrumbs.length > 0">
                 <Breadcrumbs class="min-w-0" :breadcrumbs="breadcrumbs" />
             </template>
@@ -92,7 +92,7 @@ const activeIssuesCount = computed(() =>
         <div class="flex shrink-0 items-center gap-2">
             <Button
                 variant="outline"
-                class="h-10 rounded-lg px-3"
+                class="h-11 rounded-lg px-3 sm:h-10"
                 aria-label="Storing melden"
                 :aria-busy="isReportDialogLoading"
                 :disabled="isReportDialogLoading"
@@ -109,7 +109,7 @@ const activeIssuesCount = computed(() =>
             <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                     <Button
-                        class="text-muted-foreground relative"
+                        class="text-muted-foreground relative size-11 sm:size-10"
                         size="icon"
                         variant="ghost"
                         aria-label="Meldingen"

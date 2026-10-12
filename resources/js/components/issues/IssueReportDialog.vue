@@ -144,7 +144,7 @@ const updateOpen = (value: boolean) => {
                             "
                             required
                             autofocus
-                            class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-base shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm"
+                            class="border-input bg-background ring-offset-background focus-visible:ring-ring h-11 w-full rounded-md border px-3 text-base shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:h-10 md:text-sm"
                         >
                             <option disabled value="">Kies een project</option>
                             <option
@@ -215,7 +215,7 @@ const updateOpen = (value: boolean) => {
                                         ? 'report-priority-error'
                                         : undefined
                                 "
-                                class="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-base shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm"
+                                class="border-input bg-background ring-offset-background focus-visible:ring-ring h-11 w-full rounded-md border px-3 text-base shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:h-10 md:text-sm"
                             >
                                 <option value="p1">P1 — kritiek</option>
                                 <option value="p2">P2 — hoog</option>

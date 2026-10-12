@@ -350,7 +350,7 @@ defineOptions({
                         aria-hidden="true"
                     >
                         <div
-                            class="bg-primary h-full rounded-full transition-all"
+                            class="bg-primary h-full rounded-full transition-[width] motion-reduce:transition-none"
                             :style="{ width: `${checklistProgress}%` }"
                         />
                     </div>

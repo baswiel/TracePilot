@@ -2,18 +2,16 @@
 defineProps<{ title: string; description?: string }>();
 </script>
 <template>
-    <header
-        class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
-    >
-        <div class="min-w-0">
+    <header class="flex flex-wrap items-end justify-between gap-4">
+        <div class="min-w-0 flex-1 basis-64">
             <h1
-                class="text-foreground text-2xl font-semibold tracking-tight break-words"
+                class="text-foreground text-2xl font-semibold tracking-tight text-balance break-words"
             >
                 {{ title }}
             </h1>
             <p
                 v-if="description"
-                class="text-muted-foreground mt-1 max-w-prose text-sm leading-6"
+                class="text-muted-foreground mt-1 max-w-prose text-sm leading-6 text-pretty"
             >
                 {{ description }}
             </p>
@@ -26,7 +24,7 @@ defineProps<{ title: string; description?: string }>();
         </div>
         <div
             v-if="$slots.default"
-            class="flex shrink-0 flex-wrap items-center gap-2"
+            class="flex max-w-full flex-wrap items-center gap-2"
         >
             <slot />
         </div>

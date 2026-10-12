@@ -13,6 +13,7 @@ withDefaults(defineProps<Props>(), {
 <template>
     <header :class="variant === 'small' ? '' : 'space-y-1'">
         <h2
+            class="text-balance"
             :class="
                 variant === 'small'
                     ? 'mb-1 text-lg font-semibold tracking-tight'
@@ -21,7 +22,7 @@ withDefaults(defineProps<Props>(), {
         >
             {{ title }}
         </h2>
-        <p v-if="description" class="text-muted-foreground text-sm">
+        <p v-if="description" class="text-muted-foreground text-sm text-pretty">
             {{ description }}
         </p>
     </header>

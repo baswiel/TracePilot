@@ -152,12 +152,10 @@ defineOptions({
     <div
         class="workspace-page mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-5 pt-7 pb-10 sm:px-8"
     >
-        <section
-            class="order-1 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
-        >
-            <div class="space-y-2">
+        <section class="order-1 flex flex-wrap items-end justify-between gap-4">
+            <div class="min-w-0 flex-1 basis-64 space-y-2">
                 <h1
-                    class="text-[clamp(1.875rem,3vw,2.5rem)] font-semibold tracking-[-0.035em]"
+                    class="text-[clamp(1.875rem,3vw,2.5rem)] font-semibold tracking-[-0.035em] text-balance break-words"
                 >
                     Goedemiddag, {{ firstName }}
                 </h1>
@@ -231,7 +229,7 @@ defineOptions({
                     <div class="t-acc-panel-inner">
                         <form
                             id="dashboard-filters"
-                            class="bg-muted/30 grid gap-3 border-b p-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1fr_1fr_1fr_1.2fr_auto]"
+                            class="bg-muted/30 grid gap-3 border-b p-4 sm:grid-cols-2 sm:px-6 xl:grid-cols-[1fr_1fr_1fr_1.2fr_auto]"
                             @submit.prevent="applyFilters"
                         >
                             <div class="grid min-w-0 gap-1.5">
@@ -315,7 +313,7 @@ defineOptions({
                             <Button
                                 type="submit"
                                 variant="outline"
-                                class="self-end"
+                                class="self-end sm:col-span-2 sm:justify-self-end xl:col-span-1"
                                 ><SlidersHorizontal /> Toepassen</Button
                             >
                         </form>
@@ -324,7 +322,7 @@ defineOptions({
             </div>
             <div
                 v-if="hasFilters"
-                class="flex items-center justify-between border-b px-6 py-2 text-sm"
+                class="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-3 text-sm sm:px-6"
             >
                 <p class="text-muted-foreground">
                     Je bekijkt een gefilterde werkvoorraad.
@@ -528,7 +526,7 @@ defineOptions({
         >
             <Card class="border-l-destructive min-h-36 border-l-4 py-0">
                 <CardContent
-                    class="summary-content flex items-center justify-between gap-4 p-4 lg:items-start lg:p-6"
+                    class="summary-content flex flex-1 items-center justify-between gap-4 p-4 lg:items-start lg:p-6"
                 >
                     <div class="summary-copy min-w-0 flex-1">
                         <p class="text-sm font-medium">Open storingen</p>
@@ -551,7 +549,7 @@ defineOptions({
             </Card>
             <Card class="border-l-warning min-h-36 border-l-4 py-0">
                 <CardContent
-                    class="summary-content flex items-center justify-between gap-4 p-4 lg:items-start lg:p-6"
+                    class="summary-content flex flex-1 items-center justify-between gap-4 p-4 lg:items-start lg:p-6"
                 >
                     <div class="summary-copy min-w-0 flex-1">
                         <p class="text-sm font-medium">In afhandeling</p>
@@ -574,7 +572,7 @@ defineOptions({
             </Card>
             <Card class="border-l-success min-h-36 border-l-4 py-0">
                 <CardContent
-                    class="summary-content flex items-center justify-between gap-4 p-4 lg:items-start lg:p-6"
+                    class="summary-content flex flex-1 items-center justify-between gap-4 p-4 lg:items-start lg:p-6"
                 >
                     <div class="summary-copy min-w-0 flex-1">
                         <p class="text-sm font-medium">Afgerond deze maand</p>

@@ -39,7 +39,7 @@ const display = computed(() => {
 
 <template>
     <span
-        class="inline-flex flex-col rounded-lg border px-2.5 py-1 text-xs font-medium"
+        class="inline-flex flex-col rounded-lg border px-2.5 py-1 text-xs font-medium tabular-nums"
         :class="display.class"
     >
         <span>{{ display.label }}</span>

@@ -633,7 +633,7 @@ defineOptions({
                         class="rounded-lg border p-4"
                     >
                         <p class="font-medium">{{ card.name }}</p>
-                        <p class="mt-2 text-3xl font-semibold">
+                        <p class="mt-2 text-3xl font-semibold tabular-nums">
                             {{ percentage(card.data.percentage) }}
                         </p>
                         <p class="text-muted-foreground mt-1 text-sm">

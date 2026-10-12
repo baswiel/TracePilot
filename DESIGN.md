@@ -217,7 +217,7 @@ The type hierarchy is compact and direct. Semibold incident names and headings l
 
 ## Layout
 
-A grouped sidebar separates Werkplek from Beheer; settings and user controls sit in the footer. A sticky toolbar is 64px high. Dashboard and incident detail content use a centered 1440px maximum width, 20px side padding increasing to 32px from the small breakpoint. Shared management views use `WorkspacePage` with the same 1440px width; compact forms use its 768px variant. Some older views retain the 1152px container.
+A grouped sidebar separates Werkplek from Beheer; settings and user controls sit in the footer. A sticky toolbar is 64px high. Dashboard and incident detail content use a centered 1440px maximum width, 20px side padding increasing to 32px from the small breakpoint. Shared management views use `WorkspacePage` with a 1152px maximum width; compact forms use its 768px variant.
 
 Settings use a 224px navigation column beside flexible content from 1024px, with a 32px column gap and sticky navigation. On smaller screens a visible current-setting button expands the grouped navigation.
 
@@ -269,7 +269,7 @@ A semantic panel directly below the incident header names the next required acti
 
 ### Workspace pages and headers
 
-Reuse `WorkspacePage` for the centered content width, 24px block gaps, 20px/32px horizontal padding and bottom breathing room. `WorkspaceHeader` supplies one 24px semibold `h1`, a muted description with 24px line height, optional context chips and wrapping action controls. Its layout stacks below 640px and aligns actions to the heading on larger screens. Reuse the settings layout's grouped Account and Incidentbeheer navigation rather than creating a separate navigation pattern.
+Reuse `WorkspacePage` for the centered 1152px (`max-w-6xl`) management width, 768px compact forms, 24px block gaps, 20px/32px horizontal padding and bottom breathing room. The dashboard retains its 1440px container. `WorkspaceHeader` supplies one 24px semibold `h1`, a muted description with 24px line height, optional context chips and wrapping action controls. Its layout wraps according to available space: the title block has a flexible 16rem basis, and actions align with the heading when they fit on the same row. Reuse the settings layout's grouped Account and Incidentbeheer navigation rather than creating a separate navigation pattern.
 
 ### Motion and state continuity
 
@@ -277,7 +277,7 @@ Reuse `WorkspacePage` for the centered content width, 24px block gaps, 20px/32px
 
 | Interaction | Hooks | Timing and easing | Behavior |
 | --- | --- | --- | --- |
-| Dashboard and extra incident filters | `.t-acc`, `data-open`, `.t-acc-panel`, `.t-acc-panel-inner` | `--acc-expand`, `--acc-collapse`: 250ms; `--acc-ease`: `cubic-bezier(0.22, 1, 0.36, 1)` | Grid track grows from `0fr` to `1fr`; inner content fades and resolves a 2px blur. Closed panels are `inert` and `aria-hidden`. Dashboard filters stay visible on desktop, including before hydration. |
+| Dashboard and extra incident filters | `.t-acc`, `data-open`, `.t-acc-panel`, `.t-acc-panel-inner` | `--acc-expand`, `--acc-collapse`: 250ms; `--acc-ease`: `cubic-bezier(0.22, 1, 0.36, 1)` | Grid track grows from `0fr` to `1fr`; inner content fades and resolves a 2px blur. Closed panels are `inert` and `aria-hidden`. Dashboard filters stay visible from `lg`, including before hydration; fields use two columns from `sm` and the full five-track row from `xl`. |
 | Password visibility | `.t-icon-swap`, `data-state`, `.t-icon`, `data-icon` | `--icon-swap-dur`: 250ms; `--icon-swap-ease`: `ease-in-out` | Both Lucide icons share one grid cell; opacity, 2px blur and scale cross-fade. The button retains its label, pressed state and keyboard focus. |
 | Appearance selection | `.t-tabs`, `.t-tab`, `.t-tabs-pill`, `.appearance-tabs` | `--tabs-dur`: 250ms; `--tabs-ease`: `cubic-bezier(0.22, 1, 0.36, 1)` | The selection moves and resizes to the active button. First placement and resize snap without a tween. Controls remain a labeled button group with `aria-pressed`, not content tabs. |
 

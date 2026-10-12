@@ -39,7 +39,7 @@ const formatDuration = (minutes: number | null) => {
             <section
                 v-for="milestone in [sla.response, sla.resolution]"
                 :key="milestone.label"
-                class="rounded-lg border p-4"
+                class="rounded-lg border p-4 tabular-nums"
                 :class="slaTone(milestone.state)"
             >
                 <p class="font-medium">{{ milestone.label }}</p>
